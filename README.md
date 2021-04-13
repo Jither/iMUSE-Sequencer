@@ -1,1 +1,4 @@
-ImuseSequencer
+iMUSE Sequencer
+===============
+Work in progress.
+
