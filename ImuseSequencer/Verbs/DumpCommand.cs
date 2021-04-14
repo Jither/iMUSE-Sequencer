@@ -10,11 +10,20 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Verbs
 {
-    [Verb("dump")]
+    [Verb("dump", Help = "Dumps information on MIDI file")]
     public class DumpOptions
     {
         [Positional(0, Help = "Input MIDI file (Standard MIDI file or LEC chunk - SOUN, SOU, ADL, ROL etc.)", Required = true)]
         public string InputPath { get; set; }
+
+        [Option('n', "notes", Help = "Dump note-on/off MIDI events")]
+        public bool IncludeNotes { get; set; }
+
+        [Option('e', "events", Help = "Dump MIDI events (other than note-on/off)")]
+        public bool IncludeEvents { get; set; }
+
+        [Option('t', "timeline", Help = "Dump timeline")]
+        public bool IncludeTimeline { get; set; }
     }
 
     public class DumpCommand
@@ -33,13 +42,41 @@ namespace ImuseSequencer.Verbs
             var midiFile = new MidiFile(options.InputPath);
             logger.Info(midiFile.ToString());
 
-            foreach (var track in midiFile.Tracks)
+            if (options.IncludeEvents || options.IncludeNotes)
             {
                 logger.Info("");
-                logger.Info(track.ToString());
-                foreach (var evt in track.Events)
+                logger.Info("<b>Events</b>");
+                foreach (var track in midiFile.Tracks)
                 {
-                    logger.Colored($"  {evt}", GetColor(evt));
+                    logger.Info("");
+                    logger.Info(track.ToString());
+                    foreach (var evt in track.Events)
+                    {
+                        if (evt.Message is NoteOnMessage or NoteOffMessage)
+                        {
+                            if (options.IncludeNotes)
+                            {
+                                logger.Colored($"  {evt}", GetColor(evt));
+                            }
+                        }
+                        else
+                        {
+                            if (options.IncludeEvents)
+                            {
+                                logger.Colored($"  {evt}", GetColor(evt));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (options.IncludeTimeline)
+            {
+                logger.Info("");
+                logger.Info("<b>Timeline</b>");
+                foreach (var time in midiFile.Timeline)
+                {
+                    logger.Info(time.ToString());
                 }
             }
         }

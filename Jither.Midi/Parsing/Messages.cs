@@ -9,19 +9,26 @@ namespace Jither.Midi.Parsing
 {
     public class MidiEvent
     {
-        public ulong AbsoluteTime { get; }
-        public int DeltaTime { get; }
+        public ulong AbsoluteTicks { get; }
+        public int DeltaTicks { get; }
         public MidiMessage Message { get; }
-        public MidiEvent(ulong absoluteTime, int deltaTime, MidiMessage message)
+        public BeatPosition BeatPosition { get; set; }
+
+        public MidiEvent(ulong absoluteTicks, int deltaTicks, MidiMessage message)
         {
-            AbsoluteTime = absoluteTime;
-            DeltaTime = deltaTime;
+            AbsoluteTicks = absoluteTicks;
+            DeltaTicks = deltaTicks;
             Message = message;
         }
 
         public override string ToString()
         {
-            return $"{AbsoluteTime,8} ({DeltaTime,6}): {Message}";
+            string result = $"({AbsoluteTicks,8}, Δ{DeltaTicks,6}): {Message}";
+            if (BeatPosition != null)
+            {
+                result = $"{BeatPosition,10} {result}";
+            }
+            return result;
         }
     }
 
@@ -471,10 +478,10 @@ namespace Jither.Midi.Parsing
         public override string TypeName => "time-signature";
         public override string Info => $"{Numerator}/{Denominator}, {ClocksPerBeat} MIDI clocks per beat, 1 MIDI quarter-note = {ThirtySecondNotesPerMidiQuarterNote} notated 32nd notes";
 
-        public int Numerator => Data[0];
-        public int Denominator => 1 << Data[1];
-        public int ClocksPerBeat => Data[2];
-        public int ThirtySecondNotesPerMidiQuarterNote => Data[3];
+        public uint Numerator => Data[0];
+        public uint Denominator => (uint)(1 << Data[1]);
+        public uint ClocksPerBeat => Data[2];
+        public uint ThirtySecondNotesPerMidiQuarterNote => Data[3];
 
         
 

@@ -5,7 +5,6 @@ using System.Text;
 
 namespace Jither.Midi.Parsing
 {
-
     public class MidiFile
     {
         private readonly List<MidiTrack> tracks = new List<MidiTrack>();
@@ -39,16 +38,27 @@ namespace Jither.Midi.Parsing
         /// <summary>
         /// Ticks per quarter note in PPQN. 0 if not PPQN.
         /// </summary>
-        public int TicksPerQuarterNote { get; private set; }
+        public uint TicksPerQuarterNote { get; private set; }
 
         /// <summary>
         /// Ticks per frame in SMPTE division. 0 if not SMPTE.
         /// </summary>
-        public int TicksPerFrame { get; private set; }
+        public uint TicksPerFrame { get; private set; }
 
+        /// <summary>
+        /// Target device. Only available if MIDI was wrapped in target chunk.
+        /// </summary>
         public SoundTarget Target { get; private set; }
 
+        /// <summary>
+        /// List of all tracks in the file.
+        /// </summary>
         public IReadOnlyList<MidiTrack> Tracks => tracks;
+
+        /// <summary>
+        /// Timeline of time signature changes. Only available for <see cref="DivisionType.Ppqn" />.
+        /// </summary>
+        public Timeline Timeline { get; }
 
         public MidiFile(string path) : this(File.OpenRead(path))
         {
@@ -65,6 +75,11 @@ namespace Jither.Midi.Parsing
                 {
                     tracks.Add(ReadTrackChunk(reader, i));
                 }
+            }
+
+            if (DivisionType == DivisionType.Ppqn)
+            {
+                Timeline = new Timeline(this);
             }
         }
 
@@ -86,7 +101,7 @@ namespace Jither.Midi.Parsing
             if ((division & 0x8000) == 0)
             {
                 DivisionType = DivisionType.Ppqn;
-                TicksPerQuarterNote = division & 0x7fff;
+                TicksPerQuarterNote = (uint)(division & 0x7fff);
             }
             else
             {
@@ -99,7 +114,7 @@ namespace Jither.Midi.Parsing
                     -30 => DivisionType.Smpte30,
                     _ => throw new MidiFileException($"Not a valid MIDI file: Unknown smpteFormat: {smpteFormat}")
                 };
-                TicksPerFrame = division & 0xff;
+                TicksPerFrame = (uint)(division & 0xff);
             }
         }
 
@@ -171,12 +186,12 @@ namespace Jither.Midi.Parsing
 
             var events = new List<MidiEvent>();
 
-            ulong absoluteTime = 0;
+            ulong absoluteTicks = 0;
             int runningStatus = -1;
 
             while (reader.Position < end)
             {
-                int deltaTime = reader.ReadVLQ();
+                int deltaTicks = reader.ReadVLQ();
 
                 byte status = reader.ReadStatus(runningStatus);
 
@@ -197,12 +212,13 @@ namespace Jither.Midi.Parsing
                     _ => throw new MidiFileException($"Unexpected MIDI message command byte: {status}")
                 };
 
-                runningStatus = status;
+                // Update running status. But: "Running Status will be stopped when any other Status byte [than channel/mode] intervenes."
+                runningStatus = command != 0xf0 ? status : -1;
 
-                // Although we type deltaTime as signed integer for convenience, it's never negative
-                absoluteTime += (uint)deltaTime;
+                // Although we type deltaTime as signed integer for convenience, it's never negative, so this cast is fine
+                absoluteTicks += (uint)deltaTicks;
 
-                var evt = new MidiEvent(absoluteTime, deltaTime, message);
+                var evt = new MidiEvent(absoluteTicks, deltaTicks, message);
                 events.Add(evt);
             }
 
