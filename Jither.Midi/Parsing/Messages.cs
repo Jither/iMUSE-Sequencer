@@ -36,6 +36,11 @@ namespace Jither.Midi.Parsing
     {
         public abstract string Name { get; }
         public abstract string Parameters { get; }
+        
+        /// <summary>
+        /// The message as an integer <i>in little endian order</i> (i.e. status byte in the least significant byte)
+        /// </summary>
+        public abstract int RawMessage { get; }
 
         public override string ToString() => $"{Name,-14}  {Parameters}";
     }
@@ -43,6 +48,9 @@ namespace Jither.Midi.Parsing
     public abstract class ChannelMessage : MidiMessage
     {
         public int Channel { get; set; }
+
+        public override int RawMessage => (0x80 & Channel) | RawData << 8;
+        protected abstract int RawData { get; }
 
         protected ChannelMessage(int channel)
         {
@@ -55,7 +63,8 @@ namespace Jither.Midi.Parsing
     public class NoteOffMessage : ChannelMessage
     {
         public override string Name => "note-off";
-        public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}"; 
+        public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}";
+        protected override int RawData => Key | Velocity << 8;
 
         public byte Key { get; set; }
         public byte Velocity { get; set; }
@@ -71,6 +80,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "note-on";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}";
+        protected override int RawData => Key | Velocity << 8;
 
         public byte Key { get; set; }
         public byte Velocity { get; set; }
@@ -86,6 +96,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "poly-press";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Pressure,3}";
+        protected override int RawData => Key | Pressure << 8;
 
         public byte Key { get; set; }
         public byte Pressure { get; set; }
@@ -104,6 +115,7 @@ namespace Jither.Midi.Parsing
 
         public MidiController Controller { get; set; }
         public byte Value { get; set; }
+        protected override int RawData => (byte)Controller | Value << 8;
 
         protected ControlChangeMessage(int channel, byte controller, byte value) : base(channel)
         {
@@ -215,6 +227,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "pgm-chng";
         public override string Parameters => $"{Program}";
+        protected override int RawData => Program;
 
         public byte Program { get; set; }
 
@@ -228,6 +241,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "chan-press";
         public override string Parameters => $"{Pressure}";
+        protected override int RawData => Pressure;
 
         public byte Pressure { get; set; }
 
@@ -241,6 +255,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "pitch-bend";
         public override string Parameters => $"{Bender}";
+        protected override int RawData => (Bender & 0xff) << 8 | (Bender & 0xff00) >> 8;
 
         public ushort Bender { get; set; }
 
@@ -254,6 +269,8 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "sysex";
         public override string Parameters => $"{(Continuation ? "->" : "")}{Data.ToHex()}{(Unterminated ? " ->" : "")}";
+        public override int RawMessage => throw new NotSupportedException("Sysex message is not representable as a 32-bit integer.");
+
         /// <summary>
         /// Actual data excluding starting F0/F7 and length (from MIDI file), but including terminating F7 (if any).
         /// </summary>
@@ -302,6 +319,8 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "meta";
         public override string Parameters => $"{TypeName,-20} {Info}";
+        public override int RawMessage => throw new NotSupportedException("Meta message is not representable as a 32-bit integer.");
+
         public byte Type { get; }
         public byte[] Data { get; set; }
 

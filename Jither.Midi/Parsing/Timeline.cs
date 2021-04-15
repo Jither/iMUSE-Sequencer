@@ -61,7 +61,7 @@ namespace Jither.Midi.Parsing
         public override string ToString()
         {
             string meter = $"{Numerator}/{Denominator}";
-            return $"{StartTicks,10} {meter,8} - {ClocksPerBeat} MIDI-clocks/beat, {TicksPerBeat} ticks/beat, {BeatsPerMeasure} beats/measure, 32nds/qn = {ThirtySecondNotesPerMidiQuarterNote}.";
+            return $"{StartMeasure,4} ({StartTicks,10}) {meter,8} - {ClocksPerBeat} MIDI-clocks/beat, {TicksPerBeat} ticks/beat, {BeatsPerMeasure} beats/measure, 32nds/qn = {ThirtySecondNotesPerMidiQuarterNote}.";
         }
     }
 
@@ -92,9 +92,9 @@ namespace Jither.Midi.Parsing
 
     public class Timeline : IReadOnlyList<Meter>
     {
-        private MidiFile file;
+        private readonly MidiFile file;
 
-        private List<Meter> timeline = new List<Meter>();
+        private List<Meter> timeline = new();
 
         public Timeline(MidiFile file)
         {
@@ -154,12 +154,14 @@ namespace Jither.Midi.Parsing
             Meter previous = null;
             foreach (var change in timeline)
             {
+                // Linked list of meter changes:
                 change.Link(previous);
+
                 if (previous != null)
                 {
-                    // Get beat position of change relative to last change
+                    // Get beat position of this change relative to last change
                     var beatPosition = new BeatPosition(change.StartTicks, previous);
-                    // ... and use it to assign a starting measure for the change
+                    // ... and use it to assign a starting measure for this change
                     change.StartMeasure = previous.StartMeasure + beatPosition.Measure;
                 }
                 else
