@@ -27,10 +27,9 @@ namespace ImuseSequencer.Drivers
             checksum -= hi_addr;
             //address >>= 7;
 
-            byte[] buffer = new byte[data.Length + 10];
+            byte[] buffer = new byte[data.Length + 9];
 
             int index = 0;
-            buffer[index++] = 0xf0;
             buffer[index++] = sysexId;
             buffer[index++] = 0x10;
             buffer[index++] = 0x16;
