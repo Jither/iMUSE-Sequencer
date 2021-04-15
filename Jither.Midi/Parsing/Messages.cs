@@ -49,7 +49,8 @@ namespace Jither.Midi.Parsing
     {
         public int Channel { get; set; }
 
-        public override int RawMessage => (0x80 & Channel) | RawData << 8;
+        public override int RawMessage => (Command & Channel) | RawData << 8;
+        protected abstract byte Command { get; }
         protected abstract int RawData { get; }
 
         protected ChannelMessage(int channel)
@@ -64,6 +65,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "note-off";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}";
+        protected override byte Command => 0x80;
         protected override int RawData => Key | Velocity << 8;
 
         public byte Key { get; set; }
@@ -80,6 +82,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "note-on";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}";
+        protected override byte Command => 0x90;
         protected override int RawData => Key | Velocity << 8;
 
         public byte Key { get; set; }
@@ -96,6 +99,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "poly-press";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Pressure,3}";
+        protected override byte Command => 0xa0;
         protected override int RawData => Key | Pressure << 8;
 
         public byte Key { get; set; }
@@ -115,6 +119,7 @@ namespace Jither.Midi.Parsing
 
         public MidiController Controller { get; set; }
         public byte Value { get; set; }
+        protected override byte Command => 0xb0;
         protected override int RawData => (byte)Controller | Value << 8;
 
         protected ControlChangeMessage(int channel, byte controller, byte value) : base(channel)
@@ -227,6 +232,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "pgm-chng";
         public override string Parameters => $"{Program}";
+        protected override byte Command => 0xc0;
         protected override int RawData => Program;
 
         public byte Program { get; set; }
@@ -241,6 +247,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "chan-press";
         public override string Parameters => $"{Pressure}";
+        protected override byte Command => 0xd0;
         protected override int RawData => Pressure;
 
         public byte Pressure { get; set; }
@@ -255,6 +262,7 @@ namespace Jither.Midi.Parsing
     {
         public override string Name => "pitch-bend";
         public override string Parameters => $"{Bender}";
+        protected override byte Command => 0xe0;
         protected override int RawData => (Bender & 0xff) << 8 | (Bender & 0xff00) >> 8;
 
         public ushort Bender { get; set; }
