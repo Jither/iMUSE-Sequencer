@@ -1,4 +1,5 @@
-﻿using Jither.Midi.Parsing;
+﻿using Jither.Midi.Messages;
+using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
 using System.Linq;

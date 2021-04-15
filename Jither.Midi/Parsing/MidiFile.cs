@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jither.Midi.Messages;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -172,7 +173,7 @@ namespace Jither.Midi.Parsing
             return type;
         }
 
-        private MidiTrack ReadTrackChunk(MidiReader reader, uint trackIndex)
+        private static MidiTrack ReadTrackChunk(MidiReader reader, uint trackIndex)
         {
             string type = reader.ReadChunkType();
             if (type != "MTrk")
@@ -186,7 +187,7 @@ namespace Jither.Midi.Parsing
 
             var events = new List<MidiEvent>();
 
-            ulong absoluteTicks = 0;
+            long absoluteTicks = 0;
             int runningStatus = -1;
 
             while (reader.Position < end)
@@ -216,7 +217,7 @@ namespace Jither.Midi.Parsing
                 runningStatus = command != 0xf0 ? status : -1;
 
                 // Although we type deltaTime as signed integer for convenience, it's never negative, so this cast is fine
-                absoluteTicks += (uint)deltaTicks;
+                absoluteTicks += deltaTicks;
 
                 var evt = new MidiEvent(absoluteTicks, deltaTicks, message);
                 events.Add(evt);
@@ -225,7 +226,7 @@ namespace Jither.Midi.Parsing
             return new MidiTrack(trackIndex, events);
         }
 
-        private MidiMessage CreateSystemMessage(MidiReader reader, byte status)
+        private static MidiMessage CreateSystemMessage(MidiReader reader, byte status)
         {
             byte[] data;
             switch (status)

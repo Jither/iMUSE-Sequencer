@@ -7,17 +7,27 @@ namespace ImuseSequencer
 {
     class Program
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(Program));
+
         static void Main(string[] args)
         {
             LogProvider.RegisterLog(new ConsoleLog("{message}"));
 
-            var parser = new CommandParser()
-                .WithVerb<DumpOptions>(o => new DumpCommand(o).Execute())
-                .WithVerb<ListOutputsOptions>(o => new ListOutputsCommand(o).Execute())
-                .WithVerb<TestOptions>(o => new TestCommand(o).Execute())
-                .WithErrorHandler(err => err.Parser.WriteHelp(err));
+            try
+            {
+                var parser = new CommandParser()
+                    .WithVerb<PlayOptions>(o => new PlayCommand(o).Execute())
+                    .WithVerb<DumpOptions>(o => new DumpCommand(o).Execute())
+                    .WithVerb<ListOutputsOptions>(o => new ListOutputsCommand(o).Execute())
+                    .WithVerb<TestOptions>(o => new TestCommand(o).Execute())
+                    .WithErrorHandler(err => err.Parser.WriteHelp(err));
 
-            parser.Parse(args);
+                parser.Parse(args);
+            }
+            catch (ImuseSequencerException ex)
+            {
+                logger.Error(ex.Message);
+            }
         }
     }
 }

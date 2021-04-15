@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Jither.Midi.Messages;
+using System.Collections.Generic;
 
 namespace Jither.Midi.Parsing
 {

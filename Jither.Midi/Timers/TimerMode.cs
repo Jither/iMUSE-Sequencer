@@ -2,7 +2,7 @@
 {
     public enum TimerMode
     {
-        Interval,
-        Single
+        Single = 0,
+        Interval = 1
     }
 }

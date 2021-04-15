@@ -1,4 +1,5 @@
-﻿using Jither.Midi.Parsing;
+﻿using Jither.Midi.Messages;
+using Jither.Midi.Parsing;
 using Jither.Tasks;
 using System;
 using System.Diagnostics;
@@ -83,6 +84,12 @@ namespace Jither.Midi.Devices.Windows
 
         public void SendMessage(MidiMessage message)
         {
+            if (message is MetaMessage meta)
+            {
+                // Don't send meta messages
+                return;
+            }
+
             if (message is SysexMessage sysex)
             {
                 SendSysex(sysex);

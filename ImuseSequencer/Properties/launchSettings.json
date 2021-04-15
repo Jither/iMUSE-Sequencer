@@ -2,7 +2,7 @@
   "profiles": {
     "ImuseSequencer": {
       "commandName": "Project",
-      "commandLineArgs": "dump d:\\scumm\\MIDIs\\BARPIANO.rol"
+      "commandLineArgs": "test sequencer"
     }
   }
 }

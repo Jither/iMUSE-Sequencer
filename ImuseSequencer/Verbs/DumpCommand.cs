@@ -1,6 +1,7 @@
 ﻿using ImuseSequencer.Helpers;
 using Jither.CommandLine;
 using Jither.Logging;
+using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
@@ -28,9 +29,9 @@ namespace ImuseSequencer.Verbs
 
     public class DumpCommand
     {
-        private Logger logger = LogProvider.Get(nameof(DumpCommand));
+        private readonly Logger logger = LogProvider.Get(nameof(DumpCommand));
 
-        private DumpOptions options;
+        private readonly DumpOptions options;
 
         public DumpCommand(DumpOptions options)
         {
@@ -81,7 +82,7 @@ namespace ImuseSequencer.Verbs
             }
         }
 
-        private string GetColor(MidiEvent evt)
+        private static string GetColor(MidiEvent evt)
         {
             return evt.Message switch
             {

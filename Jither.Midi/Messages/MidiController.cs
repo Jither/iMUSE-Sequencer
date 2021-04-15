@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Messages
 {
     public enum MidiController : byte
     {

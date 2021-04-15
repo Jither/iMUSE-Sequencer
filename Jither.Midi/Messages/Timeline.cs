@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Jither.Midi.Parsing;
 using Jither.Utilities;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Messages
 {
     public class Meter
     {
-        public ulong StartTicks { get; }
+        public long StartTicks { get; }
         public uint Numerator { get; }
         public uint Denominator { get; }
         public uint ClocksPerBeat { get; } // 24 = beat every quarter note, 36 = beat every dotted quarter note
@@ -18,16 +19,16 @@ namespace Jither.Midi.Parsing
         public uint TicksPerBeat { get; }
         public uint ThirtySecondNotesPerMidiQuarterNote { get; }
 
-        public uint StartMeasure { get; internal set; }
+        public int StartMeasure { get; internal set; }
         public Meter Next { get; private set; }
         public Meter Previous { get; private set; }
 
-        public Meter(ulong absoluteTicks, TimeSignatureMessage message, uint ticksPerQuarterNote)
+        public Meter(long absoluteTicks, TimeSignatureMessage message, uint ticksPerQuarterNote)
             : this(absoluteTicks, message.Numerator, message.Denominator, message.ClocksPerBeat, message.ThirtySecondNotesPerMidiQuarterNote, ticksPerQuarterNote)
         {
         }
 
-        public Meter(ulong startTicks, uint numerator, uint denominator, uint clocksPerBeat, uint thirtySecondNotesPerMidiQuarterNote, uint ticksPerQuarterNote)
+        public Meter(long startTicks, uint numerator, uint denominator, uint clocksPerBeat, uint thirtySecondNotesPerMidiQuarterNote, uint ticksPerQuarterNote)
         {
             StartTicks = startTicks;
             Numerator = numerator;
@@ -67,21 +68,21 @@ namespace Jither.Midi.Parsing
 
     public class BeatPosition
     {
-        public uint Measure { get; }
-        public uint Beat { get; }
-        public uint Tick { get; }
+        public int Measure { get; }
+        public int Beat { get; }
+        public int Tick { get; }
 
-        public BeatPosition(ulong absoluteTicks, Meter meter)
+        public BeatPosition(long absoluteTicks, Meter meter)
         {
-            ulong ticks = absoluteTicks - meter.StartTicks;
-            Tick = (uint)ticks % meter.TicksPerBeat;
+            long ticks = absoluteTicks - meter.StartTicks;
+            Tick = (int)(ticks % meter.TicksPerBeat);
             ticks -= Tick;
 
-            ulong beats = ticks / meter.TicksPerBeat;
-            Beat = (uint)beats % meter.BeatsPerMeasure;
+            long beats = ticks / meter.TicksPerBeat;
+            Beat = (int)(beats % meter.BeatsPerMeasure);
             beats -= Beat;
 
-            Measure = (uint)(beats / meter.BeatsPerMeasure) + meter.StartMeasure;
+            Measure = (int)(beats / meter.BeatsPerMeasure) + meter.StartMeasure;
         }
 
         public override string ToString()
@@ -108,14 +109,14 @@ namespace Jither.Midi.Parsing
             foreach (var track in file.Tracks)
             {
                 Meter currentMeter = timeline[0];
-                ulong nextChange = currentMeter.Next?.StartTicks ?? ulong.MaxValue;
+                long nextChange = currentMeter.Next?.StartTicks ?? long.MaxValue;
 
                 foreach (var evt in track.Events)
                 {
                     if (evt.AbsoluteTicks >= nextChange)
                     {
                         currentMeter = currentMeter.Next;
-                        nextChange = currentMeter.Next?.StartTicks ?? ulong.MaxValue;
+                        nextChange = currentMeter.Next?.StartTicks ?? long.MaxValue;
                     }
 
                     evt.BeatPosition = new BeatPosition(evt.AbsoluteTicks, currentMeter);

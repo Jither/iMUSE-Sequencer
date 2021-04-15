@@ -1,14 +1,11 @@
 ﻿using Jither.Midi.Timers;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Jither.Midi.Sequencing
 {
     public class Clock : IDisposable
     {
+        private readonly ITimer timer;
         private readonly int interval;
         private int tempo = 500000; // Tempo in microseconds per beat
         private int intervalResolution;
@@ -18,7 +15,6 @@ namespace Jither.Midi.Sequencing
         private bool isRunning = false;
         private bool disposed = false;
 
-        private ITimer timer;
         private int ticks = 0;
 
         public int Ticks => ticks;
@@ -68,6 +64,7 @@ namespace Jither.Midi.Sequencing
                 interval = timer.Capabilities.MinimumInterval;
             }
             this.interval = interval;
+            timer.Mode = TimerMode.Interval;
             timer.Interval = interval;
             timer.Tick += Timer_Tick;
             Update();

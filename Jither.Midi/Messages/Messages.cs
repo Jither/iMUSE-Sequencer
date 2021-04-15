@@ -5,33 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Messages
 {
-    public class MidiEvent
-    {
-        public ulong AbsoluteTicks { get; }
-        public int DeltaTicks { get; }
-        public MidiMessage Message { get; }
-        public BeatPosition BeatPosition { get; set; }
-
-        public MidiEvent(ulong absoluteTicks, int deltaTicks, MidiMessage message)
-        {
-            AbsoluteTicks = absoluteTicks;
-            DeltaTicks = deltaTicks;
-            Message = message;
-        }
-
-        public override string ToString()
-        {
-            string result = $"({AbsoluteTicks,8}, Δ{DeltaTicks,6}): {Message}";
-            if (BeatPosition != null)
-            {
-                result = $"{BeatPosition,10} {result}";
-            }
-            return result;
-        }
-    }
-
     public abstract class MidiMessage
     {
         public abstract string Name { get; }
@@ -49,7 +24,7 @@ namespace Jither.Midi.Parsing
     {
         public int Channel { get; set; }
 
-        public override int RawMessage => (Command & Channel) | RawData << 8;
+        public override int RawMessage => (Command | Channel) | (RawData << 8);
         protected abstract byte Command { get; }
         protected abstract int RawData { get; }
 
@@ -66,7 +41,7 @@ namespace Jither.Midi.Parsing
         public override string Name => "note-off";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}";
         protected override byte Command => 0x80;
-        protected override int RawData => Key | Velocity << 8;
+        protected override int RawData => Key | (Velocity << 8);
 
         public byte Key { get; set; }
         public byte Velocity { get; set; }
@@ -83,7 +58,7 @@ namespace Jither.Midi.Parsing
         public override string Name => "note-on";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Velocity,3}";
         protected override byte Command => 0x90;
-        protected override int RawData => Key | Velocity << 8;
+        protected override int RawData => Key | (Velocity << 8);
 
         public byte Key { get; set; }
         public byte Velocity { get; set; }
@@ -100,7 +75,7 @@ namespace Jither.Midi.Parsing
         public override string Name => "poly-press";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Pressure,3}";
         protected override byte Command => 0xa0;
-        protected override int RawData => Key | Pressure << 8;
+        protected override int RawData => Key | (Pressure << 8);
 
         public byte Key { get; set; }
         public byte Pressure { get; set; }
@@ -120,7 +95,7 @@ namespace Jither.Midi.Parsing
         public MidiController Controller { get; set; }
         public byte Value { get; set; }
         protected override byte Command => 0xb0;
-        protected override int RawData => (byte)Controller | Value << 8;
+        protected override int RawData => (byte)Controller | (Value << 8);
 
         protected ControlChangeMessage(int channel, byte controller, byte value) : base(channel)
         {
@@ -263,7 +238,7 @@ namespace Jither.Midi.Parsing
         public override string Name => "pitch-bend";
         public override string Parameters => $"{Bender}";
         protected override byte Command => 0xe0;
-        protected override int RawData => (Bender & 0xff) << 8 | (Bender & 0xff00) >> 8;
+        protected override int RawData => ((Bender & 0xff) << 8) | ((Bender & 0xff00) >> 8);
 
         public ushort Bender { get; set; }
 
@@ -367,7 +342,7 @@ namespace Jither.Midi.Parsing
 
     public class SequenceNumberMessage : MetaMessage
     {
-        public int Number => Data[0] << 8 | Data[1];
+        public int Number => (Data[0] << 8) | Data[1];
         public override string TypeName => "sequence-number";
         public override string Info => Number.ToString();
 
@@ -478,7 +453,7 @@ namespace Jither.Midi.Parsing
         public override string TypeName => "set-tempo";
         public override string Info => Tempo.ToString();
 
-        public int Tempo => Data[0] << 16 | Data[1] << 8 | Data[2];
+        public int Tempo => (Data[0] << 16) | (Data[1] << 8) | Data[2];
 
         public SetTempoMessage(byte type, byte[] data) : base(type, data)
         {

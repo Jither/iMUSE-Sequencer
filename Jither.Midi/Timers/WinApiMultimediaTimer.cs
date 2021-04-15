@@ -29,16 +29,14 @@ namespace Jither.Midi.Timers
 
 #pragma warning disable IDE1006 // Naming Styles - keeping case of WinAPI functions
 
-        [DllImport("winmm.dll")]
+        [DllImport("winmm.dll", SetLastError = true)]
         private static extern int timeGetDevCaps(ref TimerCaps caps, int sizeOfTimerCaps);
-        [DllImport("winmm.dll")]
+        [DllImport("winmm.dll", SetLastError = true)]
         private static extern int timeSetEvent(int delay, int resolution, TimerCallback proc, IntPtr user, int mode);
-        [DllImport("winmm.dll")]
+        [DllImport("winmm.dll", SetLastError = true)]
         private static extern int timeKillEvent(int id);
 
 #pragma warning restore IDE1006 // Naming Styles
-
-        private const int TIMERR_NOERROR = 0;
 
         private int id;
         private volatile int interval;
@@ -100,7 +98,11 @@ namespace Jither.Midi.Timers
 
         static WinApiMultimediaTimer()
         {
-            timeGetDevCaps(ref capabilities, Marshal.SizeOf<TimerCaps>());
+            int result = timeGetDevCaps(ref capabilities, Marshal.SizeOf<TimerCaps>());
+            if (result != WinApiMultimediaTimerException.TIMERR_NOERROR)
+            {
+                throw new WinApiMultimediaTimerException(result);
+            }
         }
 
         public WinApiMultimediaTimer()
@@ -120,7 +122,8 @@ namespace Jither.Midi.Timers
         {
             if (isActive)
             {
-                timeKillEvent(id);
+                // Nothing we can do at this point, if timeKillEvent fails
+                _ = timeKillEvent(id);
                 isActive = false;
             }
         }
@@ -148,7 +151,7 @@ namespace Jither.Midi.Timers
             }
             else
             {
-                throw new TimerException("An error occurred while starting WinAPI multimedia timer.");
+                throw new WinApiMultimediaTimerException(Marshal.GetLastWin32Error());
             }
         }
 
@@ -159,14 +162,20 @@ namespace Jither.Midi.Timers
                 return;
             }
 
-            int result = timeKillEvent(id);
-            Debug.Assert(result == TIMERR_NOERROR);
-
             isActive = false;
 
             Stopped?.Invoke();
         }
 
+        private void KillEvent()
+        {
+            int result = timeKillEvent(id);
+            if (result != WinApiMultimediaTimerException.TIMERR_NOERROR)
+            {
+                throw new WinApiMultimediaTimerException(result);
+            }
+
+        }
         private void IntervalCallback(int id, int message, int user, int param1, int param2)
         {
             if (disposed)
@@ -207,8 +216,10 @@ namespace Jither.Midi.Timers
 
             if (isActive)
             {
-                timeKillEvent(id);
+                KillEvent();
             }
+
+            GC.SuppressFinalize(this);
         }
     }
 }
