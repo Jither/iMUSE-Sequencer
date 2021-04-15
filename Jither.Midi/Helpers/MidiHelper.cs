@@ -11,7 +11,7 @@ namespace Jither.Midi.Helpers
 	{
 		private static readonly string[] PITCH_CLASS_NAMES = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 		private static readonly string[] PITCH_CLASS_NAMES_FLAT = new[] { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "Cb" }; // Note the Cb instead of B (for Cb minor)
-		private static Dictionary<MidiController, string> controllerNames = new Dictionary<MidiController, string>();
+		private static readonly Dictionary<MidiController, string> controllerNames = new();
 
 		static MidiHelper()
         {

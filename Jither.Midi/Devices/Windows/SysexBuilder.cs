@@ -2,7 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Jither.Midi.Devices
+namespace Jither.Midi.Devices.Windows
 {
     internal static class SysexBuilder
     {

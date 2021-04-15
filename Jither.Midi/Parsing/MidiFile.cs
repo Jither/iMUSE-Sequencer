@@ -7,9 +7,9 @@ namespace Jither.Midi.Parsing
 {
     public class MidiFile
     {
-        private readonly List<MidiTrack> tracks = new List<MidiTrack>();
+        private readonly List<MidiTrack> tracks = new();
 
-        private static Dictionary<string, SoundTarget> targetsByChunk = new Dictionary<string, SoundTarget>
+        private static readonly Dictionary<string, SoundTarget> targetsByChunk = new()
         {
             ["ADL "] = SoundTarget.Adlib,
             ["ROL "] = SoundTarget.Roland,

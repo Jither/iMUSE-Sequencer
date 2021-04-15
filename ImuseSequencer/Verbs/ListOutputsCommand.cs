@@ -1,6 +1,7 @@
 ﻿using Jither.CommandLine;
 using Jither.Logging;
 using Jither.Midi.Devices;
+using Jither.Midi.Devices.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;

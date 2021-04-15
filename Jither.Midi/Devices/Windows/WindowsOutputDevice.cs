@@ -5,11 +5,12 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Jither.Midi.Devices
+namespace Jither.Midi.Devices.Windows
 {
     public class WindowsOutputDevice : OutputDevice
     {
 #pragma warning disable IDE1006 // Naming Styles - keeping case of WinAPI functions
+
         [DllImport("winmm.dll")]
         private static extern int midiConnect(IntPtr handleA, IntPtr handleB, IntPtr reserved);
 
@@ -38,6 +39,7 @@ namespace Jither.Midi.Devices
 
         [DllImport("winmm.dll")]
         private static extern int midiOutLongMsg(IntPtr handle, IntPtr headerPtr, int sizeOfMidiHeader);
+
 #pragma warning restore IDE1006 // Naming Styles
 
         protected static readonly int sizeOfMidiHeader = Marshal.SizeOf<MidiHeader>();

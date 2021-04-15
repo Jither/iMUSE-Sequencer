@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Jither.Midi.Devices
+namespace Jither.Midi.Devices.Windows
 {
     public class WinApiConstants
     {

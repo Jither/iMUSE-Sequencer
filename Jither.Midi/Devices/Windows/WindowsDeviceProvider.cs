@@ -2,19 +2,23 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace Jither.Midi.Devices
+namespace Jither.Midi.Devices.Windows
 {
     public class WindowsDeviceProvider : DeviceProvider
     {
+#pragma warning disable IDE1006 // Naming Styles - keeping case of WinAPI functions
+
         [DllImport("winmm.dll")]
         private static extern int midiOutGetNumDevs();
         [DllImport("winmm.dll")]
         private static extern int midiOutGetDevCaps(IntPtr deviceId, ref MidiOutCaps caps, int sizeOfMidiOutCaps);
 
+#pragma warning restore IDE1006 // Naming Styles
+
         public override IEnumerable<DeviceDescription> GetOutputDeviceDescriptions()
         {
             int count = midiOutGetNumDevs();
-            MidiOutCaps caps = new MidiOutCaps();
+            MidiOutCaps caps = new();
             for (int i = 0; i < count; i++)
             {
                 IntPtr deviceId = (IntPtr)i;
@@ -23,7 +27,7 @@ namespace Jither.Midi.Devices
                 {
                     throw new WindowsMidiDeviceException(result);
                 }
-                yield return new DeviceDescription
+                yield return new WindowsDeviceDescription
                 {
                     Id = i,
                     ManufacturerId = caps.mid,

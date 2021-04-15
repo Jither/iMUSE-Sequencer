@@ -1,6 +1,7 @@
 ﻿using ImuseSequencer.Drivers;
 using Jither.CommandLine;
 using Jither.Midi.Devices;
+using Jither.Midi.Devices.Windows;
 using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace ImuseSequencer.Verbs
 
     public class TestCommand
     {
-        private TestOptions options;
+        private readonly TestOptions options;
         public TestCommand(TestOptions options)
         {
             this.options = options;
