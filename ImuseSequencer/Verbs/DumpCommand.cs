@@ -14,7 +14,7 @@ namespace ImuseSequencer.Verbs
     [Verb("dump", Help = "Dumps information on MIDI file")]
     public class DumpOptions
     {
-        [Positional(0, Help = "Input MIDI file (Standard MIDI file or LEC chunk - SOUN, SOU, ADL, ROL etc.)", Required = true)]
+        [Positional(0, Name = "input path", Help = "Input MIDI file (Standard MIDI file or LEC chunk - SOUN, SOU, ADL, ROL etc.)", Required = true)]
         public string InputPath { get; set; }
 
         [Option('n', "notes", Help = "Dump note-on/off MIDI events")]

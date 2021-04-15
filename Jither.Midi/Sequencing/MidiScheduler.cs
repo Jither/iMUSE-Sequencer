@@ -36,6 +36,8 @@ namespace Jither.Midi.Sequencing
         public event Action<List<MidiEvent>> SliceReached;
         public event Action<int> TempoChanged;
 
+        public long Jitter => jitter;
+
         /// <summary>
         /// Sets tempo in microseconds per beat ("MIDI tempo"). Default MIDI tempo (120bpm) = 500,000 microseconds per beat.
         /// </summary>
@@ -224,6 +226,7 @@ namespace Jither.Midi.Sequencing
                         long waitTime = MicrosecondsUntil(queue.EarliestTime);
                         if (waitTime > 0)
                         {
+                            // Let other threads do work
                             Monitor.Wait(lockThread, (int)(waitTime / 1000));
                         }
                         else
@@ -243,11 +246,11 @@ namespace Jither.Midi.Sequencing
             {
                 long currentMicroseconds = ElapsedMicroseconds;
                 long currentJitteredMicroseconds = currentMicroseconds + jitter;
-                double beatTime = currentJitteredMicroseconds / microsecondsPerBeat;
-                long newJitteredMicroseconds = (long)(beatTime * newMicrosecondsPerBeat);
+                long newJitteredMicroseconds = currentJitteredMicroseconds * newMicrosecondsPerBeat / microsecondsPerBeat;
                 long newJitter = newJitteredMicroseconds - currentMicroseconds;
                 microsecondsPerBeat = newMicrosecondsPerBeat;
                 jitter = newJitter;
+                Console.WriteLine($"{currentMicroseconds} {currentJitteredMicroseconds} {newJitteredMicroseconds} {newJitter}");
             }
             TempoChanged?.Invoke(microsecondsPerBeat);
             // Let scheduler thread apply new timing

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ImuseSequencer.Playback;
 
 namespace ImuseSequencer.Verbs
 {
@@ -49,37 +50,11 @@ namespace ImuseSequencer.Verbs
             }
 
             logger.Info($"Playing {options.InputPath}");
-            logger.Info($"Target device: {target.GetFriendlyName()}");
 
-            using (var output = new WindowsOutputDevice(options.DeviceId))
+            using (var player = new ImusePlayer(options.DeviceId, midiFile, target))
             {
-                using (var scheduler = new MidiScheduler(500000))
-                {
-                    scheduler.Schedule(midiFile.Tracks[0].Events);
-                    scheduler.SliceReached += slice =>
-                    {
-                        for (int i = 0; i < slice.Count; i++)
-                        {
-                            var message = slice[i].Message;
-                            if (message is SetTempoMessage meta)
-                            {
-                                scheduler.MicrosecondsPerBeat = meta.Tempo;
-                            }
-                            else
-                            {
-                                logger.Info(message.ToString());
-                                output.SendMessage(message);
-                            }
-                        }
-                    };
-                    scheduler.TempoChanged += tempo =>
-                    {
-                        logger.Info(tempo.ToString());
-                    };
-                    scheduler.Start();
-
-                    Console.ReadKey();
-                }
+                player.Play();
+                Console.ReadKey();
             }
         }
     }

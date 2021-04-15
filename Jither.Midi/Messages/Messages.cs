@@ -103,6 +103,11 @@ namespace Jither.Midi.Messages
             Value = value;
         }
 
+        public static ControlChangeMessage Create(int channel, MidiController controller, byte value)
+        {
+            return Create(channel, (byte)controller, value);
+        }
+
         public static ControlChangeMessage Create(int channel, byte controller, byte value)
         {
             return controller switch

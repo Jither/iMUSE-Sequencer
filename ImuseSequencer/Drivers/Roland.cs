@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Jither.Midi.Devices;
+using Jither.Midi.Messages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,12 +8,90 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Drivers
 {
-    public class Roland
+    public class Roland : Driver
     {
-        // TODO: This is all just quick stuff to test handling of sysex through WinAPI
         private const byte sysexId = 0x41;
 
-        public byte[] GenerateSysex(int address, byte[] data)
+        private const int rhythmAddress = 0xc090;
+        private const int systemAddress = 0x40000;
+        private const int displayAddress = 0x80000;
+        private const int resetAddress = 0x1fc000;
+
+        private const int virtualPartBaseAddress = 0x14000;
+        private const int virtualPartSize = 0x08;
+
+        private const int pitchBendRangeOffset = 4;
+        private const int reverbOffset = 6;
+
+        private const int rhythmChannel = 9;
+        private const int partCount = 32;
+
+        private static readonly string initDisplayString = "Lucasfilm Games     ";
+
+        private static readonly byte[] initSysString = new byte[]
+        {
+            64,								// master tune
+            0,								// reverb mode
+            4,								// reverb time
+            4,								// reverb level
+            4, 4, 4, 4, 4, 4, 4, 4, 0,		// partial reserves
+            1, 2, 3, 4, 5, 6, 7, 8, 9,		// midi chans
+            100,                            // master vol
+        };
+
+        private static readonly byte[] initRhythmString = new byte[]
+        { // keys 24-34
+            64, 100, 7, 0,		// Acou BD
+            74, 100, 6, 0,		// Rim Shot
+            65, 100, 7, 0,		// Acou SD
+            75, 100, 8, 0,		// Hand Clap
+            69, 100, 6, 0,		// Elec SD
+            68, 100, 11, 0,	    // Low Tom
+            81, 100, 5, 0,		// Low Timbale
+            67, 100, 8, 0,		// Mid Tom
+            80, 100, 7, 0,		// Hi Timbale
+            66, 100, 3, 0,		// Hi Tom
+            76, 100, 7, 0,      // Cowbell
+        };
+
+        public Roland(OutputDevice output) : base(output)
+        {
+
+        }
+
+        public override void Init()
+        {
+            byte[] display = Encoding.ASCII.GetBytes(initDisplayString);
+            TransmitSysex(displayAddress, display);
+            Reset();
+
+            TransmitSysex(systemAddress, initSysString);
+            TransmitSysex(rhythmAddress, initRhythmString);
+
+            output.SendMessage(ControlChangeMessage.Create(rhythmChannel, MidiController.ChannelVolume, 127));
+
+            var addr = virtualPartBaseAddress + pitchBendRangeOffset;
+            var pbr = new byte[] { 16 };
+
+            for (int part = 0; part < partCount; part++)
+            {
+                TransmitSysex(addr, pbr);
+                addr += virtualPartSize;
+            }
+        }
+
+        public override void Reset()
+        {
+            TransmitSysex(resetAddress, Array.Empty<byte>());
+            Task.Delay(300);
+        }
+
+        private void TransmitSysex(int address, byte[] data)
+        {
+            output.SendMessage(new SysexMessage(GenerateSysex(address, data)));
+        }
+
+        private byte[] GenerateSysex(int address, byte[] data)
         {
             byte checksum = 0;
 

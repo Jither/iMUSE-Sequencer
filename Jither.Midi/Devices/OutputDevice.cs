@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jither.Midi.Messages;
+using System;
 
 namespace Jither.Midi.Devices
 {
@@ -13,19 +14,12 @@ namespace Jither.Midi.Devices
             DeviceId = deviceId;
         }
 
-        protected virtual void Dispose(bool disposing)
-        {
-        }
-
+        public abstract void SendMessage(MidiMessage message);
+        public abstract void SendRaw(int message);
         public abstract void Reset();
 
-        public void Close()
+        protected virtual void Dispose(bool disposing)
         {
-            if (disposed)
-            {
-                return;
-            }
-            Dispose(true);
         }
 
         public void Dispose()

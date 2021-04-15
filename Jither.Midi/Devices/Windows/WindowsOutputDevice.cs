@@ -1,5 +1,4 @@
 ﻿using Jither.Midi.Messages;
-using Jither.Midi.Parsing;
 using Jither.Tasks;
 using System;
 using System.Diagnostics;
@@ -11,12 +10,6 @@ namespace Jither.Midi.Devices.Windows
     public class WindowsOutputDevice : OutputDevice
     {
 #pragma warning disable IDE1006 // Naming Styles - keeping case of WinAPI functions
-
-        [DllImport("winmm.dll")]
-        private static extern int midiConnect(IntPtr handleA, IntPtr handleB, IntPtr reserved);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiDisconnect(IntPtr handleA, IntPtr handleB, IntPtr reserved);
 
         [DllImport("winmm.dll")]
         private static extern int midiOutOpen(out IntPtr handle, int deviceID, MidiOutProc proc, IntPtr instance, int flags);
@@ -61,19 +54,7 @@ namespace Jither.Midi.Devices.Windows
             Dispose(false);
         }
 
-        private void Connect(IntPtr handleA, IntPtr handleB)
-        {
-            int result = midiConnect(handleA, handleB, IntPtr.Zero);
-            EnsureSuccess(result);
-        }
-
-        private void Disconnect(IntPtr handleA, IntPtr handleB)
-        {
-            int result = midiDisconnect(handleA, handleB, IntPtr.Zero);
-            EnsureSuccess(result);
-        }
-
-        public void SendRaw(int message)
+        public override void SendRaw(int message)
         {
             lock (lockMidi)
             {
@@ -82,9 +63,9 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public void SendMessage(MidiMessage message)
+        public override void SendMessage(MidiMessage message)
         {
-            if (message is MetaMessage meta)
+            if (message is MetaMessage)
             {
                 // Don't send meta messages
                 return;
@@ -97,6 +78,19 @@ namespace Jither.Midi.Devices.Windows
             else
             {
                 SendRaw(message.RawMessage);
+            }
+        }
+
+        public override void Reset()
+        {
+            lock (lockMidi)
+            {
+                int result = midiOutReset(handle);
+                EnsureSuccess(result);
+                while (sysexBufferCount > 0)
+                {
+                    Monitor.Wait(lockMidi);
+                }
             }
         }
 
@@ -168,19 +162,6 @@ namespace Jither.Midi.Devices.Windows
                 Monitor.Pulse(lockMidi);
 
                 Debug.Assert(sysexBufferCount >= 0);
-            }
-        }
-
-        public override void Reset()
-        {
-            lock (lockMidi)
-            {
-                int result = midiOutReset(handle);
-                EnsureSuccess(result);
-                while (sysexBufferCount > 0)
-                {
-                    Monitor.Wait(lockMidi);
-                }
             }
         }
 
