@@ -485,10 +485,10 @@ namespace Jither.Midi.Messages
         public override string TypeName => "time-signature";
         public override string Info => $"{Numerator}/{Denominator}, {ClocksPerBeat} MIDI clocks per beat, 1 MIDI quarter-note = {ThirtySecondNotesPerMidiQuarterNote} notated 32nd notes";
 
-        public uint Numerator => Data[0];
-        public uint Denominator => (uint)(1 << Data[1]);
-        public uint ClocksPerBeat => Data[2];
-        public uint ThirtySecondNotesPerMidiQuarterNote => Data[3];
+        public int Numerator => Data[0];
+        public int Denominator => 1 << Data[1];
+        public int ClocksPerBeat => Data[2];
+        public int ThirtySecondNotesPerMidiQuarterNote => Data[3];
 
         
 

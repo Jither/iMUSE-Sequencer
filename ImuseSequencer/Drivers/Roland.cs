@@ -91,7 +91,7 @@ namespace ImuseSequencer.Drivers
             output.SendMessage(new SysexMessage(GenerateSysex(address, data)));
         }
 
-        private byte[] GenerateSysex(int address, byte[] data)
+        private static byte[] GenerateSysex(int address, byte[] data)
         {
             byte checksum = 0;
 

@@ -2,41 +2,42 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Jither.Midi.Sequencing
 {
     public class MidiScheduler : IDisposable
     {
         private bool disposed;
-        private int microsecondsPerBeat = 500000;
 
         private readonly object lockTiming = new();
         private readonly object lockRun = new();
         private readonly object lockThread = new();
 
         private readonly Stopwatch stopwatch = new();
-        private long jitter = 0;
+
+        private int microsecondsPerBeat = 500000;
+        private readonly int ppqn;
+
+        // Accumulated offset due to tempo changes
+        private long microsecondsOffset = 0;
         private bool isRunning = false;
 
         [ThreadStatic]
         private static bool isSchedulerThread;
         private bool cancelThread;
 
-        private long threadProcessingTime = 0;
+        // Tick currently being processed on scheduling thread
+        private long currentTick = 0;
+
         private readonly ScheduleQueue<MidiEvent> queue = new();
         private Thread thread = null;
 
+        private long MicrosecondsPerTick => microsecondsPerBeat * ppqn;
         private long ElapsedMicroseconds => stopwatch.ElapsedTicks * 1000_000 / Stopwatch.Frequency;
 
         public event Action<List<MidiEvent>> SliceReached;
         public event Action<int> TempoChanged;
-
-        public long Jitter => jitter;
 
         /// <summary>
         /// Sets tempo in microseconds per beat ("MIDI tempo"). Default MIDI tempo (120bpm) = 500,000 microseconds per beat.
@@ -69,11 +70,26 @@ namespace Jither.Midi.Sequencing
             {
                 if (isSchedulerThread)
                 {
-                    return threadProcessingTime;
+                    return currentTick * MicrosecondsPerTick;
                 }
                 lock (lockTiming)
                 {
-                    return ElapsedMicroseconds + jitter;
+                    return ElapsedMicroseconds + microsecondsOffset;
+                }
+            }
+        }
+
+        public long TimeInTicks
+        {
+            get
+            {
+                if (isSchedulerThread)
+                {
+                    return currentTick;
+                }
+                lock (lockTiming)
+                {
+                    return (ElapsedMicroseconds + microsecondsOffset) / MicrosecondsPerTick;
                 }
             }
         }
@@ -93,8 +109,9 @@ namespace Jither.Midi.Sequencing
             }
         }
 
-        public MidiScheduler(int microsecondsPerBeat)
+        public MidiScheduler(int microsecondsPerBeat, int ppqn)
         {
+            this.ppqn = ppqn;
             this.MicrosecondsPerBeat = microsecondsPerBeat;
         }
 
@@ -167,7 +184,7 @@ namespace Jither.Midi.Sequencing
                 }
 
                 stopwatch.Reset();
-                jitter = 0;
+                microsecondsOffset = 0;
 
                 lock (lockThread)
                 {
@@ -200,8 +217,8 @@ namespace Jither.Midi.Sequencing
 
         private long MicrosecondsUntil(long tick)
         {
-            long time = tick * microsecondsPerBeat / 480;
-            long now = ElapsedMicroseconds + jitter;
+            long time = tick * microsecondsPerBeat / ppqn;
+            long now = ElapsedMicroseconds + microsecondsOffset;
             long delta = time - now;
             return delta >= 0 ? delta : 0;
         }
@@ -231,7 +248,7 @@ namespace Jither.Midi.Sequencing
                         }
                         else
                         {
-                            threadProcessingTime = queue.EarliestTime;
+                            currentTick = queue.EarliestTime;
                             var slice = queue.PopEarliest();
                             SliceReached(slice);
                         }
@@ -245,12 +262,11 @@ namespace Jither.Midi.Sequencing
             lock (lockTiming)
             {
                 long currentMicroseconds = ElapsedMicroseconds;
-                long currentJitteredMicroseconds = currentMicroseconds + jitter;
-                long newJitteredMicroseconds = currentJitteredMicroseconds * newMicrosecondsPerBeat / microsecondsPerBeat;
-                long newJitter = newJitteredMicroseconds - currentMicroseconds;
+                long currentOffsetMicroseconds = currentMicroseconds + microsecondsOffset;
+                long newOffsetMicroseconds = currentOffsetMicroseconds * newMicrosecondsPerBeat / microsecondsPerBeat;
+                long newOffset = newOffsetMicroseconds - currentMicroseconds;
                 microsecondsPerBeat = newMicrosecondsPerBeat;
-                jitter = newJitter;
-                Console.WriteLine($"{currentMicroseconds} {currentJitteredMicroseconds} {newJitteredMicroseconds} {newJitter}");
+                microsecondsOffset = newOffset;
             }
             TempoChanged?.Invoke(microsecondsPerBeat);
             // Let scheduler thread apply new timing
@@ -270,6 +286,7 @@ namespace Jither.Midi.Sequencing
                     Stop();
                     Reset();
                 }
+                GC.SuppressFinalize(this);
             }
         }
     }

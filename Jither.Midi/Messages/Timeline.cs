@@ -12,23 +12,23 @@ namespace Jither.Midi.Messages
     public class Meter
     {
         public long StartTicks { get; }
-        public uint Numerator { get; }
-        public uint Denominator { get; }
-        public uint ClocksPerBeat { get; } // 24 = beat every quarter note, 36 = beat every dotted quarter note
-        public uint BeatsPerMeasure { get; }
-        public uint TicksPerBeat { get; }
-        public uint ThirtySecondNotesPerMidiQuarterNote { get; }
+        public int Numerator { get; }
+        public int Denominator { get; }
+        public int ClocksPerBeat { get; } // 24 = beat every quarter note, 36 = beat every dotted quarter note
+        public int BeatsPerMeasure { get; }
+        public int TicksPerBeat { get; }
+        public int ThirtySecondNotesPerMidiQuarterNote { get; }
 
         public int StartMeasure { get; internal set; }
         public Meter Next { get; private set; }
         public Meter Previous { get; private set; }
 
-        public Meter(long absoluteTicks, TimeSignatureMessage message, uint ticksPerQuarterNote)
+        public Meter(long absoluteTicks, TimeSignatureMessage message, int ticksPerQuarterNote)
             : this(absoluteTicks, message.Numerator, message.Denominator, message.ClocksPerBeat, message.ThirtySecondNotesPerMidiQuarterNote, ticksPerQuarterNote)
         {
         }
 
-        public Meter(long startTicks, uint numerator, uint denominator, uint clocksPerBeat, uint thirtySecondNotesPerMidiQuarterNote, uint ticksPerQuarterNote)
+        public Meter(long startTicks, int numerator, int denominator, int clocksPerBeat, int thirtySecondNotesPerMidiQuarterNote, int ticksPerQuarterNote)
         {
             StartTicks = startTicks;
             Numerator = numerator;
@@ -130,7 +130,7 @@ namespace Jither.Midi.Messages
             {
                 throw new NotSupportedException($"Beat timing is only supported for MIDIs with PPQN time division.");
             }
-            uint tpq = file.TicksPerQuarterNote;
+            int tpq = file.TicksPerQuarterNote;
 
             // Build timeline of time signature changes by tick
             foreach (var track in file.Tracks)

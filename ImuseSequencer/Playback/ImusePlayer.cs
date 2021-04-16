@@ -33,9 +33,14 @@ namespace ImuseSequencer.Playback
             this.file = file;
             this.target = target;
             
+            if (file.DivisionType != DivisionType.Ppqn)
+            {
+                throw new ImuseSequencerException($"iMUSE Sequencer only supports PPQN division MIDI files - this appears to be SMPTE.");
+            }
+
             output = new WindowsOutputDevice(deviceId);
             driver = GetDriver(output);
-            scheduler = new MidiScheduler(500000);
+            scheduler = new MidiScheduler(500000, file.TicksPerQuarterNote);
         }
 
         public void Play()
@@ -56,7 +61,7 @@ namespace ImuseSequencer.Playback
                     }
                     else
                     {
-                        logger.Info($"{scheduler.Jitter,15} {message}");
+                        logger.Info($"{scheduler.TimeInTicks,10} {message}");
                         output.SendMessage(message);
                     }
                 }
@@ -92,6 +97,8 @@ namespace ImuseSequencer.Playback
             Stop();
             scheduler.Dispose();
             output.Dispose();
+
+            GC.SuppressFinalize(this);
         }
     }
 }
