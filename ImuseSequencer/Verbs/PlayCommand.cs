@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ImuseSequencer.Playback;
+using System.IO;
 
 namespace ImuseSequencer.Verbs
 {
@@ -49,7 +50,16 @@ namespace ImuseSequencer.Verbs
 
         public void Execute()
         {
-            var midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
+            MidiFile midiFile;
+            try
+            {
+                midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+            {
+                throw new ImuseSequencerException($"Cannot open file: {ex.Message}", ex);
+            }
+
             var target = options.Target == SoundTarget.Unknown ? midiFile.Target : options.Target;
             if (target == SoundTarget.Unknown)
             {

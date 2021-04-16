@@ -11,5 +11,9 @@ namespace ImuseSequencer
         public ImuseSequencerException(string message) : base(message)
         {
         }
+
+        public ImuseSequencerException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

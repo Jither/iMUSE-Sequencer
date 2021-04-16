@@ -5,6 +5,7 @@ using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,7 +52,16 @@ namespace ImuseSequencer.Verbs
 
         public void Execute()
         {
-            var midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
+            MidiFile midiFile;
+            try
+            {
+                midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+            {
+                throw new ImuseSequencerException($"Cannot open file: {ex.Message}", ex);
+            }
+
             logger.Info($"MIDI: {midiFile}");
             
             if (midiFile.ImuseHeader != null)
