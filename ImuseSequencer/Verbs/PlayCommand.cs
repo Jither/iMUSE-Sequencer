@@ -27,6 +27,13 @@ namespace ImuseSequencer.Verbs
 
         [Option('t', "target", Help = "Playback target device. 'Unknown' will determine from LEC chunk, if present.", ArgName = "target", Default = SoundTarget.Unknown)]
         public SoundTarget Target { get; set; }
+
+        [Examples]
+        public static IEnumerable<Example<PlayOptions>> examples => new[]
+        {
+            new Example<PlayOptions>("Play file using MIDI output device 2", new PlayOptions { InputPath = "LARGO.rol", DeviceId = 2 }),
+            new Example<PlayOptions>("Play file with MT-32 as target", new PlayOptions { InputPath = "OFFICE.mid", DeviceId = 2, Target = SoundTarget.Roland })
+        };
     }
 
     public class PlayCommand

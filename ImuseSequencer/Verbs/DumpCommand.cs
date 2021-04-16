@@ -28,6 +28,14 @@ namespace ImuseSequencer.Verbs
 
         [Option('t', "timeline", Help = "Dump timeline")]
         public bool IncludeTimeline { get; set; }
+
+        [Examples]
+        public static IEnumerable<Example<DumpOptions>> examples => new[]
+{
+            new Example<DumpOptions>("Dump events excluding notes", new DumpOptions { InputPath = "LARGO.rol", IncludeEvents = true }),
+            new Example<DumpOptions>("Dump events including notes", new DumpOptions { InputPath = "OFFICE.mid", IncludeEvents = true, IncludeNotes = true }),
+            new Example<DumpOptions>("Dump only iMUSE events", new DumpOptions { InputPath = "CRABROOM.adl", IncludeImuse = true })
+        };
     }
 
     public class DumpCommand
@@ -44,7 +52,7 @@ namespace ImuseSequencer.Verbs
         public void Execute()
         {
             var midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
-            logger.Info(midiFile.ToString());
+            logger.Info($"MIDI: {midiFile}");
             
             if (midiFile.ImuseHeader != null)
             {

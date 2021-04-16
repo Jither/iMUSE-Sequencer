@@ -2,7 +2,7 @@
   "profiles": {
     "ImuseSequencer": {
       "commandName": "Project",
-      "commandLineArgs": "dump \"D:\\scumm\\MIDIs\\LARGO.rol\""
+      "commandLineArgs": "help"
     }
   }
 }
