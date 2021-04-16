@@ -23,6 +23,9 @@ namespace ImuseSequencer.Verbs
         [Option('e', "events", Help = "Dump MIDI events (other than note-on/off)")]
         public bool IncludeEvents { get; set; }
 
+        [Option('i', "imuse", Help = "Dump iMUSE MIDI events")]
+        public bool IncludeImuse { get; set; }
+
         [Option('t', "timeline", Help = "Dump timeline")]
         public bool IncludeTimeline { get; set; }
     }
@@ -40,10 +43,10 @@ namespace ImuseSequencer.Verbs
 
         public void Execute()
         {
-            var midiFile = new MidiFile(options.InputPath);
+            var midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
             logger.Info(midiFile.ToString());
 
-            if (options.IncludeEvents || options.IncludeNotes)
+            if (options.IncludeEvents || options.IncludeNotes || options.IncludeImuse)
             {
                 logger.Info("");
                 logger.Info("<b>Events</b>");
@@ -53,19 +56,15 @@ namespace ImuseSequencer.Verbs
                     logger.Info(track.ToString());
                     foreach (var evt in track.Events)
                     {
-                        if (evt.Message is NoteOnMessage or NoteOffMessage)
+                        bool output = evt.Message switch
                         {
-                            if (options.IncludeNotes)
-                            {
-                                logger.Colored($"  {evt}", GetColor(evt));
-                            }
-                        }
-                        else
+                            NoteOnMessage or NoteOffMessage => options.IncludeNotes,
+                            ImuseMessage => options.IncludeImuse || options.IncludeEvents,
+                            _ => options.IncludeEvents
+                        };
+                        if (output)
                         {
-                            if (options.IncludeEvents)
-                            {
-                                logger.Colored($"  {evt}", GetColor(evt));
-                            }
+                            logger.Colored($"  {evt}", GetColor(evt));
                         }
                     }
                 }
@@ -90,6 +89,7 @@ namespace ImuseSequencer.Verbs
                 NoteOffMessage => "606060",
                 ControlChangeMessage => "ffcc00",
                 ProgramChangeMessage => "88cc55",
+                ImuseMessage => "88bbff",
                 SysexMessage => "dd6666",
                 PitchBendChangeMessage => "6699cc",
                 MetaMessage => "ccaaff",

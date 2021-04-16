@@ -42,7 +42,7 @@ namespace ImuseSequencer.Verbs
 
         public void Execute()
         {
-            var midiFile = new MidiFile(options.InputPath);
+            var midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
             var target = options.Target == SoundTarget.Unknown ? midiFile.Target : options.Target;
             if (target == SoundTarget.Unknown)
             {

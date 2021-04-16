@@ -6,9 +6,15 @@ using System.Text;
 
 namespace Jither.Midi.Parsing
 {
+    public class MidiFileOptions
+    {
+        public bool ParseImuse { get; set; }
+    }
+
     public class MidiFile
     {
         private readonly List<MidiTrack> tracks = new();
+        private readonly MidiFileOptions options;
 
         private static readonly Dictionary<string, SoundTarget> targetsByChunk = new()
         {
@@ -61,13 +67,15 @@ namespace Jither.Midi.Parsing
         /// </summary>
         public Timeline Timeline { get; }
 
-        public MidiFile(string path) : this(File.OpenRead(path))
+        public MidiFile(string path, MidiFileOptions options = null) : this(File.OpenRead(path), options)
         {
 
         }
 
-        public MidiFile(Stream stream)
+        public MidiFile(Stream stream, MidiFileOptions options = null)
         {
+            this.options = options ?? new MidiFileOptions();
+
             using (var reader = new MidiReader(stream))
             {
                 ReadHeaderChunk(reader);
@@ -173,7 +181,7 @@ namespace Jither.Midi.Parsing
             return type;
         }
 
-        private static MidiTrack ReadTrackChunk(MidiReader reader, uint trackIndex)
+        private MidiTrack ReadTrackChunk(MidiReader reader, uint trackIndex)
         {
             string type = reader.ReadChunkType();
             if (type != "MTrk")
@@ -226,13 +234,17 @@ namespace Jither.Midi.Parsing
             return new MidiTrack(trackIndex, events);
         }
 
-        private static MidiMessage CreateSystemMessage(MidiReader reader, byte status)
+        private MidiMessage CreateSystemMessage(MidiReader reader, byte status)
         {
             byte[] data;
             switch (status)
             {
                 case 0xf0:
                     data = reader.ReadVariableBytes();
+                    if (options.ParseImuse && data[0] == 0x7d)
+                    {
+                        return ImuseMessage.Create(data);
+                    }
                     return new SysexMessage(data, continuation: false);
                 case 0xf7:
                     data = reader.ReadVariableBytes();

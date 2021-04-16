@@ -21,7 +21,7 @@ namespace Jither.Midi.Messages
 
         public override string ToString()
         {
-            string result = $"({AbsoluteTicks,8}, Δ{DeltaTicks,6}): {Message}";
+            string result = $"({AbsoluteTicks,8}):  {Message}";
             if (BeatPosition != null)
             {
                 result = $"{BeatPosition,10} {result}";
