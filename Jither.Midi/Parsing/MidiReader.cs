@@ -56,6 +56,11 @@ namespace Jither.Midi.Parsing
             return (byte)result;
         }
 
+        public sbyte ReadSByte()
+        {
+            return (sbyte)(ReadByte());
+        }
+
         public byte ReadStatus(int runningStatus)
         {
             byte result = ReadByte();

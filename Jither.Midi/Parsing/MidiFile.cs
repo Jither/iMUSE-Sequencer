@@ -1,4 +1,5 @@
-﻿using Jither.Midi.Messages;
+﻿using Jither.Logging;
+using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,41 @@ namespace Jither.Midi.Parsing
     public class MidiFileOptions
     {
         public bool ParseImuse { get; set; }
+    }
+
+    public class ImuseMidiHeader
+    {
+        private static Logger logger = LogProvider.Get(nameof(ImuseMidiHeader));
+
+        public int Version { get; }
+        public int Priority { get; }
+        public int Volume { get; }
+        public int Pan { get; }
+        public int Transpose { get; }
+        public int Detune { get; }
+        public int Speed { get; }
+
+        public ImuseMidiHeader(MidiReader reader, uint size)
+        {
+            if (size != 8)
+            {
+                logger.Warning($"Unknown MDhd chunk format, size {size}");
+                return;
+            }
+
+            Version = reader.ReadUint16();
+            Priority = reader.ReadByte();
+            Volume = reader.ReadByte();
+            Pan = reader.ReadSByte();
+            Transpose = reader.ReadSByte();
+            Detune = reader.ReadSByte();
+            Speed = reader.ReadByte();
+        }
+
+        public override string ToString()
+        {
+            return $"Version {Version}, Priority {Priority}, Volume {Volume}, Pan {Pan}, Transpose {Transpose}, Detune {Detune}, Speed {Speed}";
+        }
     }
 
     public class MidiFile
@@ -56,6 +92,11 @@ namespace Jither.Midi.Parsing
         /// Target device. Only available if MIDI was wrapped in target chunk.
         /// </summary>
         public SoundTarget Target { get; private set; }
+
+        /// <summary>
+        /// iMUSE MIDI header. Only available if MIDI includes MDhd chunk.
+        /// </summary>
+        public ImuseMidiHeader ImuseHeader { get; private set; }
 
         /// <summary>
         /// List of all tracks in the file.
@@ -158,7 +199,7 @@ namespace Jither.Midi.Parsing
                         // Found in most (all?) target chunks - variable length (e.g. 0 in DOTT)
                         uint mdhdSize = reader.ReadUint32();
                         // Just skip size for now
-                        reader.Position += mdhdSize;
+                        ImuseHeader = new ImuseMidiHeader(reader, mdhdSize);
                         break;
                     case "MDpg":
                         // Found in SNM and DOTT - variable length, not in all target chunks
@@ -260,7 +301,7 @@ namespace Jither.Midi.Parsing
 
         public override string ToString()
         {
-            string result = $"target {Target}, format {Format}, {TrackCount} tracks, {DivisionType}: ";
+            string result = $"Target {Target}, Format {Format}, Tracks: {TrackCount}, Division: {DivisionType} - ";
             result += DivisionType switch
             {
                 DivisionType.Smpte24 => TicksPerFrame,

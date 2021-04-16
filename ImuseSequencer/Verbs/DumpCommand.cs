@@ -45,6 +45,15 @@ namespace ImuseSequencer.Verbs
         {
             var midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
             logger.Info(midiFile.ToString());
+            
+            if (midiFile.ImuseHeader != null)
+            {
+                logger.Info($"iMUSE header (MDhd): {midiFile.ImuseHeader}");
+            }
+            else
+            {
+                logger.Info($"iMUSE header (MDhd): NONE");
+            }
 
             if (options.IncludeEvents || options.IncludeNotes || options.IncludeImuse)
             {
