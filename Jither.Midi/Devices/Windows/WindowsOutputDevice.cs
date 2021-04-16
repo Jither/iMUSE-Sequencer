@@ -42,10 +42,13 @@ namespace Jither.Midi.Devices.Windows
         private readonly MessagingSynchronizationContext context = new();
         private readonly object lockMidi = new();
         private int sysexBufferCount = 0;
+        private readonly MidiOutProc midiOutCallback;
 
         public WindowsOutputDevice(int deviceId) : base(deviceId)
         {
-            int result = midiOutOpen(out handle, deviceId, HandleMessage, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
+            // We need to manually create the delegate to avoid it being garbage collected
+            midiOutCallback = new MidiOutProc(HandleMessage);
+            int result = midiOutOpen(out handle, deviceId, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
             EnsureSuccess(result);
         }
 
