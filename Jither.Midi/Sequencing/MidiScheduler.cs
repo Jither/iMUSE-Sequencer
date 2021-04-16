@@ -17,7 +17,7 @@ namespace Jither.Midi.Sequencing
         private readonly Stopwatch stopwatch = new();
 
         private int microsecondsPerBeat = 500000;
-        private readonly int ppqn;
+        private readonly int ticksPerQuarterNote;
 
         // Accumulated offset due to tempo changes
         private long microsecondsOffset = 0;
@@ -33,11 +33,16 @@ namespace Jither.Midi.Sequencing
         private readonly ScheduleQueue<MidiEvent> queue = new();
         private Thread thread = null;
 
-        private long MicrosecondsPerTick => microsecondsPerBeat * ppqn;
+        private long MicrosecondsPerTick => microsecondsPerBeat * ticksPerQuarterNote;
         private long ElapsedMicroseconds => stopwatch.ElapsedTicks * 1000_000 / Stopwatch.Frequency;
 
         public event Action<List<MidiEvent>> SliceReached;
         public event Action<int> TempoChanged;
+
+        /// <summary>
+        /// Gets the scheduler's ticks per quarternote (aka Pulses Per Quarter Note - PPQN).
+        /// </summary>
+        public int TicksPerQuarterNote => ticksPerQuarterNote;
 
         /// <summary>
         /// Sets tempo in microseconds per beat ("MIDI tempo"). Default MIDI tempo (120bpm) = 500,000 microseconds per beat.
@@ -109,9 +114,9 @@ namespace Jither.Midi.Sequencing
             }
         }
 
-        public MidiScheduler(int microsecondsPerBeat, int ppqn)
+        public MidiScheduler(int microsecondsPerBeat, int ticksPerQuarterNote)
         {
-            this.ppqn = ppqn;
+            this.ticksPerQuarterNote = ticksPerQuarterNote;
             this.MicrosecondsPerBeat = microsecondsPerBeat;
         }
 
@@ -217,7 +222,7 @@ namespace Jither.Midi.Sequencing
 
         private long MicrosecondsUntil(long tick)
         {
-            long time = tick * microsecondsPerBeat / ppqn;
+            long time = tick * microsecondsPerBeat / ticksPerQuarterNote;
             long now = ElapsedMicroseconds + microsecondsOffset;
             long delta = time - now;
             return delta >= 0 ? delta : 0;

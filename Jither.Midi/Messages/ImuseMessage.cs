@@ -139,10 +139,9 @@ namespace Jither.Midi.Messages
     }
     public class ImuseAllocPart : ImuseMessage
     {
-        // TODO: Better location for this constant
-        public const int TransposeLocked = -128;
+        public const int transposeLockedFlag = -128;
 
-        protected override string Info => $"enabled: {Enabled,5}, reverb: {Reverb,5}, prioffs: {PriorityOffset,3}, vol: {Volume,3}, pan: {Pan,3}, trans: {(Transpose == TransposeLocked ? "lock" : Transpose),4}, detune: {Detune,3}, pbr: {PitchBendRange,3}, pgm: {Program,3}";
+        protected override string Info => $"enabled: {Enabled,5}, reverb: {Reverb,5}, prioffs: {PriorityOffset,3}, vol: {Volume,3}, pan: {Pan,3}, trans: {(TransposeLocked ? "lock" : Transpose),4}, detune: {Detune,3}, pbr: {PitchBendRange,3}, pgm: {Program,3}";
 
         public bool Enabled { get; }
         public bool Reverb { get; }
@@ -153,6 +152,7 @@ namespace Jither.Midi.Messages
         public int Detune { get; }
         public int PitchBendRange { get; }
         public int Program { get; }
+        public bool TransposeLocked => Transpose == transposeLockedFlag;
 
         public ImuseAllocPart(byte[] data) : base(data)
         {

@@ -1,4 +1,5 @@
-﻿using Jither.Midi.Devices;
+﻿using ImuseSequencer.Playback;
+using Jither.Midi.Devices;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
@@ -17,14 +18,24 @@ namespace ImuseSequencer.Drivers
         private const int displayAddress = 0x80000;
         private const int resetAddress = 0x1fc000;
 
-        private const int virtualPartBaseAddress = 0x14000;
-        private const int virtualPartSize = 0x08;
-
         private const int pitchBendRangeOffset = 4;
         private const int reverbOffset = 6;
 
         private const int rhythmChannel = 9;
         private const int partCount = 32;
+
+        public const int RealPartBaseAddress = 0x0c000;
+        public const int RealPartSize = 0x10;
+
+        public const int ActiveSetupBaseAddress = 0x10000;
+        public const int ActiveSetupSize = 0xf6;
+
+        public const int VirtualPartBaseAddress = 0x14000;
+        public const int VirtualPartSize = 0x08;
+
+        public const int StoredSetupBaseAddress = 0x20000;
+        public const int StoredSetupSize = 0x100;
+        public const int StoredSetupCount = 0x20;
 
         private static readonly string initDisplayString = "Lucasfilm Games     ";
 
@@ -70,13 +81,13 @@ namespace ImuseSequencer.Drivers
 
             output.SendMessage(ControlChangeMessage.Create(rhythmChannel, MidiController.ChannelVolume, 127));
 
-            var addr = virtualPartBaseAddress + pitchBendRangeOffset;
+            var addr = VirtualPartBaseAddress + pitchBendRangeOffset;
             var pbr = new byte[] { 16 };
 
             for (int part = 0; part < partCount; part++)
             {
                 TransmitSysex(addr, pbr);
-                addr += virtualPartSize;
+                addr += VirtualPartSize;
             }
         }
 
@@ -89,6 +100,11 @@ namespace ImuseSequencer.Drivers
         private void TransmitSysex(int address, byte[] data)
         {
             output.SendMessage(new SysexMessage(GenerateSysex(address, data)));
+        }
+
+        private void TransmitProgramChange(int channel, int program)
+        {
+            output.SendMessage(new ProgramChangeMessage(channel, (byte)program));
         }
 
         private static byte[] GenerateSysex(int address, byte[] data)
@@ -128,6 +144,101 @@ namespace ImuseSequencer.Drivers
             buffer[index++] = 0xf7;
 
             return buffer;
+        }
+
+        public override void StartNote(Part part, int note, int velocity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void StopNote(Part part, int note, int velocity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetVolume(Part part)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetPan(Part part)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetPitchOffset(Part part)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetModWheel(Part part)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetSustain(Part part)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void LoadPart(Part part)
+        {
+            byte[] buffer = new byte[8];
+            buffer[0] = (byte)(part.Program >> 6);
+            buffer[1] = (byte)(part.Program & 0x3f);
+            buffer[2] = 24; // key shift
+            buffer[3] = 50; // fine tune
+            buffer[4] = 16; // bender range
+            buffer[5] = 0; // assign mode
+            buffer[6] = (byte)(part.Reverb ? 1 : 0);
+
+            TransmitSysex(part.ExternalAddress, buffer);
+
+            if (part.Slot != null)
+            {
+                TransmitProgramChange(part.Slot.Channel, part.Number); // Load external part into slot
+            }
+
+            SetModWheel(part);
+            SetVolume(part);
+            SetPan(part);
+            SetSustain(part);
+            SetPitchOffset(part);
+        }
+
+        public override void LoadRomSetup(Part part, int value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void DoActiveDump(Part part, byte[] data)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void DoStoredDump(int number, byte[] data)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void LoadStoredSetup(Part part, int number)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void UpdateSetup(Part part)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void DoParamAdjust(Part part, int number, int value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void StopAllNotes(Slot slot)
+        {
+            throw new NotImplementedException();
         }
     }
 }

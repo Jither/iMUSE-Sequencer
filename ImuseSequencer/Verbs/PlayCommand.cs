@@ -30,7 +30,7 @@ namespace ImuseSequencer.Verbs
         public SoundTarget Target { get; set; }
 
         [Examples]
-        public static IEnumerable<Example<PlayOptions>> examples => new[]
+        public static IEnumerable<Example<PlayOptions>> Examples => new[]
         {
             new Example<PlayOptions>("Play file using MIDI output device 2", new PlayOptions { InputPath = "LARGO.rol", DeviceId = 2 }),
             new Example<PlayOptions>("Play file with MT-32 as target", new PlayOptions { InputPath = "OFFICE.mid", DeviceId = 2, Target = SoundTarget.Roland })
@@ -68,10 +68,11 @@ namespace ImuseSequencer.Verbs
 
             logger.Info($"Playing {options.InputPath}");
 
-            using (var player = new ImusePlayer(options.DeviceId, midiFile, target))
+            using (var engine = new ImuseEngine(options.DeviceId, target))
             {
-                player.Play();
-                Console.ReadKey();
+                engine.RegisterSound(0, midiFile);
+                engine.Play();
+                Console.ReadKey(intercept: true);
             }
         }
     }

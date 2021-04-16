@@ -31,7 +31,7 @@ namespace ImuseSequencer.Verbs
         public bool IncludeTimeline { get; set; }
 
         [Examples]
-        public static IEnumerable<Example<DumpOptions>> examples => new[]
+        public static IEnumerable<Example<DumpOptions>> Examples => new[]
 {
             new Example<DumpOptions>("Dump events excluding notes", new DumpOptions { InputPath = "LARGO.rol", IncludeEvents = true }),
             new Example<DumpOptions>("Dump events including notes", new DumpOptions { InputPath = "OFFICE.mid", IncludeEvents = true, IncludeNotes = true }),

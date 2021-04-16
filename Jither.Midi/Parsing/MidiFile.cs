@@ -28,6 +28,11 @@ namespace Jither.Midi.Parsing
         };
 
         /// <summary>
+        /// Name of the MIDI file. The path if available, otherwise "anonymous"
+        /// </summary>
+        public string Name { get; private set; } = "anonymous";
+
+        /// <summary>
         /// Standard MIDI file format (0, 1, 2).
         /// </summary>
         public int Format { get; private set; }
@@ -74,7 +79,7 @@ namespace Jither.Midi.Parsing
 
         public MidiFile(string path, MidiFileOptions options = null) : this(File.OpenRead(path), options)
         {
-
+            Name = path;
         }
 
         public MidiFile(Stream stream, MidiFileOptions options = null)

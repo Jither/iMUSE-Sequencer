@@ -14,42 +14,74 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
-    public class ImusePlayer : IDisposable
+    public class ImuseEngine : IDisposable
     {
-        private static readonly Logger logger = LogProvider.Get(nameof(ImusePlayer));
+        private static readonly Logger logger = LogProvider.Get(nameof(ImuseEngine));
 
         private readonly int deviceId;
-        private readonly MidiFile file;
         private readonly SoundTarget target;
         private readonly Driver driver;
         private readonly OutputDevice output;
-        private readonly MidiScheduler scheduler;
+        
+        private MidiScheduler scheduler;
+        
+        private readonly PlayerManager players;
+        private readonly FileManager files = new();
 
         private bool disposed;
 
-        public ImusePlayer(int deviceId, MidiFile file, SoundTarget target)
+        public ImuseEngine(int deviceId, SoundTarget target)
         {
             this.deviceId = deviceId;
-            this.file = file;
             this.target = target;
-            
-            if (file.DivisionType != DivisionType.Ppqn)
+
+            try
             {
-                throw new ImuseSequencerException($"iMUSE Sequencer only supports PPQN division MIDI files - this appears to be SMPTE.");
+                output = new WindowsOutputDevice(deviceId);
             }
-
-            output = new WindowsOutputDevice(deviceId);
+            catch (MidiDeviceException ex)
+            {
+                throw new ImuseSequencerException($"Failed to connect to output: {ex.Message}");
+            }
             driver = GetDriver(output);
-            scheduler = new MidiScheduler(500000, file.TicksPerQuarterNote);
-        }
 
-        public void Play()
-        {
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
             driver.Init();
 
-            scheduler.Schedule(file.Tracks[0].Events);
+            players = new PlayerManager(files, driver);
+        }
+
+        public void RegisterSound(int id, MidiFile file)
+        {
+            if (file.DivisionType != DivisionType.Ppqn)
+            {
+                throw new ImuseSequencerException($"iMUSE Sequencer only supports PPQN division MIDI files - this appears to be SMPTE.");
+            }
+            
+            if (scheduler == null)
+            {
+                scheduler = new MidiScheduler(500000, file.TicksPerQuarterNote);
+            }
+            else
+            {
+                if (file.TicksPerQuarterNote != scheduler.TicksPerQuarterNote)
+                {
+                    throw new ImuseSequencerException($"File '{file.Name}' has a PPQN (ticks per quarter note) value that differs from already registered files - it cannot be registered with them.");
+                }
+            }
+
+            files.Register(id, file);
+        }
+
+        public void StartSound(int id)
+        {
+            players.StartSound(id);
+        }
+
+        public void Play()
+        {
+            scheduler.Schedule(files.Get(0).Tracks[0].Events);
             scheduler.SliceReached += slice =>
             {
                 for (int i = 0; i < slice.Count; i++)
@@ -95,7 +127,7 @@ namespace ImuseSequencer.Playback
             }
             disposed = true;
             Stop();
-            scheduler.Dispose();
+            scheduler?.Dispose();
             output.Dispose();
 
             GC.SuppressFinalize(this);
