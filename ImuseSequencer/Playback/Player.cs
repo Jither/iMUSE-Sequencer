@@ -18,6 +18,7 @@ namespace ImuseSequencer.Playback
         private readonly Sequencer sequencer;
         private readonly HookBlock hookBlock;
 
+        // List of parts currently used by this player
         private readonly PartsCollection linkedParts;
 
         public PlayerStatus Status { get; private set; }

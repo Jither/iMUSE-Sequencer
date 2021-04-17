@@ -2,8 +2,6 @@
 using Jither.Midi.Devices;
 using Jither.Midi.Messages;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,7 +18,7 @@ namespace ImuseSequencer.Drivers
         private const int storedSetupStart = 24;
 
         private const int pitchBendRangeOffset = 4;
-        private const int reverbOffset = 6;
+        //private const int reverbOffset = 6;
 
         private const int rhythmChannel = 9;
         private const int partCount = 32;
@@ -85,6 +83,7 @@ namespace ImuseSequencer.Drivers
 
         public override void Init()
         {
+            // Gather addresses for stored setup
             int address = StoredSetupBaseAddress + (StoredSetupSize * storedSetupStart);
             for (int i = 0; i < StoredSetupCount; i++)
             {
@@ -92,23 +91,28 @@ namespace ImuseSequencer.Drivers
                 address += StoredSetupSize;
             }
 
+            // Set display string (just for fun)
             byte[] display = Encoding.ASCII.GetBytes(initDisplayString);
             TransmitSysex(displayAddress, display);
+            
             Reset();
 
+            // Initialize master system settings
             TransmitSysex(systemAddress, initSysString);
+            // Initialize rhythm keys
             TransmitSysex(rhythmAddress, initRhythmString);
 
+            // Initialize rhythm channel volume
             rhythmVolume = 127;
             TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
 
-            var addr = VirtualPartBaseAddress + pitchBendRangeOffset;
+            // Initialize pitch bend range for all parts
+            address = VirtualPartBaseAddress + pitchBendRangeOffset;
             var pbr = new byte[] { 16 };
-
             for (int part = 0; part < partCount; part++)
             {
-                TransmitSysex(addr, pbr);
-                addr += VirtualPartSize;
+                TransmitSysex(address, pbr);
+                address += VirtualPartSize;
             }
         }
 
@@ -193,7 +197,7 @@ namespace ImuseSequencer.Drivers
             if (part.Slot != null)
             {
                 part.Slot.NoteTable[note >> 4] |= bitmasks[note & 0x0f];
-                TransmitNoteOn(part.Slot.Channel, note, velocity);
+                TransmitNoteOn(part.Slot.OutputChannel, note, velocity);
             }
             else if (part.TransposeLocked)
             {
@@ -211,7 +215,7 @@ namespace ImuseSequencer.Drivers
             if (part.Slot != null)
             {
                 part.Slot.NoteTable[note >> 4] &= (ushort)(~bitmasks[note & 0x0f]);
-                TransmitNoteOff(part.Slot.Channel, note, velocity);
+                TransmitNoteOff(part.Slot.OutputChannel, note, velocity);
             }
             else if (part.TransposeLocked)
             {
@@ -223,7 +227,7 @@ namespace ImuseSequencer.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.Channel, MidiController.ChannelVolume, part.VolumeEffective);
+                TransmitControl(part.Slot.OutputChannel, MidiController.ChannelVolume, part.VolumeEffective);
             }
         }
 
@@ -231,7 +235,7 @@ namespace ImuseSequencer.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.Channel, MidiController.Pan, (63 - part.PanEffective) & 0x7f);
+                TransmitControl(part.Slot.OutputChannel, MidiController.Pan, (63 - part.PanEffective) & 0x7f);
             }
         }
 
@@ -240,7 +244,7 @@ namespace ImuseSequencer.Drivers
             // PitchOffset is auto-updated by way of getter evaluation
             if (part.Slot != null)
             {
-                TransmitPitchbend(part.Slot.Channel, (part.PitchOffset << 2) + 0x2000);
+                TransmitPitchbend(part.Slot.OutputChannel, (part.PitchOffset << 2) + 0x2000);
             }
         }
 
@@ -248,7 +252,7 @@ namespace ImuseSequencer.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.Channel, MidiController.ModWheel, part.ModWheel);
+                TransmitControl(part.Slot.OutputChannel, MidiController.ModWheel, part.ModWheel);
             }
         }
 
@@ -256,7 +260,7 @@ namespace ImuseSequencer.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.Channel, MidiController.Sustain, part.Sustain);
+                TransmitControl(part.Slot.OutputChannel, MidiController.Sustain, part.Sustain);
             }
         }
 
@@ -275,7 +279,7 @@ namespace ImuseSequencer.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.Channel, part.Number); // Load external part into slot
+                TransmitProgramChange(part.Slot.OutputChannel, part.Number); // Load external part into slot
             }
 
             SetModWheel(part);
@@ -294,7 +298,7 @@ namespace ImuseSequencer.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.Channel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
             }
         }
 
@@ -309,7 +313,7 @@ namespace ImuseSequencer.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.Channel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
             }
         }
 
@@ -327,7 +331,7 @@ namespace ImuseSequencer.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.Channel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
             }
         }
 
@@ -335,7 +339,7 @@ namespace ImuseSequencer.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.Channel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
             }
         }
 
@@ -358,8 +362,8 @@ namespace ImuseSequencer.Drivers
                 slot.NoteTable[i] = 0;
             }
 
-            TransmitControl(slot.Channel, MidiController.Sustain, 0);
-            TransmitControl(slot.Channel, MidiController.AllSoundOff, 0);
+            TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
+            TransmitControl(slot.OutputChannel, MidiController.AllSoundOff, 0);
         }
     }
 }

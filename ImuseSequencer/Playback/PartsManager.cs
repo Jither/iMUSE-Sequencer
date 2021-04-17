@@ -20,6 +20,9 @@ namespace ImuseSequencer.Playback
         private readonly List<Slot> slots = new();
 
         // Probably overkill to use a LinkedList or sorted list for this, so we just use a generic List
+        // This list contains parts that need a slot but either were allocated when all slots were taken,
+        // or had their slot stolen by a different part with higher priority. When a slot becomes available,
+        // the highest priority part will get assigned to that slot.
         private readonly List<Part> slotlessParts = new();
 
         public PartsManager(Driver driver)
@@ -82,7 +85,7 @@ namespace ImuseSequencer.Playback
             for (int i = parts.Count - 1; i >= 0; i--)
             {
                 var part = parts[i];
-                if (part.Channel == channel)
+                if (part.InputChannel == channel)
                 {
                     UnlinkPart(part);
                 }

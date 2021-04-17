@@ -1,10 +1,6 @@
 ﻿using ImuseSequencer.Drivers;
 using Jither.Midi.Messages;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
@@ -17,18 +13,28 @@ namespace ImuseSequencer.Playback
         private readonly Driver driver;
         private Player player;
         private Slot slot;
+
         public int ExternalAddress { get; }
         public int PartSetupAddress { get; }
 
         public int Number { get; private set; }
-        public int Channel { get; private set; }
+        
+        /// <summary>
+        /// The channel whose input messages this part will handle.
+        /// </summary>
+        public int InputChannel { get; private set; }
         public bool Enabled { get; private set; }
         public int PriorityOffset { get; private set; }
         public int Volume { get; private set; }
         public int Pan { get; private set; }
         public int Transpose { get; private set; }
         public int Detune { get; private set; }
+
+        /// <summary>
+        /// <c>true</c> for percussion parts, <c>false</c> for other instruments.
+        /// </summary>
         public bool TransposeLocked { get; private set; }
+
         public int ModWheel { get; private set; }
         public int Sustain { get; private set; }
         public int PitchbendRange { get; private set; }
@@ -36,9 +42,18 @@ namespace ImuseSequencer.Playback
         public bool Reverb { get; private set; }
         public int Program { get; private set; }
 
+        /// <summary>
+        /// Indicates whether this part is currently assigned to a player.
+        /// </summary>
         public bool IsInUse => player != null;
+
+        /// <summary>
+        /// The slot that currently handles output from this part. This may be null, if all slots are occupied by
+        /// parts with higher priority - and is also null for percussion parts.
+        /// </summary>
         public Slot Slot => slot;
 
+        // Effective values (typically a combination of player's value and part's value)
         public int PriorityEffective => Math.Clamp(player?.Priority ?? 0 + PriorityOffset, 0, 255);
         public int VolumeEffective => (player.EffectiveVolume * (Volume + 1)) >> 7;
         public int PanEffective => Math.Clamp(player.Pan + Pan, -64, 63);
@@ -76,7 +91,7 @@ namespace ImuseSequencer.Playback
 
         public void Alloc(ImuseAllocPart alloc)
         {
-            Channel = alloc.Channel;
+            InputChannel = alloc.Channel;
             Enabled = alloc.Enabled;
             PriorityOffset = alloc.PriorityOffset;
             Volume = alloc.Volume;

@@ -9,7 +9,14 @@ namespace Jither.Midi.Messages
 {
     public abstract class MidiMessage
     {
+        /// <summary>
+        /// Descriptive name of the message
+        /// </summary>
         public abstract string Name { get; }
+
+        /// <summary>
+        /// String describing the parameters of the message.
+        /// </summary>
         public abstract string Parameters { get; }
         
         /// <summary>
@@ -25,6 +32,7 @@ namespace Jither.Midi.Messages
         public int Channel { get; set; }
 
         public override int RawMessage => (Command | Channel) | (RawData << 8);
+        
         protected abstract byte Command { get; }
         protected abstract int RawData { get; }
 

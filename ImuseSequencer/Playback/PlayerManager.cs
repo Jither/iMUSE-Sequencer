@@ -1,10 +1,6 @@
 ﻿using ImuseSequencer.Drivers;
 using Jither.Logging;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
@@ -90,6 +86,10 @@ namespace ImuseSequencer.Playback
             return PlayerStatus.Off;
         }
 
+        /// <summary>
+        /// Finds player that's not currently playing - or, if all players are busy,
+        /// steals the weakest one with lower priority than the given priority.
+        /// </summary>
         private Player SelectPlayer(int priority)
         {
             int lowestPriority = priority;

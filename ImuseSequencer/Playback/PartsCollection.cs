@@ -19,6 +19,11 @@ namespace ImuseSequencer.Playback
             this.driver = driver;
         }
 
+        /// <summary>
+        /// Updates the priority offset of a given channel. If OMNI channel, does nothing: Normally OMNI
+        /// would indicate to update the effective value of every channel to reflect a new priority on
+        /// the player. But effective priority is always current in this implementation.
+        /// </summary>
         public void SetPriority(int priority, int channel)
         {
             if (channel == Part.OmniChannel)
@@ -28,45 +33,54 @@ namespace ImuseSequencer.Playback
             }
             foreach (var part in parts)
             {
-                if (part.Channel == channel)
+                if (part.InputChannel == channel)
                 {
                     part.SetPriorityOffset(priority);
                 }
             }
         }
 
+        /// <summary>
+        /// Updates the volume of a single channel or OMNI, and signals the new volume to the driver.
+        /// </summary>
         public void SetVolume(int volume, int channel)
         {
             foreach (var part in parts)
             {
                 if (channel == Part.OmniChannel)
                 {
-                    // Property evaluation automatically reflects new value, so just call driver
+                    // Property evaluation automatically reflects new value, so just signal driver
                     driver.SetVolume(part);
                 }
-                else if (part.Channel == channel)
+                else if (part.InputChannel == channel)
                 {
                     part.SetVolume(volume);
                 }
             }
         }
 
+        /// <summary>
+        /// Updates the pan of a single channel or OMNI, and signals the new pan to the driver.
+        /// </summary>
         public void SetPan(int pan, int channel)
         {
             foreach (var part in parts)
             {
                 if (channel == Part.OmniChannel)
                 {
-                    // Property evaluation automatically reflects new value, so just call driver
+                    // Property evaluation automatically reflects new value, so just signal driver
                     driver.SetPan(part);
                 }
-                else if (part.Channel == channel)
+                else if (part.InputChannel == channel)
                 {
                     part.SetPan(pan);
                 }
             }
         }
 
+        /// <summary>
+        /// Updates transposition of a single channel or OMNI, and signals the new pan to the driver.
+        /// </summary>
         public void SetTranspose(int transpose, bool relative, int channel)
         {
             if (transpose < -24 || transpose > 24)
@@ -78,14 +92,16 @@ namespace ImuseSequencer.Playback
             {
                 if (part.TransposeLocked)
                 {
+                    // Percussion part - doesn't transpose
                     continue;
                 }
 
                 if (channel == Part.OmniChannel)
                 {
+                    // Transpose, detune and pitch bend are combined for MT-32
                     driver.SetPitchOffset(part);
                 }
-                else if (part.Channel == channel)
+                else if (part.InputChannel == channel)
                 {
                     if (relative)
                     {
@@ -99,15 +115,21 @@ namespace ImuseSequencer.Playback
             }
         }
 
+        /// <summary>
+        /// Updates detune for a single channel or OMNI, and signals the new detune to the driver.
+        /// </summary>
+        /// <param name="detune"></param>
+        /// <param name="channel"></param>
         public void SetDetune(int detune, int channel)
         {
             foreach (var part in parts)
             {
                 if (channel == Part.OmniChannel)
                 {
+                    // Transpose, detune and pitch bend are combined for MT-32
                     driver.SetPitchOffset(part);
                 }
-                else if (part.Channel == channel)
+                else if (part.InputChannel == channel)
                 {
                     part.SetDetune(detune);
                 }
