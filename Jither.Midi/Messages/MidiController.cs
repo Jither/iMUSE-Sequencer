@@ -86,6 +86,15 @@ namespace Jither.Midi.Messages
         RpnLSB = 0x64,
         RpnMSB = 0x65,
         // 0x66-0x77 undefined
+        
         // 0x78- = channel modes
+        AllSoundOff = 0x78,
+        ResetAll = 0x79,
+        LocalControl = 0x7a,
+        AllNotesOff = 0x7b,
+        OmniOff = 0x7c,
+        OmniOn = 0x7d,
+        PolyOff = 0x7e,
+        PolyOn = 0x7f
     }
 }

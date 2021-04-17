@@ -17,6 +17,7 @@ namespace ImuseSequencer.Drivers
         private const int systemAddress = 0x40000;
         private const int displayAddress = 0x80000;
         private const int resetAddress = 0x1fc000;
+        private const int storedSetupStart = 24;
 
         private const int pitchBendRangeOffset = 4;
         private const int reverbOffset = 6;
@@ -36,6 +37,12 @@ namespace ImuseSequencer.Drivers
         public const int StoredSetupBaseAddress = 0x20000;
         public const int StoredSetupSize = 0x100;
         public const int StoredSetupCount = 0x20;
+
+        private readonly int[] storedSetupAddresses = new int[StoredSetupCount];
+
+        private const int MemoryBank = 2;
+
+        private int rhythmVolume = 127;
 
         private static readonly string initDisplayString = "Lucasfilm Games     ";
 
@@ -65,6 +72,12 @@ namespace ImuseSequencer.Drivers
             76, 100, 7, 0,      // Cowbell
         };
 
+        private static readonly ushort[] bitmasks = new ushort[]
+        {
+            0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+            0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000
+        };
+
         public Roland(OutputDevice output) : base(output)
         {
 
@@ -72,6 +85,13 @@ namespace ImuseSequencer.Drivers
 
         public override void Init()
         {
+            int address = StoredSetupBaseAddress + (StoredSetupSize * storedSetupStart);
+            for (int i = 0; i < StoredSetupCount; i++)
+            {
+                storedSetupAddresses[i] = address;
+                address += StoredSetupSize;
+            }
+
             byte[] display = Encoding.ASCII.GetBytes(initDisplayString);
             TransmitSysex(displayAddress, display);
             Reset();
@@ -79,7 +99,8 @@ namespace ImuseSequencer.Drivers
             TransmitSysex(systemAddress, initSysString);
             TransmitSysex(rhythmAddress, initRhythmString);
 
-            output.SendMessage(ControlChangeMessage.Create(rhythmChannel, MidiController.ChannelVolume, 127));
+            rhythmVolume = 127;
+            TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
 
             var addr = VirtualPartBaseAddress + pitchBendRangeOffset;
             var pbr = new byte[] { 16 };
@@ -97,14 +118,35 @@ namespace ImuseSequencer.Drivers
             Task.Delay(300);
         }
 
-        private void TransmitSysex(int address, byte[] data)
+        private void TransmitNoteOn(int channel, int note, int velocity)
         {
-            output.SendMessage(new SysexMessage(GenerateSysex(address, data)));
+            output.SendMessage(new NoteOnMessage(channel, (byte)note, (byte)velocity));
+        }
+
+        private void TransmitNoteOff(int channel, int note, int velocity)
+        {
+            // Original iMUSE always sends 64 for note-off velocity
+            output.SendMessage(new NoteOffMessage(channel, (byte)note, (byte)velocity));
+        }
+
+        private void TransmitControl(int channel, MidiController controller, int value)
+        {
+            output.SendMessage(ControlChangeMessage.Create(channel, controller, (byte)value));
         }
 
         private void TransmitProgramChange(int channel, int program)
         {
             output.SendMessage(new ProgramChangeMessage(channel, (byte)program));
+        }
+
+        private void TransmitPitchbend(int channel, int pitchbend)
+        {
+            output.SendMessage(new PitchBendChangeMessage(channel, (ushort)pitchbend));
+        }
+
+        private void TransmitSysex(int address, byte[] data)
+        {
+            output.SendMessage(new SysexMessage(GenerateSysex(address, data)));
         }
 
         private static byte[] GenerateSysex(int address, byte[] data)
@@ -148,37 +190,74 @@ namespace ImuseSequencer.Drivers
 
         public override void StartNote(Part part, int note, int velocity)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                part.Slot.NoteTable[note >> 4] |= bitmasks[note & 0x0f];
+                TransmitNoteOn(part.Slot.Channel, note, velocity);
+            }
+            else if (part.TransposeLocked)
+            {
+                if (rhythmVolume != part.VolumeEffective)
+                {
+                    rhythmVolume = part.VolumeEffective;
+                    TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
+                }
+                TransmitNoteOn(rhythmChannel, note, velocity);
+            }
         }
 
         public override void StopNote(Part part, int note, int velocity)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                part.Slot.NoteTable[note >> 4] &= (ushort)(~bitmasks[note & 0x0f]);
+                TransmitNoteOff(part.Slot.Channel, note, velocity);
+            }
+            else if (part.TransposeLocked)
+            {
+                TransmitNoteOff(rhythmChannel, note, velocity);
+            }
         }
 
         public override void SetVolume(Part part)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                TransmitControl(part.Slot.Channel, MidiController.ChannelVolume, part.VolumeEffective);
+            }
         }
 
         public override void SetPan(Part part)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                TransmitControl(part.Slot.Channel, MidiController.Pan, (63 - part.PanEffective) & 0x7f);
+            }
         }
 
         public override void SetPitchOffset(Part part)
         {
-            throw new NotImplementedException();
+            // PitchOffset is auto-updated by way of getter evaluation
+            if (part.Slot != null)
+            {
+                TransmitPitchbend(part.Slot.Channel, (part.PitchOffset << 2) + 0x2000);
+            }
         }
 
         public override void SetModWheel(Part part)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                TransmitControl(part.Slot.Channel, MidiController.ModWheel, part.ModWheel);
+            }
         }
 
         public override void SetSustain(Part part)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                TransmitControl(part.Slot.Channel, MidiController.Sustain, part.Sustain);
+            }
         }
 
         public override void LoadPart(Part part)
@@ -206,39 +285,81 @@ namespace ImuseSequencer.Drivers
             SetPitchOffset(part);
         }
 
-        public override void LoadRomSetup(Part part, int value)
+        public override void LoadRomSetup(Part part, int program)
         {
-            throw new NotImplementedException();
+            byte[] buffer = new byte[2];
+            buffer[0] = (byte)(program >> 6);
+            buffer[1] = (byte)(program & 0x3f);
+            TransmitSysex(part.ExternalAddress, buffer);
+
+            if (part.Slot != null)
+            {
+                TransmitProgramChange(part.Slot.Channel, part.Number);
+            }
         }
 
         public override void DoActiveDump(Part part, byte[] data)
         {
-            throw new NotImplementedException();
+            byte[] buffer = new byte[2];
+            buffer[0] = MemoryBank;
+            buffer[1] = (byte)part.Number;
+            TransmitSysex(part.ExternalAddress, buffer);
+
+            TransmitSysex(part.PartSetupAddress, data);
+
+            if (part.Slot != null)
+            {
+                TransmitProgramChange(part.Slot.Channel, part.Number);
+            }
         }
 
-        public override void DoStoredDump(int number, byte[] data)
+        public override void DoStoredDump(int program, byte[] data)
         {
-            throw new NotImplementedException();
+            TransmitSysex(storedSetupAddresses[program], data);
         }
 
-        public override void LoadStoredSetup(Part part, int number)
+        public override void LoadStoredSetup(Part part, int program)
         {
-            throw new NotImplementedException();
+            byte[] buffer = new byte[2];
+            buffer[0] = MemoryBank;
+            buffer[1] = (byte)(program + storedSetupStart);
+            TransmitSysex(part.ExternalAddress, buffer);
+
+            if (part.Slot != null)
+            {
+                TransmitProgramChange(part.Slot.Channel, part.Number);
+            }
         }
 
         public override void UpdateSetup(Part part)
         {
-            throw new NotImplementedException();
+            if (part.Slot != null)
+            {
+                TransmitProgramChange(part.Slot.Channel, part.Number);
+            }
         }
 
         public override void DoParamAdjust(Part part, int number, int value)
         {
-            throw new NotImplementedException();
+            byte[] buffer = new byte[1];
+            buffer[0] = (byte)value;
+            TransmitSysex(part.PartSetupAddress + number, buffer);
+
+            if (part.Slot != null)
+            {
+                TransmitSysex(part.Slot.SlotSetupAddress + number, buffer);
+            }
         }
 
         public override void StopAllNotes(Slot slot)
         {
-            throw new NotImplementedException();
+            for (int i = 0; i < 8; i++)
+            {
+                slot.NoteTable[i] = 0;
+            }
+
+            TransmitControl(slot.Channel, MidiController.Sustain, 0);
+            TransmitControl(slot.Channel, MidiController.AllSoundOff, 0);
         }
     }
 }

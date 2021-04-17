@@ -18,7 +18,7 @@ namespace ImuseSequencer.Playback
         private Player player;
         private Slot slot;
         public int ExternalAddress { get; }
-        public int StoredSetupAddress { get; }
+        public int PartSetupAddress { get; }
 
         public int Number { get; private set; }
         public int Channel { get; private set; }
@@ -51,7 +51,7 @@ namespace ImuseSequencer.Playback
             this.driver = driver;
             Number = number;
             ExternalAddress = Roland.VirtualPartBaseAddress + Roland.VirtualPartSize * number;
-            StoredSetupAddress = Roland.StoredSetupBaseAddress + Roland.StoredSetupSize * number;
+            PartSetupAddress = Roland.StoredSetupBaseAddress + Roland.StoredSetupSize * number;
         }
 
         public void LinkPlayer(Player player)

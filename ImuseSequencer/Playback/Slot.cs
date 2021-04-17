@@ -13,17 +13,18 @@ namespace ImuseSequencer.Playback
         public int Channel { get; }
         public int PriorityEffective => part?.PriorityEffective ?? 0;
 
-        private readonly int externalAddress;
-        private readonly int activeSetupAddress;
-        private readonly int[] noteTable = new int[8];
+        public int ExternalAddress { get; }
+        public int SlotSetupAddress { get; }
+        // TODO: No need to do bytes here - do a bool per note
+        public ushort[] NoteTable { get; } = new ushort[8];
 
         public Slot(int number, Driver driver)
         {
             this.driver = driver;
 
             Channel = number + 1; // Channels 2-9 (1-8 zero-indexed), percussion = 10
-            externalAddress = Roland.RealPartBaseAddress + Roland.RealPartSize * number;
-            activeSetupAddress = Roland.ActiveSetupBaseAddress + Roland.ActiveSetupSize * number;
+            ExternalAddress = Roland.RealPartBaseAddress + Roland.RealPartSize * number;
+            SlotSetupAddress = Roland.ActiveSetupBaseAddress + Roland.ActiveSetupSize * number;
         }
 
         public void AssignPart(Part part)
