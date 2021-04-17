@@ -2,6 +2,7 @@
 using Jither.Midi.Devices;
 using Jither.Midi.Messages;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -127,10 +128,10 @@ namespace ImuseSequencer.Drivers
             output.SendMessage(new NoteOnMessage(channel, (byte)note, (byte)velocity));
         }
 
-        private void TransmitNoteOff(int channel, int note, int velocity)
+        private void TransmitNoteOff(int channel, int note)
         {
             // Original iMUSE always sends 64 for note-off velocity
-            output.SendMessage(new NoteOffMessage(channel, (byte)note, (byte)velocity));
+            output.SendMessage(new NoteOffMessage(channel, (byte)note, 64));
         }
 
         private void TransmitControl(int channel, MidiController controller, int value)
@@ -196,7 +197,7 @@ namespace ImuseSequencer.Drivers
         {
             if (part.Slot != null)
             {
-                part.Slot.NoteTable[note >> 4] |= bitmasks[note & 0x0f];
+                part.Slot.NoteTable.Add(note);
                 TransmitNoteOn(part.Slot.OutputChannel, note, velocity);
             }
             else if (part.TransposeLocked)
@@ -210,16 +211,16 @@ namespace ImuseSequencer.Drivers
             }
         }
 
-        public override void StopNote(Part part, int note, int velocity)
+        public override void StopNote(Part part, int note)
         {
             if (part.Slot != null)
             {
-                part.Slot.NoteTable[note >> 4] &= (ushort)(~bitmasks[note & 0x0f]);
-                TransmitNoteOff(part.Slot.OutputChannel, note, velocity);
+                part.Slot.NoteTable.Remove(note);
+                TransmitNoteOff(part.Slot.OutputChannel, note);
             }
             else if (part.TransposeLocked)
             {
-                TransmitNoteOff(rhythmChannel, note, velocity);
+                TransmitNoteOff(rhythmChannel, note);
             }
         }
 
@@ -343,27 +344,29 @@ namespace ImuseSequencer.Drivers
             }
         }
 
-        public override void DoParamAdjust(Part part, int number, int value)
+        public override void DoParamAdjust(Part part, int param, int value)
         {
             byte[] buffer = new byte[1];
             buffer[0] = (byte)value;
-            TransmitSysex(part.PartSetupAddress + number, buffer);
+            TransmitSysex(part.PartSetupAddress + param, buffer);
 
             if (part.Slot != null)
             {
-                TransmitSysex(part.Slot.SlotSetupAddress + number, buffer);
+                TransmitSysex(part.Slot.SlotSetupAddress + param, buffer);
             }
         }
 
         public override void StopAllNotes(Slot slot)
         {
-            for (int i = 0; i < 8; i++)
-            {
-                slot.NoteTable[i] = 0;
-            }
+            slot.NoteTable.Clear();
 
             TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
             TransmitControl(slot.OutputChannel, MidiController.AllSoundOff, 0);
+        }
+
+        public override void GetSustainNotes(Slot slot, HashSet<int> notes)
+        {
+            notes.UnionWith(slot.NoteTable);
         }
     }
 }

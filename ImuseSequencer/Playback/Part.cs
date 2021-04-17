@@ -1,6 +1,7 @@
 ﻿using ImuseSequencer.Drivers;
 using Jither.Midi.Messages;
 using System;
+using System.Collections.Generic;
 
 namespace ImuseSequencer.Playback
 {
@@ -112,9 +113,9 @@ namespace ImuseSequencer.Playback
             driver.StartNote(this, note, velocity);
         }
 
-        public void StopNote(int note, int velocity)
+        public void StopNote(int note)
         {
-            driver.StopNote(this, note, velocity);
+            driver.StopNote(this, note);
         }
 
         public void StopAllNotes()
@@ -134,14 +135,20 @@ namespace ImuseSequencer.Playback
             }
         }
 
-        // TODO: GetSustainNotes
+        public void GetSustainNotes(HashSet<int> notes)
+        {
+            if (slot != null)
+            {
+                driver.GetSustainNotes(slot, notes);
+            }
+        }
 
         // TODO: DecodeCustomSysex
 
-        public void DoProgramChange(int value)
+        public void DoProgramChange(int program)
         {
-            Program = value;
-            driver.LoadRomSetup(this, value);
+            Program = program;
+            driver.LoadRomSetup(this, program);
         }
 
         public void DoActiveDump(byte[] data)
@@ -149,25 +156,14 @@ namespace ImuseSequencer.Playback
             driver.DoActiveDump(this, data);
         }
 
-        public void DoStoredDump(int number, byte[] data)
+        public void LoadSetup(int program)
         {
-            if (number < Roland.StoredSetupCount)
-            {
-                driver.DoStoredDump(number, data);
-            }
+            driver.LoadStoredSetup(this, program);
         }
 
-        public void LoadSetup(int number)
+        public void DoParamAdjust(int param, int value)
         {
-            if (number < Roland.StoredSetupCount)
-            {
-                driver.LoadStoredSetup(this, number);
-            }
-        }
-
-        public void DoParamAdjust(int number, int value)
-        {
-            driver.DoParamAdjust(this, number, value);
+            driver.DoParamAdjust(this, param, value);
         }
 
         public void SetPriorityOffset(int priorityOffset)
@@ -199,10 +195,10 @@ namespace ImuseSequencer.Playback
             driver.SetPitchOffset(this);
         }
 
-        public void SetEnabled(bool state)
+        public void SetEnabled(bool enabled)
         {
-            Enabled = state;
-            if (!state && slot != null)
+            Enabled = enabled;
+            if (!enabled && slot != null)
             {
                 driver.StopAllNotes(slot);
             }

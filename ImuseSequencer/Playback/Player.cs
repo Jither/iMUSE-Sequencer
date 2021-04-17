@@ -92,7 +92,7 @@ namespace ImuseSequencer.Playback
         public void SetPriority(int priority)
         {
             Priority = priority;
-            linkedParts.SetPriority(priority, Part.OmniChannel);
+            linkedParts.SetPriority(Part.OmniChannel, priority);
         }
 
         public bool SetVolume(int volume)
@@ -102,14 +102,14 @@ namespace ImuseSequencer.Playback
                 return false;
             }
             Volume = volume;
-            linkedParts.SetVolume(volume, Part.OmniChannel);
+            linkedParts.SetVolume(Part.OmniChannel, volume);
             return true;
         }
 
         public void SetPan(int pan)
         {
             Pan = pan;
-            linkedParts.SetPan(pan, Part.OmniChannel);
+            linkedParts.SetPan(Part.OmniChannel, pan);
         }
 
         public bool SetTranspose(int transpose, bool relative)
@@ -128,14 +128,14 @@ namespace ImuseSequencer.Playback
                 Transpose = transpose;
             }
 
-            linkedParts.SetTranspose(Transpose, relative, Part.OmniChannel);
+            linkedParts.SetTranspose(Part.OmniChannel, Transpose, relative);
             return true;
         }
 
         public void SetDetune(int detune)
         {
             Detune = detune;
-            linkedParts.SetDetune(detune, Part.OmniChannel);
+            linkedParts.SetDetune(Part.OmniChannel, detune);
         }
 
         // UpdateMasterVolume not needed (probably) - we use property evaluation for effective volume

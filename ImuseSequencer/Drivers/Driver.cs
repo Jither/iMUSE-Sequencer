@@ -21,7 +21,7 @@ namespace ImuseSequencer.Drivers
         public abstract void Reset();
 
         public abstract void StartNote(Part part, int note, int velocity);
-        public abstract void StopNote(Part part, int note, int velocity);
+        public abstract void StopNote(Part part, int note);
         public abstract void SetVolume(Part part);
         public abstract void SetPan(Part part);
         public abstract void SetPitchOffset(Part part);
@@ -31,11 +31,13 @@ namespace ImuseSequencer.Drivers
         public abstract void LoadPart(Part part);
         public abstract void LoadRomSetup(Part part, int value);
         public abstract void DoActiveDump(Part part, byte[] data);
-        public abstract void DoStoredDump(int number, byte[] data);
+        public abstract void DoStoredDump(int program, byte[] data);
         public abstract void LoadStoredSetup(Part part, int number);
         public abstract void UpdateSetup(Part part);
-        public abstract void DoParamAdjust(Part part, int number, int value);
+        public abstract void DoParamAdjust(Part part, int param, int value);
 
         public abstract void StopAllNotes(Slot slot);
+
+        public abstract void GetSustainNotes(Slot slot, HashSet<int> notes);
     }
 }

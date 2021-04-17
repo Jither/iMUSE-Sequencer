@@ -1,4 +1,5 @@
 ﻿using ImuseSequencer.Drivers;
+using System.Collections.Generic;
 
 namespace ImuseSequencer.Playback
 {
@@ -31,8 +32,7 @@ namespace ImuseSequencer.Playback
 
         public int ExternalAddress { get; }
         public int SlotSetupAddress { get; }
-        // TODO: No need to do bytes here - we have more than 640K - do a bool per note.
-        public ushort[] NoteTable { get; } = new ushort[8];
+        public HashSet<int> NoteTable { get; } = new();
 
         public Slot(int number, Driver driver)
         {
