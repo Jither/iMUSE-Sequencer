@@ -57,7 +57,7 @@ namespace Jither.Midi.Sequencing
         }
 
         /// <summary>
-        /// Sets tempo in beats per minute. Default MIDI tempo is 120bpm.
+        /// Gets or sets tempo in beats per minute. Default MIDI tempo is 120bpm.
         /// </summary>
         public decimal BeatsPerMinute
         {

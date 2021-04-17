@@ -11,15 +11,67 @@ namespace Jither.Midi.Messages
 {
     public class Meter
     {
+        /// <summary>
+        /// The tick position where this meter starts.
+        /// </summary>
         public long StartTicks { get; }
+
+        /// <summary>
+        /// Numerator of the time signature. E.g. for 6/8, this is 6.
+        /// </summary>
         public int Numerator { get; }
+
+        /// <summary>
+        /// Denominator of the time signature. E.g. for 6/8, this is 8.
+        /// </summary>
         public int Denominator { get; }
-        public int ClocksPerBeat { get; } // 24 = beat every quarter note, 36 = beat every dotted quarter note
+
+        /// <summary>
+        /// Number of MIDI clocks in a beat. The MIDI default is 24, meaning 1 beat = 1 quarter note.
+        /// A value of 36 would indicate that 1 beat = 1 dotted quarter note. So:<br />
+        /// For 4/4, this is 24<br />
+        /// For 6/8, this is 36<br />
+        /// For 5/8, behaviour is undefined. The TIme Signature meta message isn't built for complex time signatures.
+        /// </summary>
+        public int ClocksPerBeat { get; }
+
+        /// <summary>
+        /// Number of beats per measure. This is based on <see cref="ClocksPerBeat" />, but usual values:<br />
+        /// For 4/4, this is 4.<br />
+        /// For 6/8, this is 2.<br />
+        /// For 5/8, behaviour is undefined. The Time Signature meta message isn't built for complex time signatures.
+        /// </summary>
         public int BeatsPerMeasure { get; }
+
+        /// <summary>
+        /// Number of quarter notes per measure.<br />
+        /// For 4/4, this is 4.<br />
+        /// For 6/8, this is 3.<br />
+        /// For 5/8, this is 2.5.
+        /// </summary>
+        public decimal QuarterNotesPerMeasure { get; }
+
+        /// <summary>
+        /// Number of ticks per beat.
+        /// </summary>
         public int TicksPerBeat { get; }
+
+        /// <summary>
+        /// Number of ticks per quarter note. This is constant within a file (defined by PPQN in the MIDI file).
+        /// </summary>
+        public int TicksPerQuarterNote { get; }
+
+        /// <summary>
+        /// The number of notated 32nd notes in a MIDI quarter note. This is intended for sequencers that might e.g. use 3/4 in the MIDI
+        /// while notating as 3/8.
+        /// </summary>
         public int ThirtySecondNotesPerMidiQuarterNote { get; }
 
+        /// <summary>
+        /// The measure where this meter starts.
+        /// </summary>
         public int StartMeasure { get; internal set; }
+
         public Meter Next { get; private set; }
         public Meter Previous { get; private set; }
 
@@ -36,8 +88,9 @@ namespace Jither.Midi.Messages
             ClocksPerBeat = clocksPerBeat;
             ThirtySecondNotesPerMidiQuarterNote = thirtySecondNotesPerMidiQuarterNote;
             
-            // TODO: Integer division here may lead to inaccuracy in rare cases
+            // TODO: Integer division here might lead to inaccuracy in rare cases
             TicksPerBeat = ticksPerQuarterNote * 24 / clocksPerBeat;
+            TicksPerQuarterNote = ticksPerQuarterNote;
 
             // Beats per measure = (quarter notes per measure) / (beat length in quarter notes)
             // Quarter notes per measure = 4 * (numerator) / (denominator)
@@ -48,6 +101,7 @@ namespace Jither.Midi.Messages
             // Beat length in quarter notes = 36 / 24    = 1.5 (1 beat = dotted quarter note)
             // Beats per measure            = 3 / 1.5    = 2
             BeatsPerMeasure = 4 * Numerator * 24 / (Denominator * ClocksPerBeat);
+            QuarterNotesPerMeasure = 4m * Numerator / Denominator;
         }
 
         public void Link(Meter previous)

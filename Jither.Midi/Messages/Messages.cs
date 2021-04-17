@@ -497,9 +497,7 @@ namespace Jither.Midi.Messages
         public int Denominator => 1 << Data[1];
         public int ClocksPerBeat => Data[2];
         public int ThirtySecondNotesPerMidiQuarterNote => Data[3];
-
         
-
         public TimeSignatureMessage(byte type, byte[] data) : base(type, data)
         {
         }
