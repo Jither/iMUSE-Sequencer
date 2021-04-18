@@ -221,7 +221,7 @@ namespace Jither.Midi.Parsing
                 {
                     0x80 => new NoteOffMessage(channel, key: reader.ReadByte(), velocity: reader.ReadByte()),
                     0x90 => new NoteOnMessage(channel, key: reader.ReadByte(), velocity: reader.ReadByte()),
-                    0xa0 => new PolyPressure(channel, key: reader.ReadByte(), pressure: reader.ReadByte()),
+                    0xa0 => new PolyPressureMessage(channel, key: reader.ReadByte(), pressure: reader.ReadByte()),
                     0xb0 => ControlChangeMessage.Create(channel, controller: reader.ReadByte(), value: reader.ReadByte()),
                     0xc0 => new ProgramChangeMessage(channel, program: reader.ReadByte()),
                     0xd0 => new ChannelPressureMessage(channel, pressure: reader.ReadByte()),

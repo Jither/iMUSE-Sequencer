@@ -78,7 +78,7 @@ namespace Jither.Midi.Messages
         }
     }
 
-    public class PolyPressure : ChannelMessage
+    public class PolyPressureMessage : ChannelMessage
     {
         public override string Name => "poly-press";
         public override string Parameters => $"{MidiHelper.NoteNumberToName(Key),-4} {Pressure,3}";
@@ -88,7 +88,7 @@ namespace Jither.Midi.Messages
         public byte Key { get; set; }
         public byte Pressure { get; set; }
 
-        public PolyPressure(int channel, byte key, byte pressure) : base(channel)
+        public PolyPressureMessage(int channel, byte key, byte pressure) : base(channel)
         {
             Key = key;
             Pressure = pressure;

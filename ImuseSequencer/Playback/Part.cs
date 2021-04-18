@@ -108,14 +108,47 @@ namespace ImuseSequencer.Playback
             Program = alloc.Program;
         }
 
-        public void StartNote(int note, int velocity)
+        public void HandleEvent(ImuseMidiEvent evt)
         {
-            driver.StartNote(this, note, velocity);
-        }
-
-        public void StopNote(int note)
-        {
-            driver.StopNote(this, note);
+            switch (evt)
+            {
+                case NoteOnEvent noteOn:
+                    driver.StartNote(this, noteOn);
+                    break;
+                case NoteOffEvent noteOff:
+                    driver.StopNote(this, noteOff);
+                    break;
+                case ControlChangeEvent controlChange:
+                    switch (controlChange.Controller)
+                    {
+                        case MidiController.ModWheel:
+                            ModWheel = controlChange.Value;
+                            driver.SetModWheel(this);
+                            break;
+                        case MidiController.ChannelVolume:
+                            Volume = controlChange.Value;
+                            driver.SetVolume(this);
+                            break;
+                        case MidiController.Pan:
+                            Pan = controlChange.Value - 0x40; // Center
+                            driver.SetPan(this);
+                            break;
+                        case MidiController.Sustain:
+                            Sustain = controlChange.Value;
+                            driver.SetSustain(this);
+                            break;
+                    }
+                    break;
+                case ProgramChangeEvent programChange:
+                    Program = programChange.Program;
+                    driver.LoadRomSetup(this, programChange);
+                    break;
+                case PitchBendChangeEvent pitchBend:
+                    int bender = pitchBend.Bender - 0x2000; // Center
+                    Pitchbend = (bender * PitchbendRange) >> 6;
+                    driver.SetPitchOffset(this);
+                    break;
+            }
         }
 
         public void StopAllNotes()
@@ -145,12 +178,6 @@ namespace ImuseSequencer.Playback
 
         // TODO: DecodeCustomSysex
 
-        public void DoProgramChange(int program)
-        {
-            Program = program;
-            driver.LoadRomSetup(this, program);
-        }
-
         public void DoActiveDump(byte[] data)
         {
             driver.DoActiveDump(this, data);
@@ -169,18 +196,6 @@ namespace ImuseSequencer.Playback
         public void SetPriorityOffset(int priorityOffset)
         {
             PriorityOffset = priorityOffset;
-        }
-
-        public void SetVolume(int volume)
-        {
-            Volume = volume;
-            driver.SetVolume(this);
-        }
-
-        public void SetPan(int pan)
-        {
-            Pan = pan;
-            driver.SetPan(this);
         }
 
         public void SetTranspose(int transpose)
@@ -202,24 +217,6 @@ namespace ImuseSequencer.Playback
             {
                 driver.StopAllNotes(slot);
             }
-        }
-
-        public void SetModWheel(int value)
-        {
-            ModWheel = value;
-            driver.SetModWheel(this);
-        }
-
-        public void SetSustain(int value)
-        {
-            Sustain = value;
-            driver.SetSustain(this);
-        }
-
-        public void SetPitchbend(int value)
-        {
-            Pitchbend = (value * PitchbendRange) >> 6;
-            driver.SetPitchOffset(this);
         }
     }
 }

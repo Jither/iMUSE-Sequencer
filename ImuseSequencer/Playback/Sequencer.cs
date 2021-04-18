@@ -1,4 +1,5 @@
 ﻿using Jither.Logging;
+using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
@@ -14,12 +15,137 @@ namespace ImuseSequencer.Playback
         On
     }
 
+    public abstract class ImuseMidiEvent
+    {
+        private static Logger logger = LogProvider.Get(nameof(ImuseMidiEvent));
+
+        public long AbsoluteTick { get; }
+        public int Channel { get; set; }
+
+        protected ImuseMidiEvent(long absoluteTick, int channel)
+        {
+            AbsoluteTick = absoluteTick;
+            Channel = channel;
+        }
+
+        public static ImuseMidiEvent Create(long absoluteTick, MidiMessage message)
+        {
+            return message switch
+            {
+                NoteOnMessage noteOn => new NoteOnEvent(absoluteTick, noteOn.Channel, noteOn.Key, noteOn.Velocity),
+                NoteOffMessage noteOff => new NoteOffEvent(absoluteTick, noteOff.Channel, noteOff.Key),
+                ControlChangeMessage controlChange => new ControlChangeEvent(absoluteTick, controlChange.Channel, controlChange.Controller, controlChange.Value),
+                ProgramChangeMessage programChange => new ProgramChangeEvent(absoluteTick, programChange.Channel, programChange.Program),
+                PitchBendChangeMessage pitchBend => new PitchBendChangeEvent(absoluteTick, pitchBend.Channel, pitchBend.Bender),
+                ImuseMessage imuse => new ImuseEvent(absoluteTick, imuse.Channel, imuse),
+                SysexMessage sysex => new SysexEvent(absoluteTick, -1, sysex.Data),
+                SetTempoMessage tempo => new SetTempoEvent(absoluteTick, -1, tempo.Tempo),
+                EndOfTrackMessage => new EndOfTrackEvent(absoluteTick, -1),
+                _ => null
+            };
+        }
+    }
+
+    public class NoteOnEvent : ImuseMidiEvent
+    {
+        public int Key { get; }
+        public int Velocity { get; }
+
+        public NoteOnEvent(long absoluteTick, int channel, int key, int velocity) : base(absoluteTick, channel)
+        {
+            Key = key;
+            Velocity = velocity;
+        }
+    }
+
+    public class NoteOffEvent : ImuseMidiEvent
+    {
+        public int Key { get; }
+
+        public NoteOffEvent(long absoluteTick, int channel, int key) : base(absoluteTick, channel)
+        {
+            Key = key;
+        }
+    }
+
+    public class ControlChangeEvent : ImuseMidiEvent
+    {
+        public MidiController Controller { get; }
+        public int Value { get; }
+
+        public ControlChangeEvent(long absoluteTick, int channel, MidiController controller, int value) : base(absoluteTick, channel)
+        {
+            Controller = controller;
+            Value = value;
+        }
+    }
+
+    public class ProgramChangeEvent : ImuseMidiEvent
+    {
+        public int Program { get; }
+
+        public ProgramChangeEvent(long absoluteTick, int channel, int program) : base(absoluteTick, channel)
+        {
+            Program = program;
+        }
+    }
+
+    public class PitchBendChangeEvent : ImuseMidiEvent
+    {
+        public int Bender { get; }
+
+        public PitchBendChangeEvent(long absoluteTick, int channel, int bender) : base(absoluteTick, channel)
+        {
+            Bender = bender;
+        }
+    }
+
+    public class SysexEvent : ImuseMidiEvent
+    {
+        public byte[] Data { get; }
+
+        public SysexEvent(long absoluteTick, int channel, byte[] data) : base(absoluteTick, channel)
+        {
+            Data = data;
+        }
+    }
+
+    public class ImuseEvent : ImuseMidiEvent
+    {
+        public ImuseMessage Message { get; }
+
+        public ImuseEvent(long absoluteTick, int channel, ImuseMessage message) : base(absoluteTick, channel)
+        {
+            Message = message;
+        }
+    }
+
+    public class SetTempoEvent : ImuseMidiEvent
+    {
+        public int Tempo { get; }
+
+        public SetTempoEvent(long absoluteTick, int channel, int tempo) : base(absoluteTick, channel)
+        {
+            Tempo = tempo;
+        }
+    }
+
+    public class EndOfTrackEvent : ImuseMidiEvent
+    {
+        public EndOfTrackEvent(long absoluteTick, int channel) : base(absoluteTick, channel)
+        {
+
+        }
+    }
+
     /// <summary>
     /// Each Player has a dedicated Sequencer handling the sequencing of the sound that's currently assigned to that player.
     /// </summary>
     public class Sequencer
     {
         private static readonly Logger logger = LogProvider.Get(nameof(Sequencer));
+
+        private readonly Player player;
         private MidiFile file;
 
         private int currentTrackIndex; // index of track within file
@@ -32,14 +158,21 @@ namespace ImuseSequencer.Playback
         private int loopEndTick;
 
         private int ticksPerQuarterNote;
-        private long totalTick;
-        private int beat;
-        private long tickInBeat;
-        private long nextEventTick;
+
+        private int totalTick; // accumulated tick that the sequencer is at
+        private long currentTick; // tick within the current track that the sequencer is at
+        private int currentBeat; // beat within the current track that the seqeucner is at
+        private long tickInBeat; // tick within the current beat within the current track
+        private long nextEventTick; // tick of next event to be processed
         
         private bool cancelPlayback;
 
         public SequencerStatus Status { get; private set; }
+
+        public Sequencer(Player player)
+        {
+            this.player = player;
+        }
 
         public void Start(MidiFile file)
         {
@@ -57,11 +190,10 @@ namespace ImuseSequencer.Playback
             //SetMicroSecondsPerQuarter(500000);
             //SetSpeed(file.ImuseHeader?.Speed ?? 128);
 
-            totalTick = nextEventTick = GetNextEventTick();
+            nextEventTick = GetNextEventTick();
 
-            tickInBeat = totalTick;
-            beat = 1;
-            UpdateBeats();
+            tickInBeat = 0;
+            currentBeat = 1;
 
             Status = SequencerStatus.On;
         }
@@ -109,35 +241,70 @@ namespace ImuseSequencer.Playback
                 return;
             }
 
-            totalTick += ticks;
-            tickInBeat += ticks;
-            UpdateBeats();
-
-            if (loopsRemaining > 0)
+            for (int i = 0; i < ticks; i++)
             {
-                if (beat >= loopEndBeat && tickInBeat >= loopEndTick)
+                if (loopsRemaining > 0)
                 {
-                    loopsRemaining--;
-                    Jump(currentTrackIndex, loopStartBeat, loopStartTick);
+                    if (currentBeat >= loopEndBeat && tickInBeat >= loopEndTick)
+                    {
+                        loopsRemaining--;
+                        Jump(currentTrackIndex, loopStartBeat, loopStartTick);
+                    }
                 }
 
-                while (totalTick >= nextEventTick)
+                while (currentTick >= nextEventTick)
                 {
                     bool end = ProcessEvent();
                     nextEventIndex++;
-                    if (end) // TODO: Or cancelled
+                    if (end || cancelPlayback)
                     {
                         break;
                     }
                     nextEventTick = GetNextEventTick();
+                }
+
+                totalTick++;
+                currentTick++;
+                tickInBeat++;
+                if (tickInBeat >= ticksPerQuarterNote)
+                {
+                    currentBeat++;
+                    tickInBeat -= ticksPerQuarterNote;
                 }
             }
         }
 
         private bool ProcessEvent()
         {
-            // TODO
-            return false;
+            bool trackFinished = false;
+            var evt = this.file.Tracks[currentTrackIndex].Events[nextEventIndex];
+            var message = evt.Message;
+            switch (message)
+            {
+                // Channel
+                case NoteOnMessage noteOn:
+                    // Special case: iMUSE also allows velocity 0 as "note-off"
+                    if (noteOn.Velocity == 0)
+                    {
+                        message = new NoteOffMessage(noteOn.Channel, noteOn.Key, noteOn.Velocity);
+                    }
+                    break;
+                
+                // Meta
+                case EndOfTrackMessage:
+                    trackFinished = true;
+                    break;
+            }
+
+            // Pass message on to player - with the total tick at which it is to occur
+            var internalEvent = ImuseMidiEvent.Create(totalTick, message);
+            if (internalEvent == null)
+            {
+                logger.Warning($"Unsupported MIDI event @ {totalTick}: {message}");
+            }
+            player.HandleEvent(internalEvent);
+
+            return trackFinished;
         }
 
         private bool Jump(int track, int beat, int tickInBeat)
@@ -171,7 +338,7 @@ namespace ImuseSequencer.Playback
 
             long nextEventTick;
             int nextEventIndex;
-            if (track == currentTrackIndex && destTick >= totalTick)
+            if (track == currentTrackIndex && destTick >= currentTick)
             {
                 // Destination is further ahead in the current track
                 nextEventTick = this.nextEventTick;
@@ -196,9 +363,9 @@ namespace ImuseSequencer.Playback
 
             // Now we've found the destination position - transfer state to the sequencer
 
-            this.beat = beat;
+            this.currentBeat = beat;
             this.tickInBeat = tickInBeat;
-            this.totalTick = destTick;
+            this.currentTick = destTick;
             this.nextEventIndex = nextEventIndex;
             this.nextEventTick = nextEventTick;
 
@@ -220,15 +387,6 @@ namespace ImuseSequencer.Playback
         private long GetNextEventTick(int trackIndex, int nextEventIndex)
         {
             return file.Tracks[trackIndex].Events[nextEventIndex].AbsoluteTicks;
-        }
-
-        private void UpdateBeats()
-        {
-            while (tickInBeat >= ticksPerQuarterNote)
-            {
-                beat++;
-                tickInBeat -= ticksPerQuarterNote;
-            }
         }
     }
 }

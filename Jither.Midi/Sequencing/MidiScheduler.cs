@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace Jither.Midi.Sequencing
 {
-    public class MidiScheduler : IDisposable
+    public class MidiScheduler<T> : IDisposable where T: ISchedulable
     {
         private bool disposed;
 
@@ -30,13 +30,13 @@ namespace Jither.Midi.Sequencing
         // Tick currently being processed on scheduling thread
         private long currentTick = 0;
 
-        private readonly ScheduleQueue<MidiEvent> queue = new();
+        private readonly ScheduleQueue<T> queue = new();
         private Thread thread = null;
 
         private long MicrosecondsPerTick => microsecondsPerBeat * ticksPerQuarterNote;
         private long ElapsedMicroseconds => stopwatch.ElapsedTicks * 1000_000 / Stopwatch.Frequency;
 
-        public event Action<List<MidiEvent>> SliceReached;
+        public event Action<List<T>> SliceReached;
         public event Action<int> TempoChanged;
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Jither.Midi.Sequencing
             }
         }
 
-        public void Schedule(MidiEvent evt)
+        public void Schedule(T evt)
         {
             lock (lockThread)
             {
@@ -208,7 +208,7 @@ namespace Jither.Midi.Sequencing
             }
         }
 
-        public void Schedule(IReadOnlyList<MidiEvent> events)
+        public void Schedule(IReadOnlyList<T> events)
         {
             lock (lockThread)
             {

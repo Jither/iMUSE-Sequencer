@@ -123,15 +123,16 @@ namespace ImuseSequencer.Drivers
             Task.Delay(300);
         }
 
-        private void TransmitNoteOn(int channel, int note, int velocity)
+        private void TransmitEvent(int channel, ImuseMidiEvent evt)
         {
-            output.SendMessage(new NoteOnMessage(channel, (byte)note, (byte)velocity));
+            evt.Channel = channel;
+            // TODO: Schedule event
         }
 
-        private void TransmitNoteOff(int channel, int note)
+        private void TransmitSysex(long absoluteTick, int address, byte[] data)
         {
-            // Original iMUSE always sends 64 for note-off velocity
-            output.SendMessage(new NoteOffMessage(channel, (byte)note, 64));
+            var evt = new SysexEvent(absoluteTick, -1, GenerateSysex(address, data));
+            // TODO: Schedule
         }
 
         private void TransmitControl(int channel, MidiController controller, int value)
@@ -193,34 +194,34 @@ namespace ImuseSequencer.Drivers
             return buffer;
         }
 
-        public override void StartNote(Part part, int note, int velocity)
+        public override void StartNote(Part part, NoteOnEvent evt)
         {
             if (part.Slot != null)
             {
-                part.Slot.NoteTable.Add(note);
-                TransmitNoteOn(part.Slot.OutputChannel, note, velocity);
+                part.Slot.NoteTable.Add(evt.Key);
+                TransmitEvent(part.Slot.OutputChannel, evt);
             }
             else if (part.TransposeLocked)
             {
                 if (rhythmVolume != part.VolumeEffective)
                 {
                     rhythmVolume = part.VolumeEffective;
-                    TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
+                    TransmitEvent(rhythmChannel, new ControlChangeEvent(evt.AbsoluteTick, rhythmChannel, MidiController.ChannelVolume, rhythmVolume));
                 }
-                TransmitNoteOn(rhythmChannel, note, velocity);
+                TransmitEvent(rhythmChannel, evt);
             }
         }
 
-        public override void StopNote(Part part, int note)
+        public override void StopNote(Part part, NoteOffEvent evt)
         {
             if (part.Slot != null)
             {
-                part.Slot.NoteTable.Remove(note);
-                TransmitNoteOff(part.Slot.OutputChannel, note);
+                part.Slot.NoteTable.Remove(evt.Key);
+                TransmitEvent(part.Slot.OutputChannel, evt);
             }
             else if (part.TransposeLocked)
             {
-                TransmitNoteOff(rhythmChannel, note);
+                TransmitEvent(rhythmChannel, evt);
             }
         }
 
@@ -290,16 +291,16 @@ namespace ImuseSequencer.Drivers
             SetPitchOffset(part);
         }
 
-        public override void LoadRomSetup(Part part, int program)
+        public override void LoadRomSetup(Part part, ProgramChangeEvent evt)
         {
             byte[] buffer = new byte[2];
-            buffer[0] = (byte)(program >> 6);
-            buffer[1] = (byte)(program & 0x3f);
-            TransmitSysex(part.ExternalAddress, buffer);
+            buffer[0] = (byte)(evt.Program >> 6);
+            buffer[1] = (byte)(evt.Program & 0x3f);
+            TransmitSysex(evt.AbsoluteTick, part.ExternalAddress, buffer);
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
+                TransmitEvent(part.Slot.OutputChannel, new ProgramChangeEvent(evt.AbsoluteTick, part.Slot.OutputChannel, part.Number));
             }
         }
 

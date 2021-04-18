@@ -1,4 +1,5 @@
 ﻿using ImuseSequencer.Drivers;
+using Jither.Midi.Messages;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -20,14 +21,16 @@ namespace ImuseSequencer.Playback
             this.driver = driver;
         }
 
-        public void StartNote(int channel, int note, int velocity)
+        public void HandleEvent(ImuseMidiEvent evt)
         {
-            GetByChannel(channel)?.StartNote(note, velocity);
-        }
-
-        public void StopNote(int channel, int note)
-        {
-            GetByChannel(channel)?.StopNote(note);
+            if (evt.Channel >= 0)
+            {
+                GetByChannel(evt.Channel)?.HandleEvent(evt);
+            }
+            else
+            {
+                throw new ImuseSequencerException($"Unexpected MIDI event passed to PartsCollection handler: {evt}");
+            }
         }
 
         public void StopAllNotes()
@@ -52,11 +55,6 @@ namespace ImuseSequencer.Playback
             {
                 part.GetSustainNotes(notes);
             }
-        }
-
-        public void DoProgramChange(int channel, int program)
-        {
-            GetByChannel(channel)?.DoProgramChange(program);
         }
 
         public void DoActiveDump(int channel, byte[] data)
@@ -101,40 +99,26 @@ namespace ImuseSequencer.Playback
         }
 
         /// <summary>
-        /// Updates the volume of a single channel or OMNI, and signals the new volume to the driver.
+        /// Updates the volume of OMNI, and signals the new volume to the driver.
         /// </summary>
-        public void SetVolume(int channel, int volume)
+        public void SetVolume()
         {
-            if (channel == Part.OmniChannel)
+            foreach (var part in parts)
             {
-                foreach (var part in parts)
-                {
-                    // Property evaluation automatically reflects new value, so just signal driver
-                    driver.SetVolume(part);
-                }
-            }
-            else
-            {
-                GetByChannel(channel)?.SetVolume(volume);
+                // Property evaluation automatically reflects new Player value, so just signal driver
+                driver.SetVolume(part);
             }
         }
 
         /// <summary>
-        /// Updates the pan of a single channel or OMNI, and signals the new pan to the driver.
+        /// Updates the pan of OMNI, and signals the new pan to the driver.
         /// </summary>
-        public void SetPan(int channel, int pan)
+        public void SetPan()
         {
-            if (channel == Part.OmniChannel)
+            foreach (var part in parts)
             {
-                foreach (var part in parts)
-                {
-                    // Property evaluation automatically reflects new value, so just signal driver
-                    driver.SetPan(part);
-                }
-            }
-            else
-            {
-                GetByChannel(channel)?.SetPan(pan);
+                // Property evaluation automatically reflects new Player value, so just signal driver
+                driver.SetPan(part);
             }
         }
 
@@ -201,21 +185,6 @@ namespace ImuseSequencer.Playback
         public void SetEnabled(int channel, bool enabled)
         {
             GetByChannel(channel)?.SetEnabled(enabled);
-        }
-
-        public void SetModWheel(int channel, int value)
-        {
-            GetByChannel(channel)?.SetModWheel(value);
-        }
-
-        public void SetSustain(int channel, int value)
-        {
-            GetByChannel(channel)?.SetSustain(value);
-        }
-
-        public void SetPitchbend(int channel, int value)
-        {
-            GetByChannel(channel)?.SetPitchbend(value);
         }
 
         private Part GetByChannel(int channel)

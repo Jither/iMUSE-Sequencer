@@ -1,5 +1,6 @@
 ﻿using ImuseSequencer.Playback;
 using Jither.Midi.Devices;
+using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,8 +21,9 @@ namespace ImuseSequencer.Drivers
         public abstract void Init();
         public abstract void Reset();
 
-        public abstract void StartNote(Part part, int note, int velocity);
-        public abstract void StopNote(Part part, int note);
+        public abstract void StartNote(Part part, NoteOnEvent evt);
+        public abstract void StopNote(Part part, NoteOffEvent evt);
+
         public abstract void SetVolume(Part part);
         public abstract void SetPan(Part part);
         public abstract void SetPitchOffset(Part part);
@@ -29,7 +31,7 @@ namespace ImuseSequencer.Drivers
         public abstract void SetSustain(Part part);
 
         public abstract void LoadPart(Part part);
-        public abstract void LoadRomSetup(Part part, int value);
+        public abstract void LoadRomSetup(Part part, ProgramChangeEvent evt);
         public abstract void DoActiveDump(Part part, byte[] data);
         public abstract void DoStoredDump(int program, byte[] data);
         public abstract void LoadStoredSetup(Part part, int number);

@@ -23,7 +23,7 @@ namespace ImuseSequencer.Playback
         private readonly Driver driver;
         private readonly OutputDevice output;
         
-        private MidiScheduler scheduler;
+        private MidiScheduler<MidiEvent> scheduler;
         
         private readonly PlayerManager players;
         private readonly FileManager files = new();
@@ -61,7 +61,7 @@ namespace ImuseSequencer.Playback
             
             if (scheduler == null)
             {
-                scheduler = new MidiScheduler(500000, file.TicksPerQuarterNote);
+                scheduler = new MidiScheduler<MidiEvent>(500000, file.TicksPerQuarterNote);
             }
             else
             {

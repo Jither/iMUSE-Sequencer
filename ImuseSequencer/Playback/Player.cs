@@ -1,4 +1,5 @@
 ﻿using ImuseSequencer.Drivers;
+using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 using System;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace ImuseSequencer.Playback
 
     public class Player
     {
+        private readonly Driver driver;
         private readonly Sequencer sequencer;
         private readonly HookBlock hookBlock;
 
@@ -32,10 +34,11 @@ namespace ImuseSequencer.Playback
 
         public Player(Driver driver)
         {
+            this.driver = driver;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
             hookBlock = new HookBlock();
-            sequencer = new Sequencer();
+            sequencer = new Sequencer(this);
         }
 
         public void LinkPart(Part part)
@@ -102,14 +105,14 @@ namespace ImuseSequencer.Playback
                 return false;
             }
             Volume = volume;
-            linkedParts.SetVolume(Part.OmniChannel, volume);
+            linkedParts.SetVolume();
             return true;
         }
 
         public void SetPan(int pan)
         {
             Pan = pan;
-            linkedParts.SetPan(Part.OmniChannel, pan);
+            linkedParts.SetPan();
         }
 
         public bool SetTranspose(int transpose, bool relative)
@@ -139,6 +142,34 @@ namespace ImuseSequencer.Playback
         }
 
         // UpdateMasterVolume not needed (probably) - we use property evaluation for effective volume
+        
+        /// <summary>
+        /// Handles events from sequencer.
+        /// </summary>
+        public void HandleEvent(ImuseMidiEvent evt)
+        {
+            if (evt.Channel >= 0)
+            {
+                linkedParts.HandleEvent(evt);
+            }
+            else if (evt is SysexEvent sysex)
+            {
+                HandleSysex(sysex);
+            }
+            else
+            {
+                HandleMetaEvent(evt);
+            }
+        }
 
+        private void HandleSysex(SysexEvent evt)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void HandleMetaEvent(ImuseMidiEvent evt)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
