@@ -13,14 +13,14 @@ namespace ImuseSequencer.Playback
         private readonly PartsManager parts;
         private readonly List<Player> players = new();
 
-        public PlayerManager(FileManager files, PartsManager parts, Driver driver)
+        public PlayerManager(FileManager files, PartsManager parts, Sustainer sustainer, Driver driver)
         {
             this.files = files;
             this.parts = parts;
 
             for (int i = 0; i < playerCount; i++)
             {
-                players.Add(new Player(driver, parts));
+                players.Add(new Player(driver, parts, sustainer));
             }
         }
 

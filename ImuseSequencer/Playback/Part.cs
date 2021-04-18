@@ -157,9 +157,6 @@ namespace ImuseSequencer.Playback
         {
             switch (message)
             {
-                case ImuseDeallocAllParts deallocAll:
-                    // Should be handled by PartsManager
-                    break;
                 case ImuseActiveSetup activeSetup:
                     driver.ActiveSetup(this, activeSetup.Setup);
                     break;
@@ -197,10 +194,6 @@ namespace ImuseSequencer.Playback
                 case ImuseHookPartTranspose:
                     break;
                 case ImuseMarker:
-                    break;
-                case ImuseSetLoop:
-                    break;
-                case ImuseClearLoop:
                     break;
                 case ImuseLoadSetup loadSetup:
                     if (loadSetup.SetupNumber < Roland.StoredSetupCount)

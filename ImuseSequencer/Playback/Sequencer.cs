@@ -23,6 +23,7 @@ namespace ImuseSequencer.Playback
         private static readonly Logger logger = LogProvider.Get(nameof(Sequencer));
 
         private readonly Player player;
+        private readonly Sustainer sustainer;
         private MidiFile file;
 
         private int currentTrackIndex; // index of track within file
@@ -43,11 +44,16 @@ namespace ImuseSequencer.Playback
         
         private bool cancelPlayback;
 
+        internal PartsCollection Parts => player.Parts;
+        internal long NextEventTick => nextEventTick;
+        internal long CurrentTick => currentTick;
+
         public SequencerStatus Status { get; private set; }
 
-        public Sequencer(Player player)
+        public Sequencer(Player player, Sustainer sustainer)
         {
             this.player = player;
+            this.sustainer = sustainer;
         }
 
         public void Start(MidiFile file)
@@ -120,6 +126,9 @@ namespace ImuseSequencer.Playback
                 return true;
             }
 
+            // Send note-off for sustained notes (if any)
+            sustainer.Tick();
+
             if (loopsRemaining > 0)
             {
                 if (currentBeat >= loopEndBeat && tickInBeat >= loopEndTick)
@@ -191,22 +200,22 @@ namespace ImuseSequencer.Playback
             return trackFinished;
         }
 
-        private bool Jump(int track, int beat, int tickInBeat)
+        private bool Jump(int trackIndex, int beat, int tickInBeat)
         {
             if (Status == SequencerStatus.Off)
             {
                 return false;
             }
 
-            if (track < 0 || track >= this.file.TrackCount)
+            if (trackIndex < 0 || trackIndex >= this.file.TrackCount)
             {
-                logger.Error($"Jump to invalid track {track}...");
+                logger.Error($"Jump to invalid track {trackIndex}...");
                 return false;
             }
 
             if (currentTrackIndex < 0 || currentTrackIndex >= this.file.TrackCount)
             {
-                logger.Error($"Jump from invalid track {track}...");
+                logger.Error($"Jump from invalid track {trackIndex}...");
                 return false;
             }
 
@@ -222,7 +231,7 @@ namespace ImuseSequencer.Playback
 
             long nextEventTick;
             int nextEventIndex;
-            if (track == currentTrackIndex && destTick >= currentTick)
+            if (trackIndex == currentTrackIndex && destTick >= currentTick)
             {
                 // Destination is further ahead in the current track
                 nextEventTick = this.nextEventTick;
@@ -231,31 +240,34 @@ namespace ImuseSequencer.Playback
             else
             {
                 nextEventIndex = 0;
-                nextEventTick = GetNextEventTick(track, nextEventIndex);
+                nextEventTick = GetNextEventTick(trackIndex, nextEventIndex);
             }
 
             while (nextEventTick < destTick)
             {
                 nextEventIndex++; // Yes, mp_jump_midi_msg amounts to this in our implementation
-                if (nextEventIndex >= file.Tracks[track].Events.Count)
+                if (nextEventIndex >= file.Tracks[trackIndex].Events.Count)
                 {
-                    logger.Error($"Jump past track {track} end...");
+                    logger.Error($"Jump past track {trackIndex} end...");
                     return false;
                 }
-                nextEventTick = GetNextEventTick(track, nextEventIndex);
+                nextEventTick = GetNextEventTick(trackIndex, nextEventIndex);
             }
 
-            // Now we've found the destination position - transfer state to the sequencer
+            // Now we've found the destination position - stop (MIDI controller) sustain, and handle sustained notes:
+            player.StopAllSustains();
+            sustainer.AnalyzeSustain(this, file.Tracks[currentTrackIndex], this.nextEventIndex, file.Tracks[trackIndex], nextEventIndex, nextEventTick - destTick);
 
+            // ... and transfer state to the sequencer
             this.currentBeat = beat;
             this.tickInBeat = tickInBeat;
             this.currentTick = destTick;
             this.nextEventIndex = nextEventIndex;
             this.nextEventTick = nextEventTick;
 
-            if (this.currentTrackIndex != track)
+            if (this.currentTrackIndex != trackIndex)
             {
-                this.currentTrackIndex = track;
+                this.currentTrackIndex = trackIndex;
                 // Clear looping - we started a new track
                 this.loopsRemaining = 0;
             }

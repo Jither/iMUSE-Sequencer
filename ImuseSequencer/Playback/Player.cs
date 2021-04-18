@@ -33,14 +33,16 @@ namespace ImuseSequencer.Playback
         public int Detune { get; private set; }
         public int EffectiveVolume => ((Volume + 1) * 127) >> 7; // TODO: "127" is actually system master volume
 
-        public Player(Driver driver, PartsManager parts)
+        public PartsCollection Parts => linkedParts;
+
+        public Player(Driver driver, PartsManager parts, Sustainer sustainer)
         {
             this.driver = driver;
             this.parts = parts;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
             hookBlock = new HookBlock();
-            sequencer = new Sequencer(this);
+            sequencer = new Sequencer(this, sustainer);
         }
 
         public void LinkPart(Part part)
@@ -151,6 +153,11 @@ namespace ImuseSequencer.Playback
 
         // UpdateMasterVolume not needed (probably) - we use property evaluation for effective volume
         
+        public void StopAllSustains()
+        {
+            linkedParts.StopAllSustains();
+        }
+
         /// <summary>
         /// Handles events from sequencer.
         /// </summary>
@@ -184,8 +191,16 @@ namespace ImuseSequencer.Playback
                 case ImuseDeallocPart dealloc:
                     parts.DeallocPart(dealloc.Channel);
                     break;
-                case ImuseDeallocAllParts deallocAll:
+                case ImuseDeallocAllParts:
                     parts.DeallocAllParts();
+                    break;
+                case ImuseSetLoop setLoop:
+                    // TODO: For now, we're limiting loops to 3 - or we'll get e.g. 1000 generated while testing
+                    int count = Math.Min(setLoop.Count, 2);
+                    sequencer.SetLoop(count, setLoop.StartBeat, setLoop.StartTick, setLoop.EndBeat, setLoop.EndTick);
+                    break;
+                case ImuseClearLoop:
+                    sequencer.ClearLoop();
                     break;
                 default:
                     linkedParts.HandleEvent(message);

@@ -27,7 +27,6 @@ namespace ImuseSequencer.Playback
         
         private readonly PlayerManager players;
         private readonly FileManager files = new();
-        private readonly PartsManager parts;
 
         private bool disposed;
 
@@ -51,8 +50,9 @@ namespace ImuseSequencer.Playback
 
             driver.Init();
 
-            parts = new PartsManager(driver);
-            players = new PlayerManager(files, parts, driver);
+            var parts = new PartsManager(driver);
+            var sustainer = new Sustainer();
+            players = new PlayerManager(files, parts, sustainer, driver);
         }
 
         public void RegisterSound(int id, MidiFile file)
