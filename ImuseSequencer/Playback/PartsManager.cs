@@ -36,7 +36,7 @@ namespace ImuseSequencer.Playback
 
             for (int i = 0; i < slotCount; i++)
             {
-                slots.Add(new Slot(i, driver));
+                slots.Add(new Slot(i));
             }
         }
 

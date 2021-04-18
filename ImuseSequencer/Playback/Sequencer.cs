@@ -144,18 +144,24 @@ namespace ImuseSequencer.Playback
                 }
             }
 
+            // Bail is set if a jump or stop occurs during processing of events.
+            // This helps us ensure that we don't move to the next event when we're not supposed to.
             bail = false;
+
             bool end = false;
+
             while (currentTick >= nextEventTick)
             {
                 end = ProcessEvent();
-                if (end || bail)
+                // We don't need to check end - if end is set, bail is too (but not vice versa)
+                if (bail)
                 {
                     break;
                 }
                 nextEventIndex++;
                 nextEventTick = GetNextEventTick();
             }
+            // We don't need to check end - if end is set, bail is too (but not vice versa)
             if (!bail)
             {
                 currentTick++;
@@ -167,10 +173,10 @@ namespace ImuseSequencer.Playback
 
         private bool ProcessEvent()
         {
-            bool trackFinished = false;
             var evt = this.file.Tracks[currentTrackIndex].Events[nextEventIndex];
             var message = evt.Message;
-            
+
+            bool trackEnded = false;
             bool skip = false;
             switch (message)
             {
@@ -190,9 +196,8 @@ namespace ImuseSequencer.Playback
                     skip = true;
                     logger.DebugWarning("Hey! iMUSE would like you to quit the aftertouch...");
                     break;
-                // Meta
                 case EndOfTrackMessage:
-                    trackFinished = true;
+                    trackEnded = true;
                     break;
             }
 
@@ -202,7 +207,7 @@ namespace ImuseSequencer.Playback
                 player.HandleEvent(message);
             }
 
-            return trackFinished;
+            return trackEnded;
         }
 
         public bool Jump(int trackIndex, int beat, int tickInBeat)

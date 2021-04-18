@@ -19,12 +19,13 @@ namespace ImuseSequencer.Drivers
 
         public long CurrentTick { get; set; }
 
+        public Action<MidiEvent> Transmitter { get; set; }
+
         protected long previousTick;
 
-        protected Driver(OutputDevice output, MidiScheduler<MidiEvent> scheduler)
+        protected Driver(OutputDevice output)
         {
             this.output = output;
-            this.scheduler = scheduler;
         }
 
         public abstract void Init();
@@ -54,8 +55,13 @@ namespace ImuseSequencer.Drivers
         protected void TransmitEvent(MidiMessage message)
         {
             var evt = new MidiEvent(CurrentTick, (int)(CurrentTick - previousTick), message);
-            scheduler.Schedule(evt);
+            Transmitter?.Invoke(evt);
             previousTick = CurrentTick;
+        }
+
+        protected void TransmitEventImmediate(MidiMessage message)
+        {
+            output.SendMessage(message);
         }
 
         public void SetTempo(MidiMessage tempo)

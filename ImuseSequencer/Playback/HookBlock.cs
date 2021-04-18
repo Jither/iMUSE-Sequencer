@@ -14,7 +14,7 @@ namespace ImuseSequencer.Playback
 
     public class HookBlock
     {
-        private Player player;
+        private readonly Player player;
 
         public int Jump { get; private set; }
         public int Transpose { get; private set; }

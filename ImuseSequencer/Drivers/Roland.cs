@@ -72,13 +72,7 @@ namespace ImuseSequencer.Drivers
             76, 100, 7, 0,      // Cowbell
         };
 
-        private static readonly ushort[] bitmasks = new ushort[]
-        {
-            0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
-            0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000
-        };
-
-        public Roland(OutputDevice output, MidiScheduler<MidiEvent> scheduler) : base(output, scheduler)
+        public Roland(OutputDevice output) : base(output)
         {
 
         }
@@ -124,12 +118,6 @@ namespace ImuseSequencer.Drivers
             Task.Delay(300);
         }
 
-        private void TransmitSysex(int address, byte[] data)
-        {
-            var evt = new SysexMessage(GenerateSysex(address, data));
-            TransmitEvent(evt);
-        }
-
         private void TransmitControl(int channel, MidiController controller, int value)
         {
             var message = ControlChangeMessage.Create(channel, controller, (byte)value);
@@ -142,16 +130,22 @@ namespace ImuseSequencer.Drivers
             TransmitEvent(evt);
         }
 
+        private void TransmitSysex(int address, byte[] data)
+        {
+            var evt = new SysexMessage(GenerateSysex(address, data));
+            TransmitEvent(evt);
+        }
+
         private void TransmitSysexImmediate(int address, byte[] data)
         {
             var message = new SysexMessage(GenerateSysex(address, data));
-            output.SendMessage(message);
+            TransmitEventImmediate(message);
         }
 
         private void TransmitControlImmediate(int channel, MidiController controller, int value)
         {
             var message = ControlChangeMessage.Create(channel, controller, (byte)value);
-            output.SendMessage(message);
+            TransmitEventImmediate(message);
         }
 
         private static byte[] GenerateSysex(int address, byte[] data)

@@ -43,8 +43,8 @@ namespace ImuseSequencer.Playback
             {
                 throw new ImuseSequencerException($"Failed to connect to output: {ex.Message}");
             }
-            SetupScheduler(480);
-            driver = GetDriver(output, scheduler);
+
+            driver = GetDriver(output);
 
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
@@ -83,7 +83,7 @@ namespace ImuseSequencer.Playback
                         }
                         else
                         {
-                            logger.Info($"{scheduler.TimeInTicks,10} {message}");
+                            logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
                             output.SendMessage(message);
                         }
                     }
@@ -111,6 +111,10 @@ namespace ImuseSequencer.Playback
         {
             StartSound(0);
 
+            // TODO: Preparation for interactive mode. Collect events before sending them to MidiScheduler to reduce amount of locks.
+            var events = new List<MidiEvent>();
+            driver.Transmitter = evt => { events.Add(evt); };
+
             bool done;
             do
             {
@@ -118,6 +122,8 @@ namespace ImuseSequencer.Playback
                 driver.CurrentTick++;
             }
             while (!done);
+
+            scheduler.Schedule(events);
 
             scheduler.Start();
         }
@@ -127,11 +133,11 @@ namespace ImuseSequencer.Playback
             driver.Reset();
         }
 
-        private Driver GetDriver(OutputDevice output, MidiScheduler<MidiEvent> scheduler)
+        private Driver GetDriver(OutputDevice output)
         {
             return target switch
             {
-                SoundTarget.Roland => new Roland(output, scheduler),
+                SoundTarget.Roland => new Roland(output),
                 _ => throw new ImuseSequencerException($"Driver for {target} target is not implemented yet."),
             };
         }

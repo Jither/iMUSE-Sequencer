@@ -81,8 +81,8 @@ namespace ImuseSequencer.Playback
     {
         private static readonly Logger logger = LogProvider.Get(nameof(Sustainer));
 
-        private List<SustainDef> activeSustainDefs = new();
-        private HashSet<int> noteTable = new HashSet<int>();
+        private readonly List<SustainDef> activeSustainDefs = new();
+        private readonly HashSet<int> noteTable = new();
 
         public Sustainer()
         {
@@ -163,15 +163,12 @@ namespace ImuseSequencer.Playback
         {
             var message = pos.Event.Message;
             pos.Advance();
-            switch (message)
+            return message switch
             {
-                case NoteOffMessage noteOff:
-                    return new SeekNoteResult(SeekNoteStatus.NoteOffFound, noteOff.Channel, noteOff.Key, noteOff.Velocity);
-                case NoteOnMessage noteOn:
-                    // iMUSE accepts velocity 0 as note-off
-                    return new SeekNoteResult(noteOn.Velocity > 0 ? SeekNoteStatus.NoteOnFound : SeekNoteStatus.NoteOffFound, noteOn.Channel, noteOn.Key, noteOn.Velocity);
-            }
-            return new SeekNoteResult(SeekNoteStatus.NoteNotFound, 0, 0, 0);
+                NoteOffMessage noteOff => new SeekNoteResult(SeekNoteStatus.NoteOffFound, noteOff.Channel, noteOff.Key, noteOff.Velocity),
+                NoteOnMessage noteOn => new SeekNoteResult(noteOn.Velocity > 0 ? SeekNoteStatus.NoteOnFound : SeekNoteStatus.NoteOffFound, noteOn.Channel, noteOn.Key, noteOn.Velocity),// iMUSE accepts velocity 0 as note-off
+                _ => new SeekNoteResult(SeekNoteStatus.NoteNotFound, 0, 0, 0),
+            };
         }
     }
 }

@@ -11,7 +11,6 @@ namespace ImuseSequencer.Playback
     public class Slot
     {
         private Part part;
-        private readonly Driver driver;
 
         /// <summary>
         /// The part currently assigned to this slot.
@@ -34,10 +33,8 @@ namespace ImuseSequencer.Playback
         public int SlotSetupAddress { get; }
         public HashSet<int> NoteTable { get; } = new();
 
-        public Slot(int number, Driver driver)
+        public Slot(int number)
         {
-            this.driver = driver;
-
             OutputChannel = number + 1; // Channels 2-9 (1-8 zero-indexed), percussion = 10 (9 zero-indexed)
             ExternalAddress = Roland.RealPartBaseAddress + Roland.RealPartSize * number;
             SlotSetupAddress = Roland.ActiveSetupBaseAddress + Roland.ActiveSetupSize * number;
