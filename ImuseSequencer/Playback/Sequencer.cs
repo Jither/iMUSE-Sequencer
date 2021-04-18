@@ -42,7 +42,7 @@ namespace ImuseSequencer.Playback
         private long tickInBeat; // tick within the current beat within the current track
         private long nextEventTick; // tick of next event to be processed
         
-        private bool cancelPlayback;
+        private bool bail;
 
         internal PartsCollection Parts => player.Parts;
         internal long NextEventTick => nextEventTick;
@@ -60,7 +60,7 @@ namespace ImuseSequencer.Playback
         {
             this.file = file;
 
-            cancelPlayback = false;
+            bail = false;
 
             ticksPerQuarterNote = file.TicksPerQuarterNote;
             currentTrackIndex = 0;
@@ -86,7 +86,7 @@ namespace ImuseSequencer.Playback
         public void Stop()
         {
             Status = SequencerStatus.Off;
-            cancelPlayback = true;
+            bail = true;
         }
 
         public bool SetLoop(int count, int startBeat, int startTick, int endBeat, int endTick)
@@ -129,6 +129,12 @@ namespace ImuseSequencer.Playback
             // Send note-off for sustained notes (if any)
             sustainer.Tick();
 
+            if (tickInBeat >= ticksPerQuarterNote)
+            {
+                currentBeat++;
+                tickInBeat -= ticksPerQuarterNote;
+            }
+
             if (loopsRemaining > 0)
             {
                 if (currentBeat >= loopEndBeat && tickInBeat >= loopEndTick)
@@ -138,26 +144,25 @@ namespace ImuseSequencer.Playback
                 }
             }
 
+            bail = false;
+            bool end = false;
             while (currentTick >= nextEventTick)
             {
-                bool end = ProcessEvent();
-                nextEventIndex++;
-                if (end || cancelPlayback)
+                end = ProcessEvent();
+                if (end || bail)
                 {
-                    return true;
+                    break;
                 }
+                nextEventIndex++;
                 nextEventTick = GetNextEventTick();
             }
-
-            currentTick++;
-            tickInBeat++;
-            if (tickInBeat >= ticksPerQuarterNote)
+            if (!bail)
             {
-                currentBeat++;
-                tickInBeat -= ticksPerQuarterNote;
+                currentTick++;
+                tickInBeat++;
             }
 
-            return false;
+            return end;
         }
 
         private bool ProcessEvent()
@@ -200,7 +205,7 @@ namespace ImuseSequencer.Playback
             return trackFinished;
         }
 
-        private bool Jump(int trackIndex, int beat, int tickInBeat)
+        public bool Jump(int trackIndex, int beat, int tickInBeat)
         {
             if (Status == SequencerStatus.Off)
             {
@@ -225,6 +230,8 @@ namespace ImuseSequencer.Playback
             {
                 beat = 1;
             }
+
+            logger.Debug($"Jumping to track {trackIndex}, beat {beat}, tick {tickInBeat}");
 
             long destTick = (beat - 1) * ticksPerQuarterNote;
             destTick += tickInBeat;
@@ -271,6 +278,9 @@ namespace ImuseSequencer.Playback
                 // Clear looping - we started a new track
                 this.loopsRemaining = 0;
             }
+
+            // Make sequencer bail from this tick - we've jumped, so it shouldn't update e.g. nextEventIndex
+            bail = true;
 
             return true;
         }

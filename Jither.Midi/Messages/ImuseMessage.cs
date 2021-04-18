@@ -288,15 +288,15 @@ namespace Jither.Midi.Messages
 
     public class ImuseHookPartEnable : ImuseMessage
     {
-        protected override string Info => $"hook: {Hook,3}, state: {EnableState,3}";
+        protected override string Info => $"hook: {Hook,3}, state: {Enabled,3}";
 
         public int Hook { get; }
-        public int EnableState { get; }
+        public int Enabled { get; }
 
         public ImuseHookPartEnable(byte[] data) : base(data)
         {
             Hook = ImuseData[0];
-            EnableState = ImuseData[1];
+            Enabled = ImuseData[1];
         }
     }
 

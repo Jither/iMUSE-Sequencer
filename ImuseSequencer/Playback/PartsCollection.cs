@@ -82,6 +82,11 @@ namespace ImuseSequencer.Playback
             }
         }
 
+        public void SetVolume(int channel, int volume)
+        {
+            GetByChannel(channel)?.SetVolume(volume);
+        }
+
         /// <summary>
         /// Updates the pan of OMNI, and signals the new pan to the driver.
         /// </summary>
@@ -95,11 +100,23 @@ namespace ImuseSequencer.Playback
         }
 
         /// <summary>
+        /// Updates detune of OMNI, and signals the new detune to the driver.
+        /// </summary>
+        public void SetDetune()
+        {
+            foreach (var part in parts)
+            {
+                // Transpose, detune and pitch bend are combined for MT-32
+                driver.SetPitchOffset(part);
+            }
+        }
+
+        /// <summary>
         /// Updates transposition of a single channel or OMNI, and signals the new pan to the driver.
         /// </summary>
-        public void SetTranspose(int channel, int transpose, bool relative)
+        public void SetTranspose(int channel, int interval, bool relative)
         {
-            if (transpose < -24 || transpose > 24)
+            if (interval < -24 || interval > 24)
             {
                 return;
             }
@@ -123,40 +140,24 @@ namespace ImuseSequencer.Playback
                 {
                     if (relative)
                     {
-                        part.SetTranspose(Math.Clamp(transpose + part.Transpose, -7, 7));
+                        part.SetTranspose(Math.Clamp(interval + part.Transpose, -7, 7));
                     }
                     else
                     {
-                        part.SetTranspose(transpose);
+                        part.SetTranspose(interval);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Updates detune for a single channel or OMNI, and signals the new detune to the driver.
-        /// </summary>
-        /// <param name="detune"></param>
-        /// <param name="channel"></param>
-        public void SetDetune(int channel, int detune)
-        {
-            if (channel == Part.OmniChannel)
-            {
-                foreach (var part in parts)
-                {
-                    // Transpose, detune and pitch bend are combined for MT-32
-                    driver.SetPitchOffset(part);
-                }
-            }
-            else
-            {
-                GetByChannel(channel)?.SetDetune(detune);
             }
         }
 
         public void SetEnabled(int channel, bool enabled)
         {
             GetByChannel(channel)?.SetEnabled(enabled);
+        }
+
+        public void DoProgramChange(int channel, int program)
+        {
+            GetByChannel(channel)?.DoProgramChange(program);
         }
 
         private Part GetByChannel(int channel)

@@ -2,6 +2,7 @@
 using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,6 +25,9 @@ namespace ImuseSequencer.Playback
         // List of parts currently used by this player
         private readonly PartsCollection linkedParts;
 
+        // TODO: Temporary test measure:
+        private readonly Dictionary<ImuseHookJump, int> jumpsExecuted = new();
+
         public PlayerStatus Status { get; private set; }
         public int SoundId { get; private set; }
         public int Priority { get; private set; }
@@ -33,7 +37,8 @@ namespace ImuseSequencer.Playback
         public int Detune { get; private set; }
         public int EffectiveVolume => ((Volume + 1) * 127) >> 7; // TODO: "127" is actually system master volume
 
-        public PartsCollection Parts => linkedParts;
+        internal PartsCollection Parts => linkedParts;
+        internal Sequencer Sequencer => sequencer;
 
         public Player(Driver driver, PartsManager parts, Sustainer sustainer)
         {
@@ -41,7 +46,7 @@ namespace ImuseSequencer.Playback
             this.parts = parts;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
-            hookBlock = new HookBlock();
+            hookBlock = new HookBlock(this);
             sequencer = new Sequencer(this, sustainer);
         }
 
@@ -125,20 +130,20 @@ namespace ImuseSequencer.Playback
             linkedParts.SetPan();
         }
 
-        public bool SetTranspose(int transpose, bool relative)
+        public bool SetTranspose(int interval, bool relative)
         {
-            if (transpose < -24 || transpose > 24)
+            if (interval < -24 || interval > 24)
             {
                 return false;
             }
 
             if (relative)
             {
-                Transpose = Math.Clamp(transpose + Transpose, -7, 7);
+                Transpose = Math.Clamp(interval + Transpose, -7, 7);
             }
             else
             {
-                Transpose = transpose;
+                Transpose = interval;
             }
 
             linkedParts.SetTranspose(Part.OmniChannel, Transpose, relative);
@@ -148,7 +153,7 @@ namespace ImuseSequencer.Playback
         public void SetDetune(int detune)
         {
             Detune = detune;
-            linkedParts.SetDetune(Part.OmniChannel, detune);
+            linkedParts.SetDetune();
         }
 
         // UpdateMasterVolume not needed (probably) - we use property evaluation for effective volume
@@ -185,6 +190,7 @@ namespace ImuseSequencer.Playback
         {
             switch (message)
             {
+                // Parts
                 case ImuseAllocPart alloc:
                     parts.AllocPart(this, alloc);
                     break;
@@ -194,6 +200,36 @@ namespace ImuseSequencer.Playback
                 case ImuseDeallocAllParts:
                     parts.DeallocAllParts();
                     break;
+
+                // Hooks
+                case ImuseHookJump jump:
+                    // TODO: Temporary test measure: We don't allow a jump to execute more than 3 times - otherwise we'll never get done...
+                    jumpsExecuted.TryGetValue(jump, out int executedCount);
+                    if (executedCount < 3)
+                    {
+                        if (hookBlock.HandleJump(jump.Hook, jump.Chunk, jump.Beat, jump.Tick))
+                        {
+                            jumpsExecuted[jump] = executedCount + 1;
+                        }
+                    }
+                    break;
+                case ImuseHookTranspose transpose:
+                    hookBlock.HandleTranspose(transpose.Hook, transpose.Interval, transpose.Relative != 0);
+                    break;
+                case ImuseHookPartEnable partEnable:
+                    hookBlock.HandlePartEnable(partEnable.Hook, partEnable.Channel, partEnable.Enabled != 0);
+                    break;
+                case ImuseHookPartVol partVolume:
+                    hookBlock.HandlePartVolume(partVolume.Hook, partVolume.Channel, partVolume.Volume);
+                    break;
+                case ImuseHookPartPgmch partPgmCh:
+                    hookBlock.HandlePartProgramChange(partPgmCh.Hook, partPgmCh.Channel, partPgmCh.Program);
+                    break;
+                case ImuseHookPartTranspose partTranspose:
+                    hookBlock.HandlePartTranspose(partTranspose.Hook, partTranspose.Channel, partTranspose.Interval, partTranspose.Relative != 0);
+                    break;
+
+                // Loops
                 case ImuseSetLoop setLoop:
                     // TODO: For now, we're limiting loops to 3 - or we'll get e.g. 1000 generated while testing
                     int count = Math.Min(setLoop.Count, 2);

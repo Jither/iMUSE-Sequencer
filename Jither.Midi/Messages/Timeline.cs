@@ -141,7 +141,7 @@ namespace Jither.Midi.Messages
 
         public override string ToString()
         {
-            return $"{Measure}.{Beat}.{Tick:000}";
+            return $"{Measure + 1}.{Beat + 1}.{Tick:000}";
         }
     }
 

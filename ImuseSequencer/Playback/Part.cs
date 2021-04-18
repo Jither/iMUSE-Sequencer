@@ -126,8 +126,7 @@ namespace ImuseSequencer.Playback
                             driver.SetModWheel(this);
                             break;
                         case MidiController.ChannelVolume:
-                            Volume = controlChange.Value;
-                            driver.SetVolume(this);
+                            SetVolume(controlChange.Value);
                             break;
                         case MidiController.Pan:
                             Pan = controlChange.Value - 0x40; // Center
@@ -140,8 +139,7 @@ namespace ImuseSequencer.Playback
                     }
                     break;
                 case ProgramChangeMessage programChange:
-                    Program = programChange.Program;
-                    driver.LoadRomSetup(this, programChange.Program);
+                    DoProgramChange(programChange.Program);
                     break;
                 case PitchBendChangeMessage pitchBend:
                     int bender = pitchBend.Bender - 0x2000; // Center around 0
@@ -178,20 +176,6 @@ namespace ImuseSequencer.Playback
                     {
                         driver.SetupParam(this, setupParam.Number, setupParam.Value);
                     }
-                    break;
-                case ImuseHookJump:
-                    // Should probably be done by player
-                    break;
-                case ImuseHookTranspose:
-                    // SHould probably be done by player
-                    break;
-                case ImuseHookPartEnable:
-                    break;
-                case ImuseHookPartVol:
-                    break;
-                case ImuseHookPartPgmch:
-                    break;
-                case ImuseHookPartTranspose:
                     break;
                 case ImuseMarker:
                     break;
@@ -237,6 +221,12 @@ namespace ImuseSequencer.Playback
             PriorityOffset = priorityOffset;
         }
 
+        public void SetVolume(int volume)
+        {
+            Volume = volume;
+            driver.SetVolume(this);
+        }
+
         public void SetTranspose(int transpose)
         {
             Transpose = transpose;
@@ -256,6 +246,12 @@ namespace ImuseSequencer.Playback
             {
                 driver.StopAllNotes(slot);
             }
+        }
+
+        public void DoProgramChange(int program)
+        {
+            Program = program;
+            driver.LoadRomSetup(this, program);
         }
     }
 }

@@ -119,7 +119,7 @@ namespace ImuseSequencer.Playback
 
             int noteCount = noteTable.Count;
             var pos = new SequencerPointer(oldTrack, oldNextIndex);
-            while (noteCount > 0)
+            while (noteTable.Count > 0)
             {
                 var result = SeekNote(pos);
                 if (result.Status == SeekNoteStatus.NoteOffFound)
@@ -127,14 +127,17 @@ namespace ImuseSequencer.Playback
                     if (noteTable.Contains(result.Note))
                     {
                         noteTable.Remove(result.Note);
-                        noteCount--;
                         sustainDefs.Add(new SustainDef(sequencer, result.Note, result.Channel, sustainTicks));
                     }
                 }
                 sustainTicks = pos.NextEventTick - sequencer.CurrentTick;
             }
 
-            long maxTicks = sustainDefs.Max(s => s.SustainTicks);
+            long maxTicks = 0;
+            if (sustainDefs.Count > 0)
+            {
+                maxTicks = sustainDefs.Max(s => s.SustainTicks);
+            }
 
             // Now search from the new position, and ensure note-offs don't stump on its note-ons (i.e., cut them off).
             sustainTicks = newSustainTicks;
