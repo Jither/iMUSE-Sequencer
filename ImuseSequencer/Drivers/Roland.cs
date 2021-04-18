@@ -1,6 +1,7 @@
 ﻿using ImuseSequencer.Playback;
 using Jither.Midi.Devices;
 using Jither.Midi.Messages;
+using Jither.Midi.Sequencing;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -77,7 +78,7 @@ namespace ImuseSequencer.Drivers
             0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000
         };
 
-        public Roland(OutputDevice output) : base(output)
+        public Roland(OutputDevice output, MidiScheduler<MidiEvent> scheduler) : base(output, scheduler)
         {
 
         }
@@ -94,65 +95,63 @@ namespace ImuseSequencer.Drivers
 
             // Set display string (just for fun)
             byte[] display = Encoding.ASCII.GetBytes(initDisplayString);
-            TransmitSysex(displayAddress, display);
+            TransmitSysexImmediate(displayAddress, display);
             
             Reset();
 
             // Initialize master system settings
-            TransmitSysex(systemAddress, initSysString);
+            TransmitSysexImmediate(systemAddress, initSysString);
             // Initialize rhythm keys
-            TransmitSysex(rhythmAddress, initRhythmString);
+            TransmitSysexImmediate(rhythmAddress, initRhythmString);
 
             // Initialize rhythm channel volume
             rhythmVolume = 127;
-            TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
+            TransmitControlImmediate(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
 
             // Initialize pitch bend range for all parts
             address = VirtualPartBaseAddress + pitchBendRangeOffset;
             var pbr = new byte[] { 16 };
             for (int part = 0; part < partCount; part++)
             {
-                TransmitSysex(address, pbr);
+                TransmitSysexImmediate(address, pbr);
                 address += VirtualPartSize;
             }
         }
 
         public override void Reset()
         {
-            TransmitSysex(resetAddress, Array.Empty<byte>());
+            TransmitSysexImmediate(resetAddress, Array.Empty<byte>());
             Task.Delay(300);
-        }
-
-        private void TransmitEvent(int channel, ImuseMidiEvent evt)
-        {
-            evt.Channel = channel;
-            // TODO: Schedule event
-        }
-
-        private void TransmitSysex(long absoluteTick, int address, byte[] data)
-        {
-            var evt = new SysexEvent(absoluteTick, -1, GenerateSysex(address, data));
-            // TODO: Schedule
-        }
-
-        private void TransmitControl(int channel, MidiController controller, int value)
-        {
-            output.SendMessage(ControlChangeMessage.Create(channel, controller, (byte)value));
-        }
-
-        private void TransmitProgramChange(int channel, int program)
-        {
-            output.SendMessage(new ProgramChangeMessage(channel, (byte)program));
-        }
-
-        private void TransmitPitchbend(int channel, int pitchbend)
-        {
-            output.SendMessage(new PitchBendChangeMessage(channel, (ushort)pitchbend));
         }
 
         private void TransmitSysex(int address, byte[] data)
         {
-            output.SendMessage(new SysexMessage(GenerateSysex(address, data)));
+            var evt = new SysexMessage(GenerateSysex(address, data));
+            TransmitEvent(evt);
+        }
+
+        private void TransmitControl(int channel, MidiController controller, int value)
+        {
+            var message = ControlChangeMessage.Create(channel, controller, (byte)value);
+            TransmitEvent(message);
+        }
+
+        private void TransmitProgramChange(int channel, int program)
+        {
+            var evt = new ProgramChangeMessage(channel, (byte)program);
+            TransmitEvent(evt);
+        }
+
+        private void TransmitSysexImmediate(int address, byte[] data)
+        {
+            var message = new SysexMessage(GenerateSysex(address, data));
+            output.SendMessage(message);
+        }
+
+        private void TransmitControlImmediate(int channel, MidiController controller, int value)
+        {
+            var message = ControlChangeMessage.Create(channel, controller, (byte)value);
+            output.SendMessage(message);
         }
 
         private static byte[] GenerateSysex(int address, byte[] data)
@@ -194,34 +193,34 @@ namespace ImuseSequencer.Drivers
             return buffer;
         }
 
-        public override void StartNote(Part part, NoteOnEvent evt)
+        public override void StartNote(Part part, int key, int velocity)
         {
             if (part.Slot != null)
             {
-                part.Slot.NoteTable.Add(evt.Key);
-                TransmitEvent(part.Slot.OutputChannel, evt);
+                part.Slot.NoteTable.Add(key);
+                TransmitEvent(new NoteOnMessage(part.Slot.OutputChannel, (byte)key, (byte)velocity));
             }
             else if (part.TransposeLocked)
             {
                 if (rhythmVolume != part.VolumeEffective)
                 {
                     rhythmVolume = part.VolumeEffective;
-                    TransmitEvent(rhythmChannel, new ControlChangeEvent(evt.AbsoluteTick, rhythmChannel, MidiController.ChannelVolume, rhythmVolume));
+                    TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
                 }
-                TransmitEvent(rhythmChannel, evt);
+                TransmitEvent(new NoteOnMessage(rhythmChannel, (byte)key, (byte)velocity));
             }
         }
 
-        public override void StopNote(Part part, NoteOffEvent evt)
+        public override void StopNote(Part part, int key)
         {
             if (part.Slot != null)
             {
-                part.Slot.NoteTable.Remove(evt.Key);
-                TransmitEvent(part.Slot.OutputChannel, evt);
+                part.Slot.NoteTable.Remove(key);
+                TransmitEvent(new NoteOffMessage(part.Slot.OutputChannel, (byte)key, 64));
             }
             else if (part.TransposeLocked)
             {
-                TransmitEvent(rhythmChannel, evt);
+                TransmitEvent(new NoteOffMessage(rhythmChannel, (byte)key, 64));
             }
         }
 
@@ -246,7 +245,7 @@ namespace ImuseSequencer.Drivers
             // PitchOffset is auto-updated by way of getter evaluation
             if (part.Slot != null)
             {
-                TransmitPitchbend(part.Slot.OutputChannel, (part.PitchOffset << 2) + 0x2000);
+                TransmitEvent(new PitchBendChangeMessage(part.Slot.OutputChannel, (ushort)((part.PitchOffset << 2) + 0x2000)));
             }
         }
 
@@ -291,20 +290,21 @@ namespace ImuseSequencer.Drivers
             SetPitchOffset(part);
         }
 
-        public override void LoadRomSetup(Part part, ProgramChangeEvent evt)
+        public override void LoadRomSetup(Part part, int program)
         {
             byte[] buffer = new byte[2];
-            buffer[0] = (byte)(evt.Program >> 6);
-            buffer[1] = (byte)(evt.Program & 0x3f);
-            TransmitSysex(evt.AbsoluteTick, part.ExternalAddress, buffer);
+            buffer[0] = (byte)(program >> 6);
+            buffer[1] = (byte)(program & 0x3f);
+            TransmitSysex(part.ExternalAddress, buffer);
 
             if (part.Slot != null)
             {
-                TransmitEvent(part.Slot.OutputChannel, new ProgramChangeEvent(evt.AbsoluteTick, part.Slot.OutputChannel, part.Number));
+                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
             }
         }
 
-        public override void DoActiveDump(Part part, byte[] data)
+        // AKA DoActiveDump
+        public override void ActiveSetup(Part part, byte[] data)
         {
             byte[] buffer = new byte[2];
             buffer[0] = MemoryBank;
@@ -319,12 +319,14 @@ namespace ImuseSequencer.Drivers
             }
         }
 
-        public override void DoStoredDump(int program, byte[] data)
+        // AKA DoStoredDump
+        public override void StoredSetup(int program, byte[] data)
         {
             TransmitSysex(storedSetupAddresses[program], data);
         }
 
-        public override void LoadStoredSetup(Part part, int program)
+        // AKA LoadStoredSetup
+        public override void LoadSetup(Part part, int program)
         {
             byte[] buffer = new byte[2];
             buffer[0] = MemoryBank;
@@ -345,7 +347,8 @@ namespace ImuseSequencer.Drivers
             }
         }
 
-        public override void DoParamAdjust(Part part, int param, int value)
+        // AKA DoParamAdjust
+        public override void SetupParam(Part part, int param, int value)
         {
             byte[] buffer = new byte[1];
             buffer[0] = (byte)value;

@@ -56,16 +56,17 @@ namespace ImuseSequencer.Playback
             {
                 return;
             }
-            LinkPart(player, part);
 
             part.Alloc(alloc);
+
+            LinkPart(player, part);
 
             if (!part.TransposeLocked)
             {
                 var slot = SelectSlot(part.PriorityEffective);
                 if (slot != null)
                 {
-                    part.LinkSlot(slot);
+                    slot.AssignPart(part);
                 }
                 else
                 {
@@ -89,6 +90,15 @@ namespace ImuseSequencer.Playback
                 {
                     UnlinkPart(part);
                 }
+            }
+        }
+
+        public void DeallocAllParts()
+        {
+            for (int i = parts.Count - 1; i >= 0; i--)
+            {
+                var part = parts[i];
+                UnlinkPart(part);
             }
         }
 

@@ -11,7 +11,7 @@ namespace ImuseSequencer.Verbs
     }
 
     [Verb("test", Help = "Runs test code.")]
-    public class TestOptions
+    public class TestOptions : CommonOptions
     {
         [Positional(0, Help = "Test to run", Name = "test", Required = true)]
         public TestMethod Test { get; set; }
@@ -20,15 +20,15 @@ namespace ImuseSequencer.Verbs
         public int DeviceId { get; set; }
     }
 
-    public class TestCommand
+    public class TestCommand : Command
     {
         private readonly TestOptions options;
-        public TestCommand(TestOptions options)
+        public TestCommand(TestOptions options) : base(options)
         {
             this.options = options;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             switch (options.Test)
             {

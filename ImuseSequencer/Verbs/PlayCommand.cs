@@ -18,7 +18,7 @@ using System.IO;
 namespace ImuseSequencer.Verbs
 {
     [Verb("play", Help = "Plays file")]
-    public class PlayOptions
+    public class PlayOptions : CommonOptions
     {
         [Positional(0, Name = "input file", Help = "Input MIDI file (Standard MIDI file or LEC chunk - SOUN, SOU, ADL, ROL etc.)", Required = true)]
         public string InputPath { get; set; }
@@ -37,18 +37,18 @@ namespace ImuseSequencer.Verbs
         };
     }
 
-    public class PlayCommand
+    public class PlayCommand : Command
     {
         private readonly Logger logger = LogProvider.Get(nameof(PlayCommand));
 
         private readonly PlayOptions options;
 
-        public PlayCommand(PlayOptions options)
+        public PlayCommand(PlayOptions options) : base(options)
         {
             this.options = options;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             MidiFile midiFile;
             try
@@ -70,9 +70,18 @@ namespace ImuseSequencer.Verbs
 
             using (var engine = new ImuseEngine(options.DeviceId, target))
             {
+                // Clean up, even with Ctrl+C
+                var cancelHandler = new ConsoleCancelEventHandler((sender, e) =>
+                {
+                    logger.Warning("Abrupt exit - trying to clean up...");
+                    engine.Dispose();
+                });
+                Console.CancelKeyPress += cancelHandler;
+
                 engine.RegisterSound(0, midiFile);
                 engine.Play();
                 Console.ReadKey(intercept: true);
+                Console.CancelKeyPress -= cancelHandler;
             }
         }
     }

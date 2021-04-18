@@ -21,16 +21,14 @@ namespace ImuseSequencer.Playback
             this.driver = driver;
         }
 
-        public void HandleEvent(ImuseMidiEvent evt)
+        public void HandleEvent(ChannelMessage message)
         {
-            if (evt.Channel >= 0)
-            {
-                GetByChannel(evt.Channel)?.HandleEvent(evt);
-            }
-            else
-            {
-                throw new ImuseSequencerException($"Unexpected MIDI event passed to PartsCollection handler: {evt}");
-            }
+            GetByChannel(message.Channel)?.HandleEvent(message);
+        }
+
+        public void HandleEvent(ImuseMessage message)
+        {
+            GetByChannel(message.Channel)?.HandleEvent(message);
         }
 
         public void StopAllNotes()
@@ -55,32 +53,6 @@ namespace ImuseSequencer.Playback
             {
                 part.GetSustainNotes(notes);
             }
-        }
-
-        public void DoActiveDump(int channel, byte[] data)
-        {
-            GetByChannel(channel)?.DoActiveDump(data);
-        }
-
-        public void DoStoredDump(int program, byte[] data)
-        {
-            if (program < Roland.StoredSetupCount)
-            {
-                driver.DoStoredDump(program, data);
-            }
-        }
-
-        public void LoadSetup(int channel, int program)
-        {
-            if (program < Roland.StoredSetupCount)
-            {
-                GetByChannel(channel)?.LoadSetup(program);
-            }
-        }
-
-        public void DoParamAdjust(int channel, int param, int value)
-        {
-            GetByChannel(channel)?.DoParamAdjust(param, value);
         }
 
         /// <summary>

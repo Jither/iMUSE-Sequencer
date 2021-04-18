@@ -225,7 +225,7 @@ namespace Jither.Midi.Parsing
                     0xb0 => ControlChangeMessage.Create(channel, controller: reader.ReadByte(), value: reader.ReadByte()),
                     0xc0 => new ProgramChangeMessage(channel, program: reader.ReadByte()),
                     0xd0 => new ChannelPressureMessage(channel, pressure: reader.ReadByte()),
-                    0xe0 => new PitchBendChangeMessage(channel, bender: (ushort)(reader.ReadByte() << 7 | reader.ReadByte())),
+                    0xe0 => new PitchBendChangeMessage(channel, bender: (ushort)(reader.ReadByte() | reader.ReadByte() << 7)),
                     0xf0 => CreateSystemMessage(reader, status),
                     // This can never actually happen - ReadStatus will always return a status >= 0x80 or throw
                     _ => throw new MidiFileException($"Unexpected MIDI message command byte: {status}")

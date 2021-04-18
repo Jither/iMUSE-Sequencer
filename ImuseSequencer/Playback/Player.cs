@@ -17,6 +17,7 @@ namespace ImuseSequencer.Playback
     public class Player
     {
         private readonly Driver driver;
+        private readonly PartsManager parts;
         private readonly Sequencer sequencer;
         private readonly HookBlock hookBlock;
 
@@ -32,9 +33,10 @@ namespace ImuseSequencer.Playback
         public int Detune { get; private set; }
         public int EffectiveVolume => ((Volume + 1) * 127) >> 7; // TODO: "127" is actually system master volume
 
-        public Player(Driver driver)
+        public Player(Driver driver, PartsManager parts)
         {
             this.driver = driver;
+            this.parts = parts;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
             hookBlock = new HookBlock();
@@ -79,6 +81,12 @@ namespace ImuseSequencer.Playback
             hookBlock.Clear();
 
             sequencer.Start(file);
+        }
+
+        // Temporary
+        public bool Tick()
+        {
+            return sequencer.Tick();
         }
 
         /// <summary>
@@ -146,30 +154,62 @@ namespace ImuseSequencer.Playback
         /// <summary>
         /// Handles events from sequencer.
         /// </summary>
-        public void HandleEvent(ImuseMidiEvent evt)
+        public void HandleEvent(MidiMessage message)
         {
-            if (evt.Channel >= 0)
+            if (message is ChannelMessage channelMessage)
             {
-                linkedParts.HandleEvent(evt);
+                linkedParts.HandleEvent(channelMessage);
             }
-            else if (evt is SysexEvent sysex)
+            else if (message is ImuseMessage imuse)
+            {
+                HandleImuse(imuse);
+            }
+            else if (message is SysexMessage sysex)
             {
                 HandleSysex(sysex);
             }
-            else
+            else if (message is MetaMessage meta)
             {
-                HandleMetaEvent(evt);
+                HandleMetaEvent(meta);
             }
         }
 
-        private void HandleSysex(SysexEvent evt)
+        private void HandleImuse(ImuseMessage message)
         {
-            throw new NotImplementedException();
+            switch (message)
+            {
+                case ImuseAllocPart alloc:
+                    parts.AllocPart(this, alloc);
+                    break;
+                case ImuseDeallocPart dealloc:
+                    parts.DeallocPart(dealloc.Channel);
+                    break;
+                case ImuseDeallocAllParts deallocAll:
+                    parts.DeallocAllParts();
+                    break;
+                default:
+                    linkedParts.HandleEvent(message);
+                    break;
+            }
         }
 
-        private void HandleMetaEvent(ImuseMidiEvent evt)
+        private void HandleSysex(SysexMessage message)
         {
-            throw new NotImplementedException();
+            // TODO: Full handling
+            driver.Sysex(message);
+        }
+
+        private void HandleMetaEvent(MetaMessage message)
+        {
+            switch (message)
+            {
+                case SetTempoMessage tempo:
+                    driver.SetTempo(tempo);
+                    break;
+                case EndOfTrackMessage:
+                    Stop();
+                    break;
+            }
         }
     }
 }

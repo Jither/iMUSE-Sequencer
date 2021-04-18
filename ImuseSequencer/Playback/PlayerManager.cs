@@ -10,15 +10,17 @@ namespace ImuseSequencer.Playback
         private const int playerCount = 8;
 
         private readonly FileManager files;
+        private readonly PartsManager parts;
         private readonly List<Player> players = new();
 
-        public PlayerManager(FileManager files, Driver driver)
+        public PlayerManager(FileManager files, PartsManager parts, Driver driver)
         {
             this.files = files;
+            this.parts = parts;
 
             for (int i = 0; i < playerCount; i++)
             {
-                players.Add(new Player(driver));
+                players.Add(new Player(driver, parts));
             }
         }
 
@@ -40,6 +42,20 @@ namespace ImuseSequencer.Playback
 
             player.Start(id, file);
             return true;
+        }
+
+        // TODO: Temporary quick-hack
+        public bool Tick()
+        {
+            bool done = true;
+            foreach (var player in players)
+            {
+                if (!player.Tick())
+                {
+                    done = false;
+                }
+            }
+            return done;
         }
 
         /// <summary>

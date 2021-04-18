@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace ImuseSequencer.Verbs
 {
     [Verb("dump", Help = "Dumps information on MIDI file")]
-    public class DumpOptions
+    public class DumpOptions : CommonOptions
     {
         [Positional(0, Name = "input path", Help = "Input MIDI file (Standard MIDI file or LEC chunk - SOUN, SOU, ADL, ROL etc.)", Required = true)]
         public string InputPath { get; set; }
@@ -39,18 +39,18 @@ namespace ImuseSequencer.Verbs
         };
     }
 
-    public class DumpCommand
+    public class DumpCommand : Command
     {
         private readonly Logger logger = LogProvider.Get(nameof(DumpCommand));
 
         private readonly DumpOptions options;
 
-        public DumpCommand(DumpOptions options)
+        public DumpCommand(DumpOptions options) : base(options)
         {
             this.options = options;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             MidiFile midiFile;
             try

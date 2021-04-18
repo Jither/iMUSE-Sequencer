@@ -11,22 +11,22 @@ using System.Threading.Tasks;
 namespace ImuseSequencer.Verbs
 {
     [Verb("list-outputs", Help = "Lists MIDI output devices")]
-    public class ListOutputsOptions
+    public class ListOutputsOptions : CommonOptions
     {
 
     }
 
-    public class ListOutputsCommand
+    public class ListOutputsCommand : Command
     {
         private static readonly Logger logger = LogProvider.Get(nameof(ListOutputsCommand));
         private readonly ListOutputsOptions options;
 
-        public ListOutputsCommand(ListOutputsOptions options)
+        public ListOutputsCommand(ListOutputsOptions options) : base(options)
         {
             this.options = options;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             var provider = new WindowsDeviceProvider();
             var outputs = provider.GetOutputDeviceDescriptions();

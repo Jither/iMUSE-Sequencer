@@ -15,129 +15,6 @@ namespace ImuseSequencer.Playback
         On
     }
 
-    public abstract class ImuseMidiEvent
-    {
-        private static Logger logger = LogProvider.Get(nameof(ImuseMidiEvent));
-
-        public long AbsoluteTick { get; }
-        public int Channel { get; set; }
-
-        protected ImuseMidiEvent(long absoluteTick, int channel)
-        {
-            AbsoluteTick = absoluteTick;
-            Channel = channel;
-        }
-
-        public static ImuseMidiEvent Create(long absoluteTick, MidiMessage message)
-        {
-            return message switch
-            {
-                NoteOnMessage noteOn => new NoteOnEvent(absoluteTick, noteOn.Channel, noteOn.Key, noteOn.Velocity),
-                NoteOffMessage noteOff => new NoteOffEvent(absoluteTick, noteOff.Channel, noteOff.Key),
-                ControlChangeMessage controlChange => new ControlChangeEvent(absoluteTick, controlChange.Channel, controlChange.Controller, controlChange.Value),
-                ProgramChangeMessage programChange => new ProgramChangeEvent(absoluteTick, programChange.Channel, programChange.Program),
-                PitchBendChangeMessage pitchBend => new PitchBendChangeEvent(absoluteTick, pitchBend.Channel, pitchBend.Bender),
-                ImuseMessage imuse => new ImuseEvent(absoluteTick, imuse.Channel, imuse),
-                SysexMessage sysex => new SysexEvent(absoluteTick, -1, sysex.Data),
-                SetTempoMessage tempo => new SetTempoEvent(absoluteTick, -1, tempo.Tempo),
-                EndOfTrackMessage => new EndOfTrackEvent(absoluteTick, -1),
-                _ => null
-            };
-        }
-    }
-
-    public class NoteOnEvent : ImuseMidiEvent
-    {
-        public int Key { get; }
-        public int Velocity { get; }
-
-        public NoteOnEvent(long absoluteTick, int channel, int key, int velocity) : base(absoluteTick, channel)
-        {
-            Key = key;
-            Velocity = velocity;
-        }
-    }
-
-    public class NoteOffEvent : ImuseMidiEvent
-    {
-        public int Key { get; }
-
-        public NoteOffEvent(long absoluteTick, int channel, int key) : base(absoluteTick, channel)
-        {
-            Key = key;
-        }
-    }
-
-    public class ControlChangeEvent : ImuseMidiEvent
-    {
-        public MidiController Controller { get; }
-        public int Value { get; }
-
-        public ControlChangeEvent(long absoluteTick, int channel, MidiController controller, int value) : base(absoluteTick, channel)
-        {
-            Controller = controller;
-            Value = value;
-        }
-    }
-
-    public class ProgramChangeEvent : ImuseMidiEvent
-    {
-        public int Program { get; }
-
-        public ProgramChangeEvent(long absoluteTick, int channel, int program) : base(absoluteTick, channel)
-        {
-            Program = program;
-        }
-    }
-
-    public class PitchBendChangeEvent : ImuseMidiEvent
-    {
-        public int Bender { get; }
-
-        public PitchBendChangeEvent(long absoluteTick, int channel, int bender) : base(absoluteTick, channel)
-        {
-            Bender = bender;
-        }
-    }
-
-    public class SysexEvent : ImuseMidiEvent
-    {
-        public byte[] Data { get; }
-
-        public SysexEvent(long absoluteTick, int channel, byte[] data) : base(absoluteTick, channel)
-        {
-            Data = data;
-        }
-    }
-
-    public class ImuseEvent : ImuseMidiEvent
-    {
-        public ImuseMessage Message { get; }
-
-        public ImuseEvent(long absoluteTick, int channel, ImuseMessage message) : base(absoluteTick, channel)
-        {
-            Message = message;
-        }
-    }
-
-    public class SetTempoEvent : ImuseMidiEvent
-    {
-        public int Tempo { get; }
-
-        public SetTempoEvent(long absoluteTick, int channel, int tempo) : base(absoluteTick, channel)
-        {
-            Tempo = tempo;
-        }
-    }
-
-    public class EndOfTrackEvent : ImuseMidiEvent
-    {
-        public EndOfTrackEvent(long absoluteTick, int channel) : base(absoluteTick, channel)
-        {
-
-        }
-    }
-
     /// <summary>
     /// Each Player has a dedicated Sequencer handling the sequencing of the sound that's currently assigned to that player.
     /// </summary>
@@ -159,7 +36,6 @@ namespace ImuseSequencer.Playback
 
         private int ticksPerQuarterNote;
 
-        private int totalTick; // accumulated tick that the sequencer is at
         private long currentTick; // tick within the current track that the sequencer is at
         private int currentBeat; // beat within the current track that the seqeucner is at
         private long tickInBeat; // tick within the current beat within the current track
@@ -177,6 +53,9 @@ namespace ImuseSequencer.Playback
         public void Start(MidiFile file)
         {
             this.file = file;
+
+            cancelPlayback = false;
+
             ticksPerQuarterNote = file.TicksPerQuarterNote;
             currentTrackIndex = 0;
             nextEventIndex = 0;
@@ -232,46 +111,44 @@ namespace ImuseSequencer.Playback
         }
 
         /// <summary>
-        /// Processes events occurring in the next N ticks.
+        /// Processes events at the current tick.
         /// </summary>
-        public void Process(int ticks)
+        public bool Tick()
         {
             if (Status != SequencerStatus.On)
             {
-                return;
+                return true;
             }
 
-            for (int i = 0; i < ticks; i++)
+            if (loopsRemaining > 0)
             {
-                if (loopsRemaining > 0)
+                if (currentBeat >= loopEndBeat && tickInBeat >= loopEndTick)
                 {
-                    if (currentBeat >= loopEndBeat && tickInBeat >= loopEndTick)
-                    {
-                        loopsRemaining--;
-                        Jump(currentTrackIndex, loopStartBeat, loopStartTick);
-                    }
-                }
-
-                while (currentTick >= nextEventTick)
-                {
-                    bool end = ProcessEvent();
-                    nextEventIndex++;
-                    if (end || cancelPlayback)
-                    {
-                        break;
-                    }
-                    nextEventTick = GetNextEventTick();
-                }
-
-                totalTick++;
-                currentTick++;
-                tickInBeat++;
-                if (tickInBeat >= ticksPerQuarterNote)
-                {
-                    currentBeat++;
-                    tickInBeat -= ticksPerQuarterNote;
+                    loopsRemaining--;
+                    Jump(currentTrackIndex, loopStartBeat, loopStartTick);
                 }
             }
+
+            while (currentTick >= nextEventTick)
+            {
+                bool end = ProcessEvent();
+                nextEventIndex++;
+                if (end || cancelPlayback)
+                {
+                    return true;
+                }
+                nextEventTick = GetNextEventTick();
+            }
+
+            currentTick++;
+            tickInBeat++;
+            if (tickInBeat >= ticksPerQuarterNote)
+            {
+                currentBeat++;
+                tickInBeat -= ticksPerQuarterNote;
+            }
+
+            return false;
         }
 
         private bool ProcessEvent()
@@ -279,6 +156,8 @@ namespace ImuseSequencer.Playback
             bool trackFinished = false;
             var evt = this.file.Tracks[currentTrackIndex].Events[nextEventIndex];
             var message = evt.Message;
+            
+            bool skip = false;
             switch (message)
             {
                 // Channel
@@ -289,20 +168,25 @@ namespace ImuseSequencer.Playback
                         message = new NoteOffMessage(noteOn.Channel, noteOn.Key, noteOn.Velocity);
                     }
                     break;
-                
+                case PolyPressureMessage:
+                    skip = true;
+                    logger.DebugWarning("Hey! iMUSE would like you to quit the poly pressure...");
+                    break;
+                case ChannelPressureMessage:
+                    skip = true;
+                    logger.DebugWarning("Hey! iMUSE would like you to quit the aftertouch...");
+                    break;
                 // Meta
                 case EndOfTrackMessage:
                     trackFinished = true;
                     break;
             }
 
-            // Pass message on to player - with the total tick at which it is to occur
-            var internalEvent = ImuseMidiEvent.Create(totalTick, message);
-            if (internalEvent == null)
+            if (!skip)
             {
-                logger.Warning($"Unsupported MIDI event @ {totalTick}: {message}");
+                // Pass message on to player
+                player.HandleEvent(message);
             }
-            player.HandleEvent(internalEvent);
 
             return trackFinished;
         }

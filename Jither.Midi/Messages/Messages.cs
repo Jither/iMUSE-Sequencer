@@ -251,7 +251,7 @@ namespace Jither.Midi.Messages
         public override string Name => "pitch-bend";
         public override string Parameters => $"{Bender}";
         protected override byte Command => 0xe0;
-        protected override int RawData => ((Bender & 0xff) << 8) | ((Bender & 0xff00) >> 8);
+        protected override int RawData => (Bender & 0x3f80) << 1 | (Bender & 0x7f);
 
         public ushort Bender { get; set; }
 

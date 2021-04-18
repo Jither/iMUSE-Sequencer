@@ -1,6 +1,8 @@
 ﻿using ImuseSequencer.Playback;
+using Jither.Logging;
 using Jither.Midi.Devices;
 using Jither.Midi.Messages;
+using Jither.Midi.Sequencing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,18 +13,25 @@ namespace ImuseSequencer.Drivers
 {
     public abstract class Driver
     {
+        protected static readonly Logger logger = LogProvider.Get(nameof(Driver));
         protected readonly OutputDevice output;
+        protected readonly MidiScheduler<MidiEvent> scheduler;
 
-        protected Driver(OutputDevice output)
+        public long CurrentTick { get; set; }
+
+        protected long previousTick;
+
+        protected Driver(OutputDevice output, MidiScheduler<MidiEvent> scheduler)
         {
             this.output = output;
+            this.scheduler = scheduler;
         }
 
         public abstract void Init();
         public abstract void Reset();
 
-        public abstract void StartNote(Part part, NoteOnEvent evt);
-        public abstract void StopNote(Part part, NoteOffEvent evt);
+        public abstract void StartNote(Part part, int key, int velocity);
+        public abstract void StopNote(Part part, int key);
 
         public abstract void SetVolume(Part part);
         public abstract void SetPan(Part part);
@@ -31,15 +40,33 @@ namespace ImuseSequencer.Drivers
         public abstract void SetSustain(Part part);
 
         public abstract void LoadPart(Part part);
-        public abstract void LoadRomSetup(Part part, ProgramChangeEvent evt);
-        public abstract void DoActiveDump(Part part, byte[] data);
-        public abstract void DoStoredDump(int program, byte[] data);
-        public abstract void LoadStoredSetup(Part part, int number);
+        public abstract void LoadRomSetup(Part part, int program);
+        public abstract void ActiveSetup(Part part, byte[] data);
+        public abstract void StoredSetup(int program, byte[] data);
+        public abstract void LoadSetup(Part part, int number);
         public abstract void UpdateSetup(Part part);
-        public abstract void DoParamAdjust(Part part, int param, int value);
+        public abstract void SetupParam(Part part, int param, int value);
 
         public abstract void StopAllNotes(Slot slot);
 
         public abstract void GetSustainNotes(Slot slot, HashSet<int> notes);
+
+        protected void TransmitEvent(MidiMessage message)
+        {
+            var evt = new MidiEvent(CurrentTick, (int)(CurrentTick - previousTick), message);
+            scheduler.Schedule(evt);
+            previousTick = CurrentTick;
+        }
+
+        public void SetTempo(MidiMessage tempo)
+        {
+            TransmitEvent(tempo);
+        }
+
+        public void Sysex(SysexMessage message)
+        {
+            TransmitEvent(message);
+        }
+
     }
 }

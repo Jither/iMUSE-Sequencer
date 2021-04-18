@@ -108,17 +108,17 @@ namespace ImuseSequencer.Playback
             Program = alloc.Program;
         }
 
-        public void HandleEvent(ImuseMidiEvent evt)
+        public void HandleEvent(ChannelMessage message)
         {
-            switch (evt)
+            switch (message)
             {
-                case NoteOnEvent noteOn:
-                    driver.StartNote(this, noteOn);
+                case NoteOnMessage noteOn:
+                    driver.StartNote(this, noteOn.Key, noteOn.Velocity);
                     break;
-                case NoteOffEvent noteOff:
-                    driver.StopNote(this, noteOff);
+                case NoteOffMessage noteOff:
+                    driver.StopNote(this, noteOff.Key);
                     break;
-                case ControlChangeEvent controlChange:
+                case ControlChangeMessage controlChange:
                     switch (controlChange.Controller)
                     {
                         case MidiController.ModWheel:
@@ -139,15 +139,76 @@ namespace ImuseSequencer.Playback
                             break;
                     }
                     break;
-                case ProgramChangeEvent programChange:
+                case ProgramChangeMessage programChange:
                     Program = programChange.Program;
-                    driver.LoadRomSetup(this, programChange);
+                    driver.LoadRomSetup(this, programChange.Program);
                     break;
-                case PitchBendChangeEvent pitchBend:
-                    int bender = pitchBend.Bender - 0x2000; // Center
+                case PitchBendChangeMessage pitchBend:
+                    int bender = pitchBend.Bender - 0x2000; // Center around 0
                     Pitchbend = (bender * PitchbendRange) >> 6;
                     driver.SetPitchOffset(this);
                     break;
+                default:
+                    throw new ArgumentException($"Unexpected message to part: {message}");
+            }
+        }
+
+        public void HandleEvent(ImuseMessage message)
+        {
+            switch (message)
+            {
+                case ImuseDeallocAllParts deallocAll:
+                    // Should be handled by PartsManager
+                    break;
+                case ImuseActiveSetup activeSetup:
+                    driver.ActiveSetup(this, activeSetup.Setup);
+                    break;
+                case ImuseStoredSetup storedSetup:
+                    // Should be done... elsewhere - not part-related
+                    if (storedSetup.SetupNumber < Roland.StoredSetupCount)
+                    {
+                        driver.StoredSetup(storedSetup.SetupNumber, storedSetup.Setup);
+                    }
+                    break;
+                case ImuseSetupBank:
+                    // Not used by Roland
+                    break;
+                case ImuseSystemParam:
+                    // Not used by Roland
+                    break;
+                case ImuseSetupParam setupParam:
+                    if (setupParam.Number < Roland.StoredSetupCount)
+                    {
+                        driver.SetupParam(this, setupParam.Number, setupParam.Value);
+                    }
+                    break;
+                case ImuseHookJump:
+                    // Should probably be done by player
+                    break;
+                case ImuseHookTranspose:
+                    // SHould probably be done by player
+                    break;
+                case ImuseHookPartEnable:
+                    break;
+                case ImuseHookPartVol:
+                    break;
+                case ImuseHookPartPgmch:
+                    break;
+                case ImuseHookPartTranspose:
+                    break;
+                case ImuseMarker:
+                    break;
+                case ImuseSetLoop:
+                    break;
+                case ImuseClearLoop:
+                    break;
+                case ImuseLoadSetup loadSetup:
+                    if (loadSetup.SetupNumber < Roland.StoredSetupCount)
+                    {
+                        driver.LoadSetup(this, loadSetup.SetupNumber);
+                    }
+                    break;
+
             }
         }
 
@@ -177,21 +238,6 @@ namespace ImuseSequencer.Playback
         }
 
         // TODO: DecodeCustomSysex
-
-        public void DoActiveDump(byte[] data)
-        {
-            driver.DoActiveDump(this, data);
-        }
-
-        public void LoadSetup(int program)
-        {
-            driver.LoadStoredSetup(this, program);
-        }
-
-        public void DoParamAdjust(int param, int value)
-        {
-            driver.DoParamAdjust(this, param, value);
-        }
 
         public void SetPriorityOffset(int priorityOffset)
         {
