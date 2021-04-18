@@ -113,10 +113,17 @@ namespace ImuseSequencer.Playback
             switch (message)
             {
                 case NoteOnMessage noteOn:
-                    driver.StartNote(this, noteOn.Key, noteOn.Velocity);
+                    if (Enabled)
+                    {
+                        driver.StartNote(this, noteOn.Key, noteOn.Velocity);
+                    }
                     break;
                 case NoteOffMessage noteOff:
-                    driver.StopNote(this, noteOff.Key);
+                    // Disabling a part sends all-notes-off, so skipping note-offs here should be fine (and is what the original does)
+                    if (Enabled)
+                    {
+                        driver.StopNote(this, noteOff.Key);
+                    }
                     break;
                 case ControlChangeMessage controlChange:
                     switch (controlChange.Controller)
