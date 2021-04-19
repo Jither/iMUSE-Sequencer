@@ -1,11 +1,6 @@
 ﻿using Jither.Logging;
 using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
@@ -47,6 +42,7 @@ namespace ImuseSequencer.Playback
         internal PartsCollection Parts => player.Parts;
         internal long NextEventTick => nextEventTick;
         internal long CurrentTick => currentTick;
+        private MidiTrack CurrentTrack => file.Tracks[currentTrackIndex];
 
         public SequencerStatus Status { get; private set; }
 
@@ -119,6 +115,9 @@ namespace ImuseSequencer.Playback
         /// <summary>
         /// Processes events at the current tick.
         /// </summary>
+        /// <returns>
+        /// <c>true</c> if EndOfTrack message was reached during processing. Otherwise <c>false</c>.
+        /// </returns>
         public bool Tick()
         {
             if (Status != SequencerStatus.On)
@@ -129,21 +128,25 @@ namespace ImuseSequencer.Playback
             // Send note-off for sustained notes (if any)
             sustainer.Tick();
 
+            // Update beat time
             if (tickInBeat >= ticksPerQuarterNote)
             {
                 currentBeat++;
                 tickInBeat -= ticksPerQuarterNote;
             }
 
+            // Handle loops
             if (loopsRemaining > 0)
             {
                 if (currentBeat >= loopEndBeat && tickInBeat >= loopEndTick)
                 {
                     loopsRemaining--;
+                    logger.Info($"loop: jump to {loopStartBeat}.{loopStartTick:000} (loops remaining: {loopsRemaining})");
                     Jump(currentTrackIndex, loopStartBeat, loopStartTick);
                 }
             }
 
+            // Process events.
             // Bail is set if a jump or stop occurs during processing of events.
             // This helps us ensure that we don't move to the next event when we're not supposed to.
             bail = false;
@@ -173,7 +176,7 @@ namespace ImuseSequencer.Playback
 
         private bool ProcessEvent()
         {
-            var evt = this.file.Tracks[currentTrackIndex].Events[nextEventIndex];
+            var evt = CurrentTrack.Events[nextEventIndex];
             var message = evt.Message;
 
             bool trackEnded = false;
@@ -210,78 +213,87 @@ namespace ImuseSequencer.Playback
             return trackEnded;
         }
 
-        public bool Jump(int trackIndex, int beat, int tickInBeat)
+        public bool Jump(int newTrackIndex, int newBeat, int newTickInBeat)
         {
             if (Status == SequencerStatus.Off)
             {
                 return false;
             }
 
-            if (trackIndex < 0 || trackIndex >= this.file.TrackCount)
+            if (newTrackIndex < 0 || newTrackIndex >= file.TrackCount)
             {
-                logger.Error($"Jump to invalid track {trackIndex}...");
+                logger.Error($"Jump to invalid track {newTrackIndex}...");
                 return false;
             }
 
-            if (currentTrackIndex < 0 || currentTrackIndex >= this.file.TrackCount)
+            if (currentTrackIndex < 0 || currentTrackIndex >= file.TrackCount)
             {
-                logger.Error($"Jump from invalid track {trackIndex}...");
+                logger.Error($"Jump from invalid track {currentTrackIndex}...");
                 return false;
             }
 
             // Search through the chosen track for the destination
 
-            if (beat == 0)
+            if (newBeat <= 0)
             {
-                beat = 1;
+                newBeat = 1;
             }
 
-            logger.Debug($"Jumping to track {trackIndex}, beat {beat}, tick {tickInBeat}");
+            long destTick = (newBeat - 1) * ticksPerQuarterNote;
+            destTick += newTickInBeat;
 
-            long destTick = (beat - 1) * ticksPerQuarterNote;
-            destTick += tickInBeat;
-
-            long nextEventTick;
-            int nextEventIndex;
-            if (trackIndex == currentTrackIndex && destTick >= currentTick)
+            long newNextEventTick;
+            int newNextEventIndex;
+            if (newTrackIndex == currentTrackIndex && destTick >= currentTick)
             {
-                // Destination is further ahead in the current track
-                nextEventTick = this.nextEventTick;
-                nextEventIndex = this.nextEventIndex;
+                // Destination is further ahead in the current track, so search from the current position
+                newNextEventTick = nextEventTick;
+                newNextEventIndex = nextEventIndex;
             }
             else
             {
-                nextEventIndex = 0;
-                nextEventTick = GetNextEventTick(trackIndex, nextEventIndex);
+                // Destination is in a different track or further back in the current track,
+                // so search from the beginning of the track
+                newNextEventIndex = 0;
+                newNextEventTick = GetNextEventTick(newTrackIndex, newNextEventIndex);
             }
 
-            while (nextEventTick < destTick)
+            // Find the first event after our destination.
+            int newTrackEventCount = file.Tracks[newTrackIndex].Events.Count;
+
+            while (newNextEventTick < destTick)
             {
-                nextEventIndex++; // Yes, mp_jump_midi_msg amounts to this in our implementation
-                if (nextEventIndex >= file.Tracks[trackIndex].Events.Count)
+                newNextEventIndex++; // Yes, mp_jump_midi_msg amounts to this in our implementation
+                if (newNextEventIndex >= newTrackEventCount)
                 {
-                    logger.Error($"Jump past track {trackIndex} end...");
+                    logger.Error($"Jump past track {newTrackIndex} end...");
                     return false;
                 }
-                nextEventTick = GetNextEventTick(trackIndex, nextEventIndex);
+                newNextEventTick = GetNextEventTick(newTrackIndex, newNextEventIndex);
             }
 
-            // Now we've found the destination position - stop (MIDI controller) sustain, and handle sustained notes:
+            logger.Debug($"Jumping to track {newTrackIndex}, beat {newBeat}, tick {newTickInBeat}");
+
+            // Now we've found the destination position - stop (MIDI controller) sustain:
             player.StopAllSustains();
-            sustainer.AnalyzeSustain(this, file.Tracks[currentTrackIndex], this.nextEventIndex, file.Tracks[trackIndex], nextEventIndex, nextEventTick - destTick);
 
-            // ... and transfer state to the sequencer
-            this.currentBeat = beat;
-            this.tickInBeat = tickInBeat;
-            this.currentTick = destTick;
-            this.nextEventIndex = nextEventIndex;
-            this.nextEventTick = nextEventTick;
+            // ... handle sustained notes:
+            var oldTrackPos = new SequencerPointer(CurrentTrack, nextEventIndex);
+            var newTrackPos = new SequencerPointer(file.Tracks[newTrackIndex], newNextEventIndex);
+            sustainer.AnalyzeSustain(this, oldTrackPos, newTrackPos, newNextEventTick - destTick);
 
-            if (this.currentTrackIndex != trackIndex)
+            // ... and transfer state to the sequencer:
+            currentBeat = newBeat;
+            tickInBeat = newTickInBeat;
+            currentTick = destTick;
+            nextEventIndex = newNextEventIndex;
+            nextEventTick = newNextEventTick;
+
+            if (currentTrackIndex != newTrackIndex)
             {
-                this.currentTrackIndex = trackIndex;
+                currentTrackIndex = newTrackIndex;
                 // Clear looping - we started a new track
-                this.loopsRemaining = 0;
+                loopsRemaining = 0;
             }
 
             // Make sequencer bail from this tick - we've jumped, so it shouldn't update e.g. nextEventIndex
@@ -292,7 +304,7 @@ namespace ImuseSequencer.Playback
 
         private long GetNextEventTick()
         {
-            return this.GetNextEventTick(currentTrackIndex, nextEventIndex);
+            return CurrentTrack.Events[nextEventIndex].AbsoluteTicks;
         }
 
         private long GetNextEventTick(int trackIndex, int nextEventIndex)

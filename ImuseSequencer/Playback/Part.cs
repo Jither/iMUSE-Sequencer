@@ -8,9 +8,6 @@ namespace ImuseSequencer.Playback
     // TODO: Make base class - this is Roland-specific
     public class Part
     {
-        // TODO: Move constant elsewhere...
-        public const int OmniChannel = 16;
-
         private readonly Driver driver;
         private Player player;
         private Slot slot;

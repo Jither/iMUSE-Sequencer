@@ -30,10 +30,6 @@ namespace ImuseSequencer.Verbs
 
         public override void Execute()
         {
-            switch (options.Test)
-            {
-                
-            }
         }
     }
 }

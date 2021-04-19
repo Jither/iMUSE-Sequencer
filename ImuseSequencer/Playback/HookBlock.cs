@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jither.Logging;
+using System;
 
 namespace ImuseSequencer.Playback
 {
@@ -12,8 +13,12 @@ namespace ImuseSequencer.Playback
         PartTranspose,
     }
 
+    /// <summary>
+    /// The HookBlock handles hooks (conditional iMUSE midi messages) for a single Player.
+    /// </summary>
     public class HookBlock
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(HookBlock));
         private readonly Player player;
 
         public int Jump { get; private set; }
@@ -61,6 +66,7 @@ namespace ImuseSequencer.Playback
                 {
                     Jump = 0;
                 }
+                logger.Info($"hook: jump to track {trackIndex} @ {beat}.{tickInBeat:000}");
                 player.Sequencer.Jump(trackIndex, beat, tickInBeat);
                 
                 return true;
@@ -76,6 +82,7 @@ namespace ImuseSequencer.Playback
                 {
                     Transpose = 0;
                 }
+                logger.Info($"hook: transpose {interval} semitones{(relative ? " (relative)" : "")}");
                 player.SetTranspose(interval, relative);
 
                 return true;
@@ -92,6 +99,7 @@ namespace ImuseSequencer.Playback
                 {
                     PartEnable[channel] = 0;
                 }
+                logger.Info($"hook: {(enabled ? "enable" : "disable")} part on channel {channel}");
                 player.Parts.SetEnabled(channel, enabled);
 
                 return true;
@@ -109,6 +117,7 @@ namespace ImuseSequencer.Playback
                     PartVolume[channel] = 0;
                 }
 
+                logger.Info($"hook: set volume = {volume} on channel {channel}");
                 player.Parts.SetVolume(channel, volume);
 
                 return true;
@@ -126,6 +135,7 @@ namespace ImuseSequencer.Playback
                     PartProgramChange[channel] = 0;
                 }
 
+                logger.Info($"hook: change program = {program} on channel {channel}");
                 player.Parts.DoProgramChange(channel, program);
 
                 return true;
@@ -142,6 +152,7 @@ namespace ImuseSequencer.Playback
                 {
                     PartTranspose[channel] = 0;
                 }
+                logger.Info($"hook: transpose {interval} semitones{(relative ? " (relative)" : "")} on channel {channel}");
                 player.Parts.SetTranspose(channel, interval, relative);
 
                 return true;

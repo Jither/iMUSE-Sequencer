@@ -6,7 +6,7 @@ namespace ImuseSequencer.Playback
     // TODO: Make base class - this is Roland-specific
     /// <summary>
     /// Slots represent the usable channels on a synth with limited channels (e.g. MT-32 with 8 melodic channels + 1 percussion).
-    /// Parts are assigned to a slot based on their priority.
+    /// Parts are assigned to a slot based on priority (combined from player/sound priority + part priority offset).
     /// </summary>
     public class Slot
     {

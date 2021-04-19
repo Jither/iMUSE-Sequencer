@@ -15,6 +15,9 @@ namespace ImuseSequencer.Playback
         On,
     }
 
+    /// <summary>
+    /// Players manage the playback of a single sound (MIDI) file.
+    /// </summary>
     public class Player
     {
         private readonly Driver driver;
@@ -107,10 +110,11 @@ namespace ImuseSequencer.Playback
             Status = PlayerStatus.Off;
         }
 
+        // TODO: Does anything actually need these "SetX" methods? (other than SetTranspose, used by hooks)
         public void SetPriority(int priority)
         {
             Priority = priority;
-            linkedParts.SetPriority(Part.OmniChannel, priority);
+            linkedParts.SetPriority();
         }
 
         public bool SetVolume(int volume)
@@ -146,7 +150,7 @@ namespace ImuseSequencer.Playback
                 Transpose = interval;
             }
 
-            linkedParts.SetTranspose(Part.OmniChannel, Transpose, relative);
+            linkedParts.SetTranspose();
             return true;
         }
 

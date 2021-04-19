@@ -56,18 +56,20 @@ namespace ImuseSequencer.Playback
         }
 
         /// <summary>
-        /// Updates the priority offset of a given channel. If OMNI channel, does nothing: Normally OMNI
-        /// would indicate to update the effective value of every channel to reflect a new priority on
-        /// the player. But effective priority is always current in this implementation.
+        /// Updates the priority offset of a single channel.
         /// </summary>
         public void SetPriority(int channel, int priority)
         {
-            if (channel == Part.OmniChannel)
-            {
-                // Property evaluation automatically reflects new value
-                return;
-            }
             GetByChannel(channel)?.SetPriorityOffset(priority);
+        }
+
+        /// <summary>
+        /// Updates the priority offset of OMNI. In this implementation, does nothing. Normally, OMNI
+        /// would indicate to update the effective value of every channel to reflect a new priority on
+        /// the player. But effective priority is always current in this implementation.
+        /// </summary>
+        public void SetPriority()
+        {
         }
 
         /// <summary>
@@ -112,7 +114,7 @@ namespace ImuseSequencer.Playback
         }
 
         /// <summary>
-        /// Updates transposition of a single channel or OMNI, and signals the new pan to the driver.
+        /// Updates transposition of a single channel, and signals the new transposition to the driver.
         /// </summary>
         public void SetTranspose(int channel, int interval, bool relative)
         {
@@ -121,31 +123,32 @@ namespace ImuseSequencer.Playback
                 return;
             }
 
-            if (channel == Part.OmniChannel)
+            var part = GetByChannel(channel);
+            if (part != null && !part.TransposeLocked)
             {
-                foreach (var part in parts)
+                if (relative)
                 {
-                    // Percussion parts don't transpose
-                    if (!part.TransposeLocked)
-                    {
-                        // Transpose, detune and pitch bend are combined for MT-32
-                        driver.SetPitchOffset(part);
-                    }
+                    part.SetTranspose(Math.Clamp(interval + part.Transpose, -7, 7));
+                }
+                else
+                {
+                    part.SetTranspose(interval);
                 }
             }
-            else
+        }
+
+        /// <summary>
+        /// Updates transposition of OMNI, and signals the new transposition to the driver.
+        /// </summary>
+        public void SetTranspose()
+        {
+            foreach (var part in parts)
             {
-                var part = GetByChannel(channel);
-                if (part != null && !part.TransposeLocked)
+                // Percussion parts don't transpose
+                if (!part.TransposeLocked)
                 {
-                    if (relative)
-                    {
-                        part.SetTranspose(Math.Clamp(interval + part.Transpose, -7, 7));
-                    }
-                    else
-                    {
-                        part.SetTranspose(interval);
-                    }
+                    // Transpose, detune and pitch bend are combined for MT-32
+                    driver.SetPitchOffset(part);
                 }
             }
         }

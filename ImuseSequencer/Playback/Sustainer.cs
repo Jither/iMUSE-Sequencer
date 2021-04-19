@@ -9,13 +9,6 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
-    public enum SustainDefStatus
-    {
-        Unused,
-        Pending,
-        Active
-    }
-
     public class SustainDef
     {
         public int Note { get; }
@@ -90,26 +83,31 @@ namespace ImuseSequencer.Playback
 
         public void Tick()
         {
+            // Find sustain definitions at the current position and apply their note-offs.
             for (int i = activeSustainDefs.Count - 1; i >= 0; i--)
             {
                 var sustainDef = activeSustainDefs[i];
                 sustainDef.TickCount++;
                 if (sustainDef.TickCount >= sustainDef.SustainTicks)
                 {
+                    // Velocity doesn't matter. Driver will replace it.
                     var message = new NoteOffMessage(sustainDef.Channel, (byte)sustainDef.Note, 0);
                     logger.Debug($"Stopping sustained note {message}");
-                    sustainDef.Sequencer.Parts.HandleEvent(message); // Velocity doesn't matter. Driver will replace it.
+                    sustainDef.Sequencer.Parts.HandleEvent(message);
                     activeSustainDefs.RemoveAt(i);
                 }
             }
         }
 
-        public void AnalyzeSustain(Sequencer sequencer, MidiTrack oldTrack, int oldNextIndex, MidiTrack newTrack, int newNextIndex, long newSustainTicks)
+        public void AnalyzeSustain(Sequencer sequencer, SequencerPointer oldTrackPos, SequencerPointer newTrackPos, long newSustainTicks)
         {
             var sustainDefs = new List<SustainDef>();
+
+            // Get all notes that are currently on:
             noteTable.Clear();
             sequencer.Parts.GetSustainNotes(noteTable);
 
+            // Now search forward from the old position for all note-offs for those notes:
             long sustainTicks = sequencer.NextEventTick - sequencer.CurrentTick;
 
             if (sustainTicks < 0)
@@ -117,11 +115,9 @@ namespace ImuseSequencer.Playback
                 sustainTicks = 0;
             }
 
-            int noteCount = noteTable.Count;
-            var pos = new SequencerPointer(oldTrack, oldNextIndex);
             while (noteTable.Count > 0)
             {
-                var result = SeekNote(pos);
+                var result = SeekNote(oldTrackPos);
                 if (result.Status == SeekNoteStatus.NoteOffFound)
                 {
                     if (noteTable.Contains(result.Note))
@@ -130,7 +126,7 @@ namespace ImuseSequencer.Playback
                         sustainDefs.Add(new SustainDef(sequencer, result.Note, result.Channel, sustainTicks));
                     }
                 }
-                sustainTicks = pos.NextEventTick - sequencer.CurrentTick;
+                sustainTicks = oldTrackPos.NextEventTick - sequencer.CurrentTick;
             }
 
             long maxTicks = 0;
@@ -139,12 +135,12 @@ namespace ImuseSequencer.Playback
                 maxTicks = sustainDefs.Max(s => s.SustainTicks);
             }
 
-            // Now search from the new position, and ensure note-offs don't stump on its note-ons (i.e., cut them off).
+            // Now search from the new position, and ensure old note-offs won't stump on new note-ons
+            // (i.e., cut them off by way of a note-off ending up after the note-on of a different note).
             sustainTicks = newSustainTicks;
-            pos = new SequencerPointer(newTrack, newNextIndex);
             while (sustainTicks < maxTicks)
             {
-                var result = SeekNote(pos);
+                var result = SeekNote(newTrackPos);
                 if (result.Status == SeekNoteStatus.NoteOnFound)
                 {
                     var sustainDef = sustainDefs.Find(s => s.Note == result.Note && s.Channel == result.Channel);
@@ -153,7 +149,7 @@ namespace ImuseSequencer.Playback
                         sustainDefs.Remove(sustainDef);
                     }
                 }
-                sustainTicks = pos.NextEventTick - newSustainTicks;
+                sustainTicks = newTrackPos.NextEventTick - newSustainTicks;
             }
 
             activeSustainDefs.AddRange(sustainDefs);
