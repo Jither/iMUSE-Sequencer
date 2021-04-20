@@ -1,4 +1,5 @@
 ﻿using ImuseSequencer.Helpers;
+using ImuseSequencer.Messages;
 using Jither.CommandLine;
 using Jither.Logging;
 using Jither.Midi.Messages;
@@ -55,7 +56,7 @@ namespace ImuseSequencer.Verbs
             MidiFile midiFile;
             try
             {
-                midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
+                midiFile = new MidiFile(options.InputPath, new MidiFileOptions().WithParser(new ImuseSysexParser()));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
             {

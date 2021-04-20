@@ -1,19 +1,43 @@
 ﻿using Jither.Midi.Helpers;
+using Jither.Midi.Messages;
+using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Jither.Midi.Messages
+namespace ImuseSequencer.Messages
 {
-    public enum HardwareId
+    public class ImuseSysexParser : ISysexParser
     {
-        Adlib = 1,
-        Roland = 2,
-        Speaker = 3,
-        Mac = 4,
-        GeneralMidi = 5
+        public int ManufacturerId => 0x7d;
+
+        public SysexMessage Parse(byte[] data)
+        {
+            return data[1] switch
+            {
+                0x00 => data.Length == 4 ? new ImuseV2Marker(data) : new ImuseAllocPart(data),
+                0x01 => data.Length == 11 ? new ImuseV2HookJump(data) : new ImuseDeallocPart(data),
+                0x02 => new ImuseDeallocAllParts(data),
+                0x10 => new ImuseActiveSetup(data),
+                0x11 => new ImuseStoredSetup(data),
+                0x12 => new ImuseSetupBank(data),
+                0x20 => new ImuseSystemParam(data),
+                0x21 => new ImuseSetupParam(data),
+                0x30 => new ImuseHookJump(data),
+                0x31 => new ImuseHookTranspose(data),
+                0x32 => new ImuseHookPartEnable(data),
+                0x33 => new ImuseHookPartVol(data),
+                0x34 => new ImuseHookPartPgmch(data),
+                0x35 => new ImuseHookPartTranspose(data),
+                0x40 => new ImuseMarker(data),
+                0x50 => new ImuseSetLoop(data),
+                0x51 => new ImuseClearLoop(data),
+                0x60 => new ImuseLoadSetup(data),
+                _ => new ImuseUnknown(data)
+            };
+        }
     }
 
     public abstract class ImuseMessage : SysexMessage
@@ -87,32 +111,6 @@ namespace Jither.Midi.Messages
             {
                 throw new MidiMessageException($"Expected end of sysex (f7), but found: {data[source]:x2} - full sysex: {data.ToHex()}");
             }
-        }
-
-        public static ImuseMessage Create(byte[] data)
-        {
-            return data[1] switch
-            {
-                0x00 => data.Length == 4 ? new ImuseV2Marker(data) : new ImuseAllocPart(data),
-                0x01 => data.Length == 11 ? new ImuseV2HookJump(data) : new ImuseDeallocPart(data),
-                0x02 => new ImuseDeallocAllParts(data),
-                0x10 => new ImuseActiveSetup(data),
-                0x11 => new ImuseStoredSetup(data),
-                0x12 => new ImuseSetupBank(data),
-                0x20 => new ImuseSystemParam(data),
-                0x21 => new ImuseSetupParam(data),
-                0x30 => new ImuseHookJump(data),
-                0x31 => new ImuseHookTranspose(data),
-                0x32 => new ImuseHookPartEnable(data),
-                0x33 => new ImuseHookPartVol(data),
-                0x34 => new ImuseHookPartPgmch(data),
-                0x35 => new ImuseHookPartTranspose(data),
-                0x40 => new ImuseMarker(data),
-                0x50 => new ImuseSetLoop(data),
-                0x51 => new ImuseClearLoop(data),
-                0x60 => new ImuseLoadSetup(data),
-                _ => new ImuseUnknown(data)
-            };
         }
     }
 
@@ -450,6 +448,4 @@ namespace Jither.Midi.Messages
             SetupNumber = ImuseData[0] << 8 | ImuseData[1];
         }
     }
-
-
 }

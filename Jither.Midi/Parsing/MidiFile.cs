@@ -6,11 +6,6 @@ using System.Text;
 
 namespace Jither.Midi.Parsing
 {
-    public class MidiFileOptions
-    {
-        public bool ParseImuse { get; set; }
-    }
-
     public class MidiFile
     {
         private readonly List<MidiTrack> tracks = new();
@@ -234,7 +229,6 @@ namespace Jither.Midi.Parsing
                 // Update running status. But: "Running Status will be stopped when any other Status byte [than channel/mode] intervenes."
                 runningStatus = command != 0xf0 ? status : -1;
 
-                // Although we type deltaTime as signed integer for convenience, it's never negative, so this cast is fine
                 absoluteTicks += deltaTicks;
 
                 var evt = new MidiEvent(absoluteTicks, deltaTicks, message);
@@ -251,9 +245,18 @@ namespace Jither.Midi.Parsing
             {
                 case 0xf0:
                     data = reader.ReadVariableBytes();
-                    if (options.ParseImuse && data[0] == 0x7d)
+                    int manufacturerId = data[0];
+                    if (data[0] == 0x00)
                     {
-                        return ImuseMessage.Create(data);
+                        if (data.Length < 3)
+                        {
+                            throw new MidiFileException($"Expected 3 byte sysex manufacturer ID, but only {data.Length} bytes in sysex data.");
+                        }
+                        manufacturerId = data[1] << 7 | data[2];
+                    }
+                    if (options.SysexParsers.TryGetValue(manufacturerId, out var sysexParser))
+                    {
+                        return sysexParser.Parse(data);
                     }
                     return new SysexMessage(data, continuation: false);
                 case 0xf7:

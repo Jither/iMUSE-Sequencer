@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ImuseSequencer.Playback;
 using System.IO;
+using ImuseSequencer.Messages;
 
 namespace ImuseSequencer.Verbs
 {
@@ -53,7 +54,7 @@ namespace ImuseSequencer.Verbs
             MidiFile midiFile;
             try
             {
-                midiFile = new MidiFile(options.InputPath, new MidiFileOptions { ParseImuse = true });
+                midiFile = new MidiFile(options.InputPath, new MidiFileOptions().WithParser(new ImuseSysexParser()));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
             {
