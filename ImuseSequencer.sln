@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImuseSequencer", "ImuseSequencer\ImuseSequencer.csproj", "{4F4CC126-AA6C-4DB2-B6D5-069BFDDBF814}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImuseSequencer", "ImuseSequencer\ImuseSequencer.csproj", "{4F4CC126-AA6C-4DB2-B6D5-069BFDDBF814}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jither.Midi", "Jither.Midi\Jither.Midi.csproj", "{6ABAD1B1-57A5-4920-ACCC-EF93ADA39797}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Midi", "Jither.Midi\Jither.Midi.csproj", "{6ABAD1B1-57A5-4920-ACCC-EF93ADA39797}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Common", "..\Jither.Common\Jither.Common.csproj", "{0CD48F03-8B17-4207-9D1E-389D948AF0A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Common", "..\Jither.Common\Jither.Common\Jither.Common.csproj", "{0CD48F03-8B17-4207-9D1E-389D948AF0A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

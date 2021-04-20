@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Jither.Common\Jither.Common.csproj" />
+    <ProjectReference Include="..\..\Jither.Common\Jither.Common\Jither.Common.csproj" />
     <ProjectReference Include="..\Jither.Midi\Jither.Midi.csproj" />
   </ItemGroup>
 
