@@ -1,7 +1,7 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
 using Jither.Logging;
-using Jither.Midi.Parsing;
+using Jither.Midi.Files;
 using Jither.Utilities;
 using System;
 
@@ -17,6 +17,8 @@ namespace Jither.Imuse
         
         private readonly PlayerManager players;
         private readonly FileManager files = new();
+
+        private int? ticksPerQuarterNote;
 
         private bool disposed;
 
@@ -43,7 +45,19 @@ namespace Jither.Imuse
                 throw new ImuseException($"iMUSE only supports PPQN division MIDI files - this appears to be SMPTE.");
             }
 
-            transmitter.Init(file.Midi.TicksPerQuarterNote);
+            if (this.ticksPerQuarterNote != null)
+            {
+                if (file.Midi.TicksPerQuarterNote != this.ticksPerQuarterNote)
+                {
+                    throw new ImuseException($"Ticks per quarter note (PPQN) for sound '{file.Name}' differs from sounds registered earlier. Cannot register this sound.");
+                }
+            }
+            else
+            {
+                this.ticksPerQuarterNote = file.Midi.TicksPerQuarterNote;
+                // First file - we have a PPQN, so we can initialize:
+                transmitter.Init(file.Midi.TicksPerQuarterNote);
+            }
 
             files.Register(id, file);
         }

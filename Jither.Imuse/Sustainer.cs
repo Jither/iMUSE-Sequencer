@@ -1,6 +1,6 @@
 ﻿using Jither.Logging;
 using Jither.Midi.Messages;
-using Jither.Midi.Parsing;
+using Jither.Midi.Files;
 using System.Collections.Generic;
 using System.Linq;
 

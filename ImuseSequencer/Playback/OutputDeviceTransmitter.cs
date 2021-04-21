@@ -49,37 +49,27 @@ namespace ImuseSequencer.Playback
 
         public void Init(int ticksPerQuarterNote)
         {
-            if (scheduler == null)
+            scheduler = new MidiScheduler<MidiEvent>(500000, ticksPerQuarterNote);
+            scheduler.SliceReached += slice =>
             {
-                scheduler = new MidiScheduler<MidiEvent>(500000, ticksPerQuarterNote);
-                scheduler.SliceReached += slice =>
+                for (int i = 0; i < slice.Count; i++)
                 {
-                    for (int i = 0; i < slice.Count; i++)
+                    var message = slice[i].Message;
+                    if (message is SetTempoMessage meta)
                     {
-                        var message = slice[i].Message;
-                        if (message is SetTempoMessage meta)
-                        {
-                            scheduler.MicrosecondsPerBeat = meta.Tempo;
-                        }
-                        else
-                        {
-                            logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
-                            output.SendMessage(message);
-                        }
+                        scheduler.MicrosecondsPerBeat = meta.Tempo;
                     }
-                };
-                scheduler.TempoChanged += tempo =>
-                {
-                    logger.Info($"{scheduler.TimeInTicks,10} tempo = {scheduler.BeatsPerMinute:0.00}");
-                };
-            }
-            else
-            {
-                if (ticksPerQuarterNote != scheduler.TicksPerQuarterNote)
-                {
-                    throw new ImuseSequencerException($"Initialized with PPQN (ticks per quarter note) value ({ticksPerQuarterNote}) that differs from the scheduler's existing PPQN ({scheduler.TicksPerQuarterNote})");
+                    else
+                    {
+                        logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
+                        output.SendMessage(message);
+                    }
                 }
-            }
+            };
+            scheduler.TempoChanged += tempo =>
+            {
+                logger.Info($"{scheduler.TimeInTicks,10} tempo = {scheduler.BeatsPerMinute:0.00}");
+            };
         }
 
         // TODO: Temporary hacky way of sending all events when done

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Files
 {
     public class MidiFile
     {
@@ -21,7 +21,7 @@ namespace Jither.Midi.Parsing
         /// <summary>
         /// Number of tracks.
         /// </summary>
-        public int TrackCount { get; private set; }
+        public int TrackCount => tracks.Count;
 
         /// <summary>
         /// Type of division - PPQN or one of the SMPTE timecode frame rates - 24, 25, 29 (29.97) or 30.
@@ -50,8 +50,6 @@ namespace Jither.Midi.Parsing
 
         public MidiFile(MidiFileOptions options = null)
         {
-            // Currently, options are only used for loading - and this constructor is intended for saving.
-            // However, doesn't hurt (much) to create it.
             this.options = options ?? new MidiFileOptions();
         }
 
@@ -70,6 +68,28 @@ namespace Jither.Midi.Parsing
             Load(reader);
         }
 
+        public MidiFile(int format, DivisionType divisionType, int ticksPerDivision)
+        {
+            Format = format;
+            DivisionType = divisionType;
+            switch (DivisionType)
+            {
+                case DivisionType.Ppqn:
+                    TicksPerQuarterNote = ticksPerDivision;
+                    break;
+                default:
+                    TicksPerFrame = ticksPerDivision;
+                    break;
+            }
+        }
+
+        public MidiTrack AddTrack(List<MidiEvent> events)
+        {
+            var track = new MidiTrack(tracks.Count, events);
+            tracks.Add(track);
+            return track;
+        }
+
         private void Load(Stream stream)
         {
             using (var reader = new MidiReader(stream))
@@ -80,15 +100,41 @@ namespace Jither.Midi.Parsing
 
         private void Load(MidiReader reader)
         {
-            ReadHeaderChunk(reader);
+            int trackCount = ReadHeaderChunk(reader);
 
-            for (uint i = 0; i < TrackCount; i++)
+            for (int i = 0; i < trackCount; i++)
             {
                 tracks.Add(ReadTrackChunk(reader, i));
             }
         }
 
-        private void ReadHeaderChunk(MidiReader reader)
+        public void Save(string path)
+        {
+            using (var stream = File.Open(path, FileMode.Create))
+            {
+                Save(stream);
+            }
+        }
+
+        public void Save(Stream stream)
+        {
+            using (var writer = new MidiWriter(stream))
+            {
+                Save(writer);
+            }
+        }
+
+        public void Save(MidiWriter writer)
+        {
+            WriteHeaderChunk(writer);
+
+            foreach (var track in Tracks)
+            {
+                WriteTrackChunk(writer, track);
+            }
+        }
+
+        private int ReadHeaderChunk(MidiReader reader)
         {
             var type = reader.ReadChunkType();
             if (type != "MThd")
@@ -101,7 +147,7 @@ namespace Jither.Midi.Parsing
                 throw new MidiFileException($"Not a valid MIDI file: Size of MThd chunk isn't 6 bytes.");
             }
             Format = reader.ReadUint16();
-            TrackCount = reader.ReadUint16();
+            int trackCount = reader.ReadUint16();
             ushort division = reader.ReadUint16();
             if ((division & 0x8000) == 0)
             {
@@ -121,9 +167,36 @@ namespace Jither.Midi.Parsing
                 };
                 TicksPerFrame = division & 0xff;
             }
+
+            return trackCount;
         }
 
-        private MidiTrack ReadTrackChunk(MidiReader reader, uint trackIndex)
+        private void WriteHeaderChunk(MidiWriter writer)
+        {
+            writer.WriteChunkType("MThd");
+            writer.WriteUint32(6); // chunk size
+            writer.WriteUint16((ushort)Format);
+            writer.WriteUint16((ushort)TrackCount);
+
+            ushort division;
+            switch (DivisionType)
+            {
+                case DivisionType.Ppqn:
+                    division = (ushort)TicksPerQuarterNote;
+                    break;
+                case DivisionType.Smpte24:
+                case DivisionType.Smpte25:
+                case DivisionType.Smpte29:
+                case DivisionType.Smpte30:
+                    division = (ushort)(-(ushort)DivisionType << 8 | TicksPerFrame);
+                    break;
+                default:
+                    throw new MidiFileException($"Unsupported division type: {DivisionType}");
+            }
+            writer.WriteUint16(division);
+        }
+
+        private MidiTrack ReadTrackChunk(MidiReader reader, int trackIndex)
         {
             string type = reader.ReadChunkType();
             if (type != "MTrk")
@@ -160,7 +233,7 @@ namespace Jither.Midi.Parsing
                     0xe0 => new PitchBendChangeMessage(channel, bender: (ushort)(reader.ReadByte() | reader.ReadByte() << 7)),
                     0xf0 => CreateSystemMessage(reader, status),
                     // This can never actually happen - ReadStatus will always return a status >= 0x80 or throw
-                    _ => throw new MidiFileException($"Unexpected MIDI message command byte: {status}")
+                    _ => throw new MidiFileException($"Unexpected MIDI message command byte: 0x{status:x2} at reader position {reader.Position}")
                 };
 
                 // Update running status. But: "Running Status will be stopped when any other Status byte [than channel/mode] intervenes."
@@ -168,11 +241,36 @@ namespace Jither.Midi.Parsing
 
                 absoluteTicks += deltaTicks;
 
-                var evt = new MidiEvent(absoluteTicks, deltaTicks, message);
+                var evt = new MidiEvent(absoluteTicks, message);
                 events.Add(evt);
             }
 
             return new MidiTrack(trackIndex, events);
+        }
+
+        public void WriteTrackChunk(MidiWriter writer, MidiTrack track)
+        {
+            writer.WriteChunkType("MTrk");
+            long sizePosition = writer.Position;
+            writer.WriteUint32(0); // Temporary, until we know the size
+
+            long previousTicks = 0;
+
+            foreach (var evt in track.Events)
+            {
+                long deltaTime = evt.AbsoluteTicks - previousTicks;
+                writer.WriteVLQ((int)deltaTime);
+
+                evt.Message.Write(writer);
+
+                previousTicks = evt.AbsoluteTicks;
+            }
+
+            // Write chunk size:
+            long endPosition = writer.Position;
+            writer.Position = sizePosition;
+            writer.WriteUint32((uint)(endPosition - sizePosition - 4));
+            writer.Position = endPosition;
         }
 
         private MidiMessage CreateSystemMessage(MidiReader reader, byte status)
@@ -204,7 +302,7 @@ namespace Jither.Midi.Parsing
                     data = reader.ReadVariableBytes();
                     return MetaMessage.Create(type, data);
                 default:
-                    throw new NotSupportedException($"Unsupported system message with status byte {status}");
+                    throw new NotSupportedException($"Unsupported system message with status byte 0x{status:x2}");
             }
         }
 

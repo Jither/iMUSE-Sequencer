@@ -1,5 +1,5 @@
 ﻿using Jither.Midi.Messages;
-using Jither.Midi.Parsing;
+using Jither.Midi.Files;
 using System;
 using System.Runtime.InteropServices;
 

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Files
 {
     public class MidiFileOptions
     {

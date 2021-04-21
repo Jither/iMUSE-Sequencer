@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Files
 {
     public class MidiFileException : Exception
     {

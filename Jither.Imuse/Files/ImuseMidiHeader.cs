@@ -1,5 +1,5 @@
 ﻿using Jither.Logging;
-using Jither.Midi.Parsing;
+using Jither.Midi.Files;
 
 namespace Jither.Imuse.Files
 {

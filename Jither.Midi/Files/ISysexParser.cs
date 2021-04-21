@@ -1,6 +1,6 @@
 ﻿using Jither.Midi.Messages;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Files
 {
     public interface ISysexParser
     {

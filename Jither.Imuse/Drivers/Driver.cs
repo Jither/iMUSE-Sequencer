@@ -10,7 +10,6 @@ namespace Jither.Imuse.Drivers
 
         public long CurrentTick { get; set; }
 
-        protected long previousTick;
         private readonly ITransmitter transmitter;
 
         protected Driver(ITransmitter transmitter)
@@ -44,9 +43,8 @@ namespace Jither.Imuse.Drivers
 
         protected void TransmitEvent(MidiMessage message)
         {
-            var evt = new MidiEvent(CurrentTick, (int)(CurrentTick - previousTick), message);
+            var evt = new MidiEvent(CurrentTick, message);
             transmitter.Transmit(evt);
-            previousTick = CurrentTick;
         }
 
         protected void TransmitEventImmediate(MidiMessage message)

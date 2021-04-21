@@ -1,4 +1,4 @@
-﻿namespace Jither.Midi.Parsing
+﻿namespace Jither.Midi.Files
 {
     public enum DivisionType
     {

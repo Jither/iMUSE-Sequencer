@@ -1,4 +1,5 @@
 ﻿using Jither.Midi.Helpers;
+using Jither.Midi.Files;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +26,13 @@ namespace Jither.Midi.Messages
         public abstract int RawMessage { get; }
 
         public override string ToString() => $"{Name,-14}  {Parameters}";
+
+        public abstract void Write(MidiWriter writer);
     }
 
     public abstract class ChannelMessage : MidiMessage
     {
-        public int Channel { get; set; }
+        public int Channel { get; }
 
         public override int RawMessage => (Command | Channel) | (RawData << 8);
         
@@ -51,13 +54,20 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0x80;
         protected override int RawData => Key | (Velocity << 8);
 
-        public byte Key { get; set; }
-        public byte Velocity { get; set; }
+        public byte Key { get; }
+        public byte Velocity { get; }
 
         public NoteOffMessage(int channel, byte key, byte velocity) : base(channel)
         {
             Key = key;
             Velocity = velocity;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte(Key);
+            writer.WriteByte(Velocity);
         }
     }
 
@@ -68,13 +78,20 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0x90;
         protected override int RawData => Key | (Velocity << 8);
 
-        public byte Key { get; set; }
-        public byte Velocity { get; set; }
+        public byte Key { get; }
+        public byte Velocity { get; }
 
         public NoteOnMessage(int channel, byte key, byte velocity) : base(channel)
         {
             Key = key;
             Velocity = velocity;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte(Key);
+            writer.WriteByte(Velocity);
         }
     }
 
@@ -85,13 +102,20 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0xa0;
         protected override int RawData => Key | (Pressure << 8);
 
-        public byte Key { get; set; }
-        public byte Pressure { get; set; }
+        public byte Key { get; }
+        public byte Pressure { get; }
 
         public PolyPressureMessage(int channel, byte key, byte pressure) : base(channel)
         {
             Key = key;
             Pressure = pressure;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte(Key);
+            writer.WriteByte(Pressure);
         }
     }
 
@@ -100,8 +124,8 @@ namespace Jither.Midi.Messages
         public override string Name => "ctrl-chng";
         public override string Parameters => $"{MidiHelper.GetControllerName(Controller),-20} {Value,3}";
 
-        public MidiController Controller { get; set; }
-        public byte Value { get; set; }
+        public MidiController Controller { get; }
+        public byte Value { get; }
         protected override byte Command => 0xb0;
         protected override int RawData => (byte)Controller | (Value << 8);
 
@@ -130,6 +154,13 @@ namespace Jither.Midi.Messages
                 0x7f => new PolyOnMessage(channel, controller, value),
                 _ => new ControlChangeMessage(channel, controller, value)
             };
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte((byte)Controller);
+            writer.WriteByte(Value);
         }
     }
 
@@ -223,11 +254,17 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0xc0;
         protected override int RawData => Program;
 
-        public byte Program { get; set; }
+        public byte Program { get; }
 
         public ProgramChangeMessage(int channel, byte program) : base(channel)
         {
             Program = program;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte(Program);
         }
     }
 
@@ -238,11 +275,17 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0xd0;
         protected override int RawData => Pressure;
 
-        public byte Pressure { get; set; }
+        public byte Pressure { get; }
 
         public ChannelPressureMessage(int channel, byte pressure) : base(channel)
         {
             Pressure = pressure;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte(Pressure);
         }
     }
 
@@ -253,11 +296,18 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0xe0;
         protected override int RawData => (Bender & 0x3f80) << 1 | (Bender & 0x7f);
 
-        public ushort Bender { get; set; }
+        public ushort Bender { get; }
 
         public PitchBendChangeMessage(int channel, ushort bender) : base(channel)
         {
             Bender = bender;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte((byte)(Command | Channel));
+            writer.WriteByte((byte)((Bender & 0x3f80) >> 7));
+            writer.WriteByte((byte)(Bender & 0x7f));
         }
     }
 
@@ -270,13 +320,13 @@ namespace Jither.Midi.Messages
         /// <summary>
         /// Actual data excluding starting F0/F7 and length (from MIDI file), but including terminating F7 (if any).
         /// </summary>
-        public byte[] Data { get; set; }
+        public byte[] Data { get; }
 
         /// <summary>
         /// Indicates whether this message is a continuation of a previous sysex message, i.e.
         /// the previous sysex message ended without F7, and this one started with F7.
         /// </summary>
-        public bool Continuation { get; set; }
+        public bool Continuation { get; }
 
         /// <summary>
         /// Indicates whether this message is (expected to be) continued in further sysex message(s), i.e.
@@ -289,6 +339,12 @@ namespace Jither.Midi.Messages
         {
             Data = data;
             Continuation = continuation;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte(Continuation ? (byte)0xf7 : (byte)0xf0);
+            writer.WriteVariableBytes(Data);
         }
     }
 
@@ -318,7 +374,7 @@ namespace Jither.Midi.Messages
         public override int RawMessage => throw new NotSupportedException("Meta message is not representable as a 32-bit integer.");
 
         public byte Type { get; }
-        public byte[] Data { get; set; }
+        public byte[] Data { get; }
 
         public virtual string TypeName => Type.ToString("x2");
         public virtual string Info => Data.ToHex();
@@ -327,6 +383,13 @@ namespace Jither.Midi.Messages
         {
             Type = type;
             Data = data;
+        }
+
+        public override void Write(MidiWriter writer)
+        {
+            writer.WriteByte(0xff);
+            writer.WriteByte(Type);
+            writer.WriteVariableBytes(Data);
         }
 
         public static MetaMessage Create(byte type, byte[] data)
@@ -455,6 +518,11 @@ namespace Jither.Midi.Messages
     public class EndOfTrackMessage : MetaMessage
     {
         public override string TypeName => "end-of-track";
+
+        public EndOfTrackMessage() : base((byte)MetaType.EndOfTrack, Array.Empty<byte>())
+        {
+
+        }
 
         public EndOfTrackMessage(byte type, byte[] data) : base(type, data)
         {

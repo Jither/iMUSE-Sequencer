@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Jither.Midi.Parsing
+namespace Jither.Midi.Files
 {
     public class MidiReader : IDisposable
     {
