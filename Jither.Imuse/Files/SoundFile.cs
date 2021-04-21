@@ -1,11 +1,11 @@
-﻿using ImuseSequencer.Messages;
+﻿using Jither.Imuse.Messages;
 using Jither.Logging;
 using Jither.Midi.Parsing;
 using Jither.Utilities;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ImuseSequencer.Parsing
+namespace Jither.Imuse.Files
 {
     public class SoundFile
     {

@@ -1,11 +1,11 @@
-﻿using ImuseSequencer.Drivers;
-using ImuseSequencer.Messages;
+﻿using Jither.Imuse.Drivers;
+using Jither.Imuse.Messages;
 using Jither.Midi.Messages;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public class PartsCollection : IReadOnlyList<Part>
     {

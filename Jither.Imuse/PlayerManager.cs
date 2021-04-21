@@ -1,8 +1,9 @@
-﻿using ImuseSequencer.Drivers;
+﻿using Jither.Imuse.Drivers;
+using Jither.Imuse.Files;
 using Jither.Logging;
 using System.Collections.Generic;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public class PlayerManager
     {

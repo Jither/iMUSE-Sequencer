@@ -2,7 +2,7 @@
 using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public enum SequencerStatus
     {

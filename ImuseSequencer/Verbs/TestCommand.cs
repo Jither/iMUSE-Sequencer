@@ -1,5 +1,4 @@
-﻿using ImuseSequencer.Drivers;
-using Jither.CommandLine;
+﻿using Jither.CommandLine;
 using Jither.Midi.Devices.Windows;
 using Jither.Midi.Messages;
 using System.Text;

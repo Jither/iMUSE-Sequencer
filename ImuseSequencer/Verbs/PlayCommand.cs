@@ -4,7 +4,8 @@ using System;
 using System.Collections.Generic;
 using ImuseSequencer.Playback;
 using System.IO;
-using ImuseSequencer.Parsing;
+using Jither.Imuse;
+using Jither.Imuse.Files;
 
 namespace ImuseSequencer.Verbs
 {
@@ -59,29 +60,36 @@ namespace ImuseSequencer.Verbs
 
             logger.Info($"Playing {options.InputPath}");
 
-            using (var transmitter = new OutputDeviceTransmitter(options.DeviceId))
+            try
             {
-                using (var engine = new ImuseEngine(transmitter, target))
+                using (var transmitter = new OutputDeviceTransmitter(options.DeviceId))
                 {
-                    // Clean up, even with Ctrl+C
-                    var cancelHandler = new ConsoleCancelEventHandler((sender, e) =>
+                    using (var engine = new ImuseEngine(transmitter, target))
                     {
-                        logger.Warning("Abrupt exit - trying to clean up...");
-                        engine.Dispose();
-                        transmitter.Dispose();
-                    });
-                    Console.CancelKeyPress += cancelHandler;
+                        // Clean up, even with Ctrl+C
+                        var cancelHandler = new ConsoleCancelEventHandler((sender, e) =>
+                        {
+                            logger.Warning("Abrupt exit - trying to clean up...");
+                            engine.Dispose();
+                            transmitter.Dispose();
+                        });
+                        Console.CancelKeyPress += cancelHandler;
 
-                    engine.RegisterSound(0, soundFile);
-                    engine.Play();
+                        engine.RegisterSound(0, soundFile);
+                        engine.Play();
 
-                    // TODO: Temporary quick-hack to play everything when engine is done.
-                    transmitter.Send();
+                        // TODO: Temporary quick-hack to play everything when engine is done.
+                        transmitter.Send();
 
-                    Console.ReadKey(intercept: true);
+                        Console.ReadKey(intercept: true);
 
-                    Console.CancelKeyPress -= cancelHandler;
+                        Console.CancelKeyPress -= cancelHandler;
+                    }
                 }
+            }
+            catch (ImuseException ex)
+            {
+                throw new ImuseSequencerException(ex.Message, ex);
             }
         }
     }

@@ -1,7 +1,7 @@
 ﻿using Jither.Logging;
 using System;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public enum Hook
     {

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ImuseSequencer.Messages
+namespace Jither.Imuse.Messages
 {
     public class ImuseSysexParser : ISysexParser
     {

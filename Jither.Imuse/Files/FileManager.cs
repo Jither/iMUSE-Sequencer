@@ -1,13 +1,7 @@
-﻿using ImuseSequencer.Parsing;
-using Jither.Logging;
-using Jither.Midi.Parsing;
-using System;
+﻿using Jither.Logging;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse.Files
 {
     public class FileManager
     {

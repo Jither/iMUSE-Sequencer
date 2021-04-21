@@ -1,15 +1,8 @@
-﻿using ImuseSequencer.Playback;
-using Jither.Logging;
-using Jither.Midi.Devices;
+﻿using Jither.Logging;
 using Jither.Midi.Messages;
-using Jither.Midi.Sequencing;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ImuseSequencer.Drivers
+namespace Jither.Imuse.Drivers
 {
     public abstract class Driver
     {

@@ -1,16 +1,8 @@
 ﻿using Jither.Logging;
 using Jither.Midi.Parsing;
-using System;
 
-namespace ImuseSequencer.Parsing
+namespace Jither.Imuse.Files
 {
-    public class ImuseMidiHeaderException : Exception
-    {
-        public ImuseMidiHeaderException(string message) : base(message)
-        {
-
-        }
-    }
     public class ImuseMidiHeader
     {
         private static readonly Logger logger = LogProvider.Get(nameof(ImuseMidiHeader));

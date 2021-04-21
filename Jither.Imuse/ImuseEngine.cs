@@ -1,19 +1,11 @@
-﻿using ImuseSequencer.Drivers;
-using ImuseSequencer.Parsing;
+﻿using Jither.Imuse.Drivers;
+using Jither.Imuse.Files;
 using Jither.Logging;
-using Jither.Midi.Devices;
-using Jither.Midi.Devices.Windows;
-using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
-using Jither.Midi.Sequencing;
 using Jither.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public class ImuseEngine : IDisposable
     {
@@ -48,7 +40,7 @@ namespace ImuseSequencer.Playback
         {
             if (file.Midi.DivisionType != DivisionType.Ppqn)
             {
-                throw new ImuseSequencerException($"iMUSE Sequencer only supports PPQN division MIDI files - this appears to be SMPTE.");
+                throw new ImuseException($"iMUSE only supports PPQN division MIDI files - this appears to be SMPTE.");
             }
 
             transmitter.Init(file.Midi.TicksPerQuarterNote);
@@ -84,7 +76,7 @@ namespace ImuseSequencer.Playback
             return target switch
             {
                 SoundTarget.Roland => new Roland(transmitter),
-                _ => throw new ImuseSequencerException($"Driver for {target} target is not implemented yet."),
+                _ => throw new ImuseException($"Driver for {target} target is not implemented yet."),
             };
         }
 

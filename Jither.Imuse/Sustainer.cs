@@ -1,13 +1,10 @@
 ﻿using Jither.Logging;
 using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public class SustainDef
     {

@@ -1,4 +1,4 @@
-﻿namespace ImuseSequencer.Messages
+﻿namespace Jither.Imuse.Messages
 {
     public enum HardwareId
     {

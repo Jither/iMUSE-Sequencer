@@ -1,15 +1,11 @@
-﻿using ImuseSequencer.Drivers;
-using ImuseSequencer.Messages;
-using ImuseSequencer.Parsing;
+﻿using Jither.Imuse.Drivers;
+using Jither.Imuse.Files;
+using Jither.Imuse.Messages;
 using Jither.Midi.Messages;
-using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     public enum PlayerStatus
     {

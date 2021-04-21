@@ -1,13 +1,10 @@
-﻿using ImuseSequencer.Playback;
-using Jither.Midi.Devices;
-using Jither.Midi.Messages;
-using Jither.Midi.Sequencing;
+﻿using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ImuseSequencer.Drivers
+namespace Jither.Imuse.Drivers
 {
     public class Roland : Driver
     {

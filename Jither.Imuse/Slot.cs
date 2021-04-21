@@ -1,7 +1,7 @@
-﻿using ImuseSequencer.Drivers;
+﻿using Jither.Imuse.Drivers;
 using System.Collections.Generic;
 
-namespace ImuseSequencer.Playback
+namespace Jither.Imuse
 {
     // TODO: Make base class - this is Roland-specific
     /// <summary>

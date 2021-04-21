@@ -1,16 +1,12 @@
 ﻿using ImuseSequencer.Helpers;
-using ImuseSequencer.Messages;
-using ImuseSequencer.Parsing;
 using Jither.CommandLine;
+using Jither.Imuse.Files;
+using Jither.Imuse.Messages;
 using Jither.Logging;
 using Jither.Midi.Messages;
-using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImuseSequencer.Verbs
 {
