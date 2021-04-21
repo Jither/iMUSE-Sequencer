@@ -249,7 +249,7 @@ namespace Jither.Imuse
         private void HandleSysex(SysexMessage message)
         {
             // TODO: Full handling
-            driver.Sysex(message);
+            driver.TransmitSysex(message);
         }
 
         private void HandleMetaEvent(MetaMessage message)
@@ -261,6 +261,9 @@ namespace Jither.Imuse
                     break;
                 case EndOfTrackMessage:
                     Stop();
+                    break;
+                default:
+                    driver.TransmitMeta(message);
                     break;
             }
         }

@@ -72,17 +72,13 @@ namespace Jither.Midi.Files
         // Max value of variable length quantity is 0x7ffffff, so int is fine - it will always be positive.
         public void WriteVLQ(int value)
         {
-            byte flag = 0x0;
             int count = 0;
-            while (count < 4)
+            buffer[count++] = (byte)(value & 0x7f);
+            value >>= 7;
+            while (value > 0)
             {
-                buffer[count++] = (byte)((value & 0x7f) | flag);
+                buffer[count++] = (byte)(value | 0x80);
                 value >>= 7;
-                if (value == 0)
-                {
-                    break;
-                }
-                flag = 0x80;
             }
 
             // count is now the number of bytes required, and the buffer contains the bytes in reverse order

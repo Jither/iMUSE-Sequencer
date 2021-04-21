@@ -67,7 +67,7 @@ namespace Jither.Imuse
                     Jump = 0;
                 }
                 logger.Info($"hook: jump to track {trackIndex} @ {beat}.{tickInBeat:000}");
-                player.Sequencer.Jump(trackIndex, beat, tickInBeat);
+                player.Sequencer.Jump(trackIndex, beat, tickInBeat, $"hook {messageHook}");
                 
                 return true;
             }

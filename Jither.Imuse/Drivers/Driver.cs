@@ -57,7 +57,14 @@ namespace Jither.Imuse.Drivers
             TransmitEvent(tempo);
         }
 
-        public void Sysex(SysexMessage message)
+        public void TransmitMeta(MetaMessage message)
+        {
+            // We pass on meta messages. They can be used in e.g. a MIDI file writer, but ignored if needed in
+            // a transmitter outputting to a MIDI device.
+            TransmitEvent(message);
+        }
+
+        public void TransmitSysex(SysexMessage message)
         {
             TransmitEvent(message);
         }

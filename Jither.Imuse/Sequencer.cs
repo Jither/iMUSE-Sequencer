@@ -142,7 +142,7 @@ namespace Jither.Imuse
                 {
                     loopsRemaining--;
                     logger.Info($"loop: jump to {loopStartBeat}.{loopStartTick:000} (loops remaining: {loopsRemaining})");
-                    Jump(currentTrackIndex, loopStartBeat, loopStartTick);
+                    Jump(currentTrackIndex, loopStartBeat, loopStartTick, "loop");
                 }
             }
 
@@ -213,7 +213,7 @@ namespace Jither.Imuse
             return trackEnded;
         }
 
-        public bool Jump(int newTrackIndex, int newBeat, int newTickInBeat)
+        public bool Jump(int newTrackIndex, int newBeat, int newTickInBeat, string reason)
         {
             if (Status == SequencerStatus.Off)
             {
@@ -295,6 +295,9 @@ namespace Jither.Imuse
                 // Clear looping - we started a new track
                 loopsRemaining = 0;
             }
+
+            // Emit jump meta marker
+            player.HandleEvent(new MarkerMessage($"jump ({reason})"));
 
             // Make sequencer bail from this tick - we've jumped, so it shouldn't update e.g. nextEventIndex
             bail = true;

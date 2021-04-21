@@ -111,6 +111,7 @@ namespace Jither.Imuse.Drivers
         public override void Reset()
         {
             TransmitSysexImmediate(resetAddress, Array.Empty<byte>());
+            // TODO: This should actually delay the events (by way of CurrentTick) to be effective...
             Task.Delay(300);
         }
 

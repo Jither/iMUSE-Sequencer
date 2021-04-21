@@ -489,6 +489,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "marker";
 
+        public MarkerMessage(string text) : base((byte)MetaType.Marker, Encoding.ASCII.GetBytes(text))
+        {
+
+        }
+
         public MarkerMessage(byte type, byte[] data) : base(type, data)
         {
         }
