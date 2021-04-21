@@ -1,20 +1,9 @@
-﻿using ImuseSequencer.Helpers;
-using Jither.CommandLine;
+﻿using Jither.CommandLine;
 using Jither.Logging;
-using Jither.Utilities;
-using Jither.Midi.Devices;
-using Jither.Midi.Devices.Windows;
-using Jither.Midi.Messages;
-using Jither.Midi.Parsing;
-using Jither.Midi.Sequencing;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ImuseSequencer.Playback;
 using System.IO;
-using ImuseSequencer.Messages;
 using ImuseSequencer.Parsing;
 
 namespace ImuseSequencer.Verbs
@@ -70,20 +59,29 @@ namespace ImuseSequencer.Verbs
 
             logger.Info($"Playing {options.InputPath}");
 
-            using (var engine = new ImuseEngine(options.DeviceId, target))
+            using (var transmitter = new OutputDeviceTransmitter(options.DeviceId))
             {
-                // Clean up, even with Ctrl+C
-                var cancelHandler = new ConsoleCancelEventHandler((sender, e) =>
+                using (var engine = new ImuseEngine(transmitter, target))
                 {
-                    logger.Warning("Abrupt exit - trying to clean up...");
-                    engine.Dispose();
-                });
-                Console.CancelKeyPress += cancelHandler;
+                    // Clean up, even with Ctrl+C
+                    var cancelHandler = new ConsoleCancelEventHandler((sender, e) =>
+                    {
+                        logger.Warning("Abrupt exit - trying to clean up...");
+                        engine.Dispose();
+                        transmitter.Dispose();
+                    });
+                    Console.CancelKeyPress += cancelHandler;
 
-                engine.RegisterSound(0, soundFile);
-                engine.Play();
-                Console.ReadKey(intercept: true);
-                Console.CancelKeyPress -= cancelHandler;
+                    engine.RegisterSound(0, soundFile);
+                    engine.Play();
+
+                    // TODO: Temporary quick-hack to play everything when engine is done.
+                    transmitter.Send();
+
+                    Console.ReadKey(intercept: true);
+
+                    Console.CancelKeyPress -= cancelHandler;
+                }
             }
         }
     }

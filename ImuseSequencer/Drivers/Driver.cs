@@ -14,18 +14,15 @@ namespace ImuseSequencer.Drivers
     public abstract class Driver
     {
         protected static readonly Logger logger = LogProvider.Get(nameof(Driver));
-        protected readonly OutputDevice output;
-        protected readonly MidiScheduler<MidiEvent> scheduler;
 
         public long CurrentTick { get; set; }
 
-        public Action<MidiEvent> Transmitter { get; set; }
-
         protected long previousTick;
+        private readonly ITransmitter transmitter;
 
-        protected Driver(OutputDevice output)
+        protected Driver(ITransmitter transmitter)
         {
-            this.output = output;
+            this.transmitter = transmitter;
         }
 
         public abstract void Init();
@@ -55,13 +52,13 @@ namespace ImuseSequencer.Drivers
         protected void TransmitEvent(MidiMessage message)
         {
             var evt = new MidiEvent(CurrentTick, (int)(CurrentTick - previousTick), message);
-            Transmitter?.Invoke(evt);
+            transmitter.Transmit(evt);
             previousTick = CurrentTick;
         }
 
         protected void TransmitEventImmediate(MidiMessage message)
         {
-            output.SendMessage(message);
+            transmitter.TransmitImmediate(message);
         }
 
         public void SetTempo(MidiMessage tempo)

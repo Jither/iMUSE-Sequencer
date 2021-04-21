@@ -72,9 +72,8 @@ namespace ImuseSequencer.Drivers
             76, 100, 7, 0,      // Cowbell
         };
 
-        public Roland(OutputDevice output) : base(output)
+        public Roland(ITransmitter transmitter) : base(transmitter)
         {
-
         }
 
         public override void Init()

@@ -19,33 +19,21 @@ namespace ImuseSequencer.Playback
     {
         private static readonly Logger logger = LogProvider.Get(nameof(ImuseEngine));
 
-        private readonly int deviceId;
+        private readonly ITransmitter transmitter;
         private readonly SoundTarget target;
         private readonly Driver driver;
-        private readonly OutputDevice output;
-        
-        private MidiScheduler<MidiEvent> scheduler;
         
         private readonly PlayerManager players;
         private readonly FileManager files = new();
 
         private bool disposed;
 
-        public ImuseEngine(int deviceId, SoundTarget target)
+        public ImuseEngine(ITransmitter transmitter, SoundTarget target)
         {
-            this.deviceId = deviceId;
+            this.transmitter = transmitter;
             this.target = target;
 
-            try
-            {
-                output = new WindowsOutputDevice(deviceId);
-            }
-            catch (MidiDeviceException ex)
-            {
-                throw new ImuseSequencerException($"Failed to connect to output: {ex.Message}");
-            }
-
-            driver = GetDriver(output);
+            driver = GetDriver();
 
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
@@ -63,44 +51,9 @@ namespace ImuseSequencer.Playback
                 throw new ImuseSequencerException($"iMUSE Sequencer only supports PPQN division MIDI files - this appears to be SMPTE.");
             }
 
-            SetupScheduler(file.Midi.TicksPerQuarterNote);
+            transmitter.Init(file.Midi.TicksPerQuarterNote);
 
             files.Register(id, file);
-        }
-
-        private void SetupScheduler(int ticksPerQuarterNote)
-        {
-            if (scheduler == null)
-            {
-                scheduler = new MidiScheduler<MidiEvent>(500000, ticksPerQuarterNote);
-                scheduler.SliceReached += slice =>
-                {
-                    for (int i = 0; i < slice.Count; i++)
-                    {
-                        var message = slice[i].Message;
-                        if (message is SetTempoMessage meta)
-                        {
-                            scheduler.MicrosecondsPerBeat = meta.Tempo;
-                        }
-                        else
-                        {
-                            logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
-                            output.SendMessage(message);
-                        }
-                    }
-                };
-                scheduler.TempoChanged += tempo =>
-                {
-                    logger.Info($"{scheduler.TimeInTicks,10} tempo = {scheduler.BeatsPerMinute:0.00}");
-                };
-            }
-            else
-            {
-                if (ticksPerQuarterNote != scheduler.TicksPerQuarterNote)
-                {
-                    throw new ImuseSequencerException($"File has a PPQN (ticks per quarter note) value ({ticksPerQuarterNote}) that differs from the scheduler's PPQN ({scheduler.TicksPerQuarterNote}) - it cannot be registered.");
-                }
-            }
         }
 
         public void StartSound(int id)
@@ -112,10 +65,6 @@ namespace ImuseSequencer.Playback
         {
             StartSound(0);
 
-            // TODO: Preparation for interactive mode. Collect events before sending them to MidiScheduler to reduce amount of locks.
-            var events = new List<MidiEvent>();
-            driver.Transmitter = evt => { events.Add(evt); };
-
             bool done;
             do
             {
@@ -123,10 +72,6 @@ namespace ImuseSequencer.Playback
                 driver.CurrentTick++;
             }
             while (!done);
-
-            scheduler.Schedule(events);
-
-            scheduler.Start();
         }
 
         public void Stop()
@@ -134,11 +79,11 @@ namespace ImuseSequencer.Playback
             driver.Reset();
         }
 
-        private Driver GetDriver(OutputDevice output)
+        private Driver GetDriver()
         {
             return target switch
             {
-                SoundTarget.Roland => new Roland(output),
+                SoundTarget.Roland => new Roland(transmitter),
                 _ => throw new ImuseSequencerException($"Driver for {target} target is not implemented yet."),
             };
         }
@@ -150,9 +95,7 @@ namespace ImuseSequencer.Playback
                 return;
             }
             disposed = true;
-            scheduler?.Dispose();
             Stop();
-            output.Dispose();
 
             GC.SuppressFinalize(this);
         }

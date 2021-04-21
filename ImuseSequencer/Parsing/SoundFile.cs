@@ -81,9 +81,9 @@ namespace ImuseSequencer.Parsing
                         }
                         break;
                     case "MDhd":
-                        // Found in most (all?) target chunks - variable length (e.g. 0 in DOTT)
+                        // Found in most (all?) target chunks - variable length (0 in DOTT)
+                        // Contains various properties for iMUSE (e.g. sound priority etc.)
                         uint mdhdSize = reader.ReadUint32();
-                        // Just skip size for now
                         try
                         {
                             ImuseHeader = new ImuseMidiHeader(reader, mdhdSize);
