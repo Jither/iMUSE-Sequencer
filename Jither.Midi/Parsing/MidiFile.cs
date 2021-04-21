@@ -11,21 +11,7 @@ namespace Jither.Midi.Parsing
         private readonly List<MidiTrack> tracks = new();
         private readonly MidiFileOptions options;
 
-        private static readonly Dictionary<string, SoundTarget> targetsByChunk = new()
-        {
-            ["ADL "] = SoundTarget.Adlib,
-            ["ROL "] = SoundTarget.Roland,
-            ["SBL "] = SoundTarget.SoundBlaster,
-            ["GMD "] = SoundTarget.GeneralMidi,
-            ["MIDI"] = SoundTarget.GeneralMidi,
-            ["TAN "] = SoundTarget.Tandy,
-            ["SPK "] = SoundTarget.Speaker
-        };
-
-        /// <summary>
-        /// Name of the MIDI file. The path if available, otherwise "anonymous"
-        /// </summary>
-        public string Name { get; private set; } = "anonymous";
+        private Timeline timeline;
 
         /// <summary>
         /// Standard MIDI file format (0, 1, 2).
@@ -53,16 +39,6 @@ namespace Jither.Midi.Parsing
         public int TicksPerFrame { get; private set; }
 
         /// <summary>
-        /// Target device. Only available if MIDI was wrapped in target chunk.
-        /// </summary>
-        public SoundTarget Target { get; private set; }
-
-        /// <summary>
-        /// iMUSE MIDI header. Only available if MIDI includes MDhd chunk.
-        /// </summary>
-        public ImuseMidiHeader ImuseHeader { get; private set; }
-
-        /// <summary>
         /// List of all tracks in the file.
         /// </summary>
         public IReadOnlyList<MidiTrack> Tracks => tracks;
@@ -70,36 +46,51 @@ namespace Jither.Midi.Parsing
         /// <summary>
         /// Timeline of time signature changes. Only available for <see cref="DivisionType.Ppqn" />.
         /// </summary>
-        public Timeline Timeline { get; }
+        public Timeline Timeline => timeline ??= DivisionType == DivisionType.Ppqn ? new Timeline(this) : null;
 
-        public MidiFile(string path, MidiFileOptions options = null) : this(File.OpenRead(path), options)
+        public MidiFile(MidiFileOptions options = null)
         {
-            Name = path;
+            // Currently, options are only used for loading - and this constructor is intended for saving.
+            // However, doesn't hurt (much) to create it.
+            this.options = options ?? new MidiFileOptions();
         }
 
-        public MidiFile(Stream stream, MidiFileOptions options = null)
+        public MidiFile(string path, MidiFileOptions options = null) : this(options)
         {
-            this.options = options ?? new MidiFileOptions();
+            Load(File.OpenRead(path));
+        }
 
+        public MidiFile(Stream stream, MidiFileOptions options = null) : this(options)
+        {
+            Load(stream);
+        }
+
+        public MidiFile(MidiReader reader, MidiFileOptions options = null) : this(options)
+        {
+            Load(reader);
+        }
+
+        private void Load(Stream stream)
+        {
             using (var reader = new MidiReader(stream))
             {
-                ReadHeaderChunk(reader);
-
-                for (uint i = 0; i < TrackCount; i++)
-                {
-                    tracks.Add(ReadTrackChunk(reader, i));
-                }
+                Load(reader);
             }
+        }
 
-            if (DivisionType == DivisionType.Ppqn)
+        private void Load(MidiReader reader)
+        {
+            ReadHeaderChunk(reader);
+
+            for (uint i = 0; i < TrackCount; i++)
             {
-                Timeline = new Timeline(this);
+                tracks.Add(ReadTrackChunk(reader, i));
             }
         }
 
         private void ReadHeaderChunk(MidiReader reader)
         {
-            string type = FindHeader(reader);
+            var type = reader.ReadChunkType();
             if (type != "MThd")
             {
                 throw new MidiFileException($"Not a valid MIDI file: Missing MThd chunk");
@@ -130,60 +121,6 @@ namespace Jither.Midi.Parsing
                 };
                 TicksPerFrame = division & 0xff;
             }
-        }
-
-        private string FindHeader(MidiReader reader)
-        {
-            // Skip/check LEC specific chunks
-
-            long chunkPosition = reader.Position;
-            string type = reader.ReadChunkType();
-
-            while (type != "MThd")
-            {
-                switch (type)
-                {
-                    case "SOUN":
-                        // Typically outermost chunk in rooms.
-                        // May have a nested SOU_ chunk (e.g. MI2) or immediate target chunks (e.g. SNM)
-                        uint sounSize = reader.ReadUint32();
-                        if (chunkPosition + sounSize != reader.Length)
-                        {
-                            throw new MidiFileException($"Not a valid SOUN MIDI file: Incorrect SOUN chunk size.");
-                        }
-                        break;
-                    case "SOU ":
-                        uint souSize = reader.ReadUint32();
-                        if (chunkPosition + souSize + 8 != reader.Length)
-                        {
-                            throw new MidiFileException($"Not a valid SOU MIDI file: Incorrect SOU chunk size");
-                        }
-                        break;
-                    case "MDhd":
-                        // Found in most (all?) target chunks - variable length (e.g. 0 in DOTT)
-                        uint mdhdSize = reader.ReadUint32();
-                        // Just skip size for now
-                        ImuseHeader = new ImuseMidiHeader(reader, mdhdSize);
-                        break;
-                    case "MDpg":
-                        // Found in SNM and DOTT - variable length, not in all target chunks
-                        uint mdpgSize = reader.ReadUint32();
-                        // Just skip size for now
-                        reader.Position += mdpgSize;
-                        break;
-                    default:
-                        if (!targetsByChunk.TryGetValue(type, out var target))
-                        {
-                            throw new MidiFileException($"Not a valid MIDI file: Unknown header chunk type: {type}");
-                        }
-                        _ = reader.ReadUint32();
-                        Target = target;
-                        break;
-                }
-                chunkPosition = reader.Position;
-                type = reader.ReadChunkType();
-            }
-            return type;
         }
 
         private MidiTrack ReadTrackChunk(MidiReader reader, uint trackIndex)
@@ -273,7 +210,7 @@ namespace Jither.Midi.Parsing
 
         public override string ToString()
         {
-            string result = $"Target {Target}, Format {Format}, Tracks: {TrackCount}, Division: {DivisionType} - ";
+            string result = $"Format {Format}, Tracks: {TrackCount}, Division: {DivisionType} - ";
             result += DivisionType switch
             {
                 DivisionType.Smpte24 => TicksPerFrame,

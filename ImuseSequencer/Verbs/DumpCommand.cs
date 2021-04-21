@@ -1,5 +1,6 @@
 ﻿using ImuseSequencer.Helpers;
 using ImuseSequencer.Messages;
+using ImuseSequencer.Parsing;
 using Jither.CommandLine;
 using Jither.Logging;
 using Jither.Midi.Messages;
@@ -53,21 +54,22 @@ namespace ImuseSequencer.Verbs
 
         public override void Execute()
         {
-            MidiFile midiFile;
+            SoundFile soundFile;
             try
             {
-                midiFile = new MidiFile(options.InputPath, new MidiFileOptions().WithParser(new ImuseSysexParser()));
+                soundFile = new SoundFile(options.InputPath);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
             {
                 throw new ImuseSequencerException($"Cannot open file: {ex.Message}", ex);
             }
 
-            logger.Info($"MIDI: {midiFile}");
+            logger.Info($"{soundFile}");
+            logger.Info($"MIDI: {soundFile.Midi}");
             
-            if (midiFile.ImuseHeader != null)
+            if (soundFile.ImuseHeader != null)
             {
-                logger.Info($"iMUSE header (MDhd): {midiFile.ImuseHeader}");
+                logger.Info($"iMUSE header (MDhd): {soundFile.ImuseHeader}");
             }
             else
             {
@@ -78,7 +80,7 @@ namespace ImuseSequencer.Verbs
             {
                 logger.Info("");
                 logger.Info("<b>Events</b>");
-                foreach (var track in midiFile.Tracks)
+                foreach (var track in soundFile.Midi.Tracks)
                 {
                     logger.Info("");
                     logger.Info(track.ToString());
@@ -102,7 +104,7 @@ namespace ImuseSequencer.Verbs
             {
                 logger.Info("");
                 logger.Info("<b>Timeline</b>");
-                foreach (var time in midiFile.Timeline)
+                foreach (var time in soundFile.Midi.Timeline)
                 {
                     logger.Info(time.ToString());
                 }

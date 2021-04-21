@@ -1,10 +1,19 @@
 ﻿using Jither.Logging;
+using Jither.Midi.Parsing;
+using System;
 
-namespace Jither.Midi.Parsing
+namespace ImuseSequencer.Parsing
 {
+    public class ImuseMidiHeaderException : Exception
+    {
+        public ImuseMidiHeaderException(string message) : base(message)
+        {
+
+        }
+    }
     public class ImuseMidiHeader
     {
-        private static Logger logger = LogProvider.Get(nameof(ImuseMidiHeader));
+        private static readonly Logger logger = LogProvider.Get(nameof(ImuseMidiHeader));
 
         public int Version { get; }
         public int Priority { get; }
@@ -18,8 +27,7 @@ namespace Jither.Midi.Parsing
         {
             if (size != 8)
             {
-                logger.Warning($"Unknown MDhd chunk format, size {size}");
-                return;
+                throw new ImuseMidiHeaderException($"Unknown MDhd chunk format, size {size}");
             }
 
             Version = reader.ReadUint16();

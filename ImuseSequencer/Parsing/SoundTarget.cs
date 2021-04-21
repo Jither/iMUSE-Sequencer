@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Jither.Midi.Parsing
+namespace ImuseSequencer
 {
     public enum SoundTarget
     {

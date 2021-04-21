@@ -1,4 +1,5 @@
-﻿using Jither.Logging;
+﻿using ImuseSequencer.Parsing;
+using Jither.Logging;
 using Jither.Midi.Parsing;
 using System;
 using System.Collections.Generic;
@@ -12,15 +13,15 @@ namespace ImuseSequencer.Playback
     {
         private static readonly Logger logger = LogProvider.Get(nameof(FileManager));
 
-        private readonly Dictionary<int, MidiFile> files = new();
+        private readonly Dictionary<int, SoundFile> files = new();
 
-        public void Register(int id, MidiFile file)
+        public void Register(int id, SoundFile file)
         {
             files.Add(id, file);
             logger.Info($"Registered sound {id}: {file.Name}");
         }
 
-        public MidiFile Get(int id)
+        public SoundFile Get(int id)
         {
             files.TryGetValue(id, out var file);
             return file;

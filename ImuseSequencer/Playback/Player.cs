@@ -1,5 +1,6 @@
 ﻿using ImuseSequencer.Drivers;
 using ImuseSequencer.Messages;
+using ImuseSequencer.Parsing;
 using Jither.Midi.Messages;
 using Jither.Midi.Parsing;
 using System;
@@ -79,7 +80,7 @@ namespace ImuseSequencer.Playback
         /// Starts playback of sound. 
         /// </summary>
         /// <returns><c>true</c> if playback successfully started. Otherwise <c>false</c>.</returns>
-        public void Start(int id, MidiFile file)
+        public void Start(int id, SoundFile file)
         {
             Status = PlayerStatus.On;
             SoundId = id;
@@ -91,7 +92,7 @@ namespace ImuseSequencer.Playback
 
             hookBlock.Clear();
 
-            sequencer.Start(file);
+            sequencer.Start(file.Midi);
         }
 
         // Temporary

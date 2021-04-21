@@ -1,4 +1,5 @@
 ﻿using ImuseSequencer.Drivers;
+using ImuseSequencer.Parsing;
 using Jither.Logging;
 using Jither.Midi.Devices;
 using Jither.Midi.Devices.Windows;
@@ -55,14 +56,14 @@ namespace ImuseSequencer.Playback
             players = new PlayerManager(files, parts, sustainer, driver);
         }
 
-        public void RegisterSound(int id, MidiFile file)
+        public void RegisterSound(int id, SoundFile file)
         {
-            if (file.DivisionType != DivisionType.Ppqn)
+            if (file.Midi.DivisionType != DivisionType.Ppqn)
             {
                 throw new ImuseSequencerException($"iMUSE Sequencer only supports PPQN division MIDI files - this appears to be SMPTE.");
             }
 
-            SetupScheduler(file.TicksPerQuarterNote);
+            SetupScheduler(file.Midi.TicksPerQuarterNote);
 
             files.Register(id, file);
         }

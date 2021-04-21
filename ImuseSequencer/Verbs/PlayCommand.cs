@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using ImuseSequencer.Playback;
 using System.IO;
 using ImuseSequencer.Messages;
+using ImuseSequencer.Parsing;
 
 namespace ImuseSequencer.Verbs
 {
@@ -51,17 +52,17 @@ namespace ImuseSequencer.Verbs
 
         public override void Execute()
         {
-            MidiFile midiFile;
+            SoundFile soundFile;
             try
             {
-                midiFile = new MidiFile(options.InputPath, new MidiFileOptions().WithParser(new ImuseSysexParser()));
+                soundFile = new SoundFile(options.InputPath);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
             {
                 throw new ImuseSequencerException($"Cannot open file: {ex.Message}", ex);
             }
 
-            var target = options.Target == SoundTarget.Unknown ? midiFile.Target : options.Target;
+            var target = options.Target == SoundTarget.Unknown ? soundFile.Target : options.Target;
             if (target == SoundTarget.Unknown)
             {
                 throw new ImuseSequencerException("Unable to determine target device. Please specify it as an argument.");
@@ -79,7 +80,7 @@ namespace ImuseSequencer.Verbs
                 });
                 Console.CancelKeyPress += cancelHandler;
 
-                engine.RegisterSound(0, midiFile);
+                engine.RegisterSound(0, soundFile);
                 engine.Play();
                 Console.ReadKey(intercept: true);
                 Console.CancelKeyPress -= cancelHandler;
