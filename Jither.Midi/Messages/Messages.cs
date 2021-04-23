@@ -338,7 +338,7 @@ namespace Jither.Midi.Messages
         }
     }
 
-    public enum MetaType
+    public enum MetaType : byte
     {
         SequenceNumber = 0x00,
         TextEvent = 0x01,
@@ -363,13 +363,13 @@ namespace Jither.Midi.Messages
         public override string Parameters => $"{TypeName,-20} {Info}";
         public override int RawMessage => throw new NotSupportedException("Meta message is not representable as a 32-bit integer.");
 
-        public byte Type { get; }
+        public MetaType Type { get; }
         public byte[] Data { get; }
 
         public virtual string TypeName => Type.ToString("x2");
         public virtual string Info => Data.ToHex();
 
-        protected MetaMessage(byte type, byte[] data)
+        protected MetaMessage(MetaType type, byte[] data)
         {
             Type = type;
             Data = data;
@@ -377,52 +377,69 @@ namespace Jither.Midi.Messages
 
         public override void Write(IMidiWriter writer)
         {
-            writer.WriteMeta(0xff, Type, Data);
+            writer.WriteMeta(0xff, (byte)Type, Data);
+        }
+
+        public static MetaMessage Create(MetaType type, byte[] data)
+        {
+            return type switch
+            {
+                MetaType.SequenceNumber => new SequenceNumberMessage(data),
+                MetaType.TextEvent => new TextEventMessage(data),
+                MetaType.CopyrightNotice => new CopyrightNoticeMessage(data),
+                MetaType.SequenceName => new SequenceNameMessage(data),
+                MetaType.InstrumentName => new InstrumentNameMessage(data),
+                MetaType.Lyric => new LyricMessage(data),
+                MetaType.Marker => new MarkerMessage(data),
+                MetaType.CuePoint => new CuePointMessage(data),
+                MetaType.MidiChannelPrefix => new MidiChannelPrefixMessage(data),
+                MetaType.EndOfTrack => new EndOfTrackMessage(data),
+                MetaType.SetTempo => new SetTempoMessage(data),
+                MetaType.SmpteOffset => new SmpteOffsetMessage(data),
+                MetaType.TimeSignature => new TimeSignatureMessage(data),
+                MetaType.KeySignature => new KeySignatureMessage(data),
+                MetaType.SequencerSpecific => new SequencerSpecificMessage(data),
+                _ => new MetaMessage(type, data)
+            };
         }
 
         public static MetaMessage Create(byte type, byte[] data)
         {
-            return (MetaType)type switch
-            {
-                MetaType.SequenceNumber => new SequenceNumberMessage(type, data),
-                MetaType.TextEvent => new TextEventMessage(type, data),
-                MetaType.CopyrightNotice => new CopyrightNoticeMessage(type, data),
-                MetaType.SequenceName => new SequenceNameMessage(type, data),
-                MetaType.InstrumentName => new InstrumentNameMessage(type, data),
-                MetaType.Lyric => new LyricMessage(type, data),
-                MetaType.Marker => new MarkerMessage(type, data),
-                MetaType.CuePoint => new CuePointMessage(type, data),
-                MetaType.MidiChannelPrefix => new MidiChannelPrefixMessage(type, data),
-                MetaType.EndOfTrack => new EndOfTrackMessage(type, data),
-                MetaType.SetTempo => new SetTempoMessage(type, data),
-                MetaType.SmpteOffset => new SmpteOffsetMessage(type, data),
-                MetaType.TimeSignature => new TimeSignatureMessage(type, data),
-                MetaType.KeySignature => new KeySignatureMessage(type, data),
-                MetaType.SequencerSpecific => new SequencerSpecificMessage(type, data),
-                _ => new MetaMessage(type, data)
-            };
+            return Create((MetaType)type, data);
         }
     }
 
     public class SequenceNumberMessage : MetaMessage
     {
+        // Yes, meta messages have 8-bit data, not 7-bit.
         public int Number => (Data[0] << 8) | Data[1];
         public override string TypeName => "sequence-number";
         public override string Info => Number.ToString();
 
-        public SequenceNumberMessage(byte type, byte[] data) : base(type, data)
+        public SequenceNumberMessage(ushort number) : this(new byte[] { (byte)(number >> 8), (byte)(number & 0xff) })
+        {
+
+        }
+
+        public SequenceNumberMessage(byte[] data) : base(MetaType.SequenceNumber, data)
         {
 
         }
     }
 
-    public class MetaTextMessage : MetaMessage
+    public abstract class MetaTextMessage : MetaMessage
     {
         // Assuming ASCII here (although SMF spec actually doesn't in all cases - e.g. text-event)
         public string Text => Encoding.ASCII.GetString(Data);
         public override string Info => Text;
 
-        public MetaTextMessage(byte type, byte[] data) : base(type, data)
+        protected MetaTextMessage(MetaType type, string text) : base(type, Encoding.ASCII.GetBytes(text))
+        {
+
+        }
+
+
+        protected MetaTextMessage(MetaType type, byte[] data) : base(type, data)
         {
         }
     }
@@ -432,8 +449,13 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "text-event";
 
-        public TextEventMessage(byte type, byte[] data) : base(type, data)
+        public TextEventMessage(byte[] data) : base(MetaType.TextEvent, data)
         {
+        }
+
+        public TextEventMessage(string text) : base(MetaType.TextEvent, text)
+        {
+
         }
     }
 
@@ -441,7 +463,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "copyright-notice";
 
-        public CopyrightNoticeMessage(byte type, byte[] data) : base(type, data)
+        public CopyrightNoticeMessage(byte[] data) : base(MetaType.CopyrightNotice, data)
+        {
+        }
+
+        public CopyrightNoticeMessage(string text) : base(MetaType.CopyrightNotice, text)
         {
         }
     }
@@ -450,7 +476,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "sequence-name";
 
-        public SequenceNameMessage(byte type, byte[] data) : base(type, data)
+        public SequenceNameMessage(byte[] data) : base(MetaType.SequenceName, data)
+        {
+        }
+
+        public SequenceNameMessage(string text) : base(MetaType.SequenceName, text)
         {
         }
     }
@@ -459,7 +489,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "instrument-name";
 
-        public InstrumentNameMessage(byte type, byte[] data) : base(type, data)
+        public InstrumentNameMessage(byte[] data) : base(MetaType.InstrumentName, data)
+        {
+        }
+
+        public InstrumentNameMessage(string text) : base(MetaType.InstrumentName, text)
         {
         }
     }
@@ -468,7 +502,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "lyric";
 
-        public LyricMessage(byte type, byte[] data) : base(type, data)
+        public LyricMessage(byte[] data) : base(MetaType.Lyric, data)
+        {
+        }
+
+        public LyricMessage(string text) : base(MetaType.Lyric, text)
         {
         }
     }
@@ -477,12 +515,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "marker";
 
-        public MarkerMessage(string text) : base((byte)MetaType.Marker, Encoding.ASCII.GetBytes(text))
+        public MarkerMessage(byte[] data) : base(MetaType.Marker, data)
         {
-
         }
 
-        public MarkerMessage(byte type, byte[] data) : base(type, data)
+        public MarkerMessage(string text) : base(MetaType.Marker, text)
         {
         }
     }
@@ -491,7 +528,11 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "cuepoint";
 
-        public CuePointMessage(byte type, byte[] data) : base(type, data)
+        public CuePointMessage(byte[] data) : base(MetaType.CuePoint, data)
+        {
+        }
+
+        public CuePointMessage(string text) : base(MetaType.CuePoint, text)
         {
         }
     }
@@ -503,7 +544,11 @@ namespace Jither.Midi.Messages
 
         public byte Prefix => Data[0];
 
-        public MidiChannelPrefixMessage(byte type, byte[] data) : base(type, data)
+        public MidiChannelPrefixMessage(byte[] data) : base(MetaType.MidiChannelPrefix, data)
+        {
+        }
+
+        public MidiChannelPrefixMessage(byte channel) : this(new byte[] { channel })
         {
         }
     }
@@ -512,12 +557,12 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "end-of-track";
 
-        public EndOfTrackMessage() : base((byte)MetaType.EndOfTrack, Array.Empty<byte>())
+        public EndOfTrackMessage() : base(MetaType.EndOfTrack, Array.Empty<byte>())
         {
 
         }
 
-        public EndOfTrackMessage(byte type, byte[] data) : base(type, data)
+        public EndOfTrackMessage(byte[] data) : base(MetaType.EndOfTrack, data)
         {
         }
     }
@@ -529,8 +574,13 @@ namespace Jither.Midi.Messages
 
         public int Tempo => (Data[0] << 16) | (Data[1] << 8) | Data[2];
 
-        public SetTempoMessage(byte type, byte[] data) : base(type, data)
+        public SetTempoMessage(byte[] data) : base(MetaType.SetTempo, data)
         {
+        }
+
+        public SetTempoMessage(int usecsPQN) : this(new byte[] { (byte)(usecsPQN >> 16), (byte)(usecsPQN >> 8), (byte)(usecsPQN) })
+        {
+
         }
     }
 
@@ -544,7 +594,11 @@ namespace Jither.Midi.Messages
         public byte FractionalFrames => Data[4];
         public override string Info => $"{Hours:00}:{Minutes:00}:{Seconds:00}:{Frames:00}.{FractionalFrames:00}";
 
-        public SmpteOffsetMessage(byte type, byte[] data) : base(type, data)
+        public SmpteOffsetMessage(byte[] data) : base(MetaType.SmpteOffset, data)
+        {
+        }
+
+        public SmpteOffsetMessage(byte hours, byte minutes, byte seconds, byte frames, byte fractionalFrames = 0) : this(new byte[] { hours, minutes, seconds, frames, fractionalFrames })
         {
         }
     }
@@ -559,7 +613,12 @@ namespace Jither.Midi.Messages
         public int ClocksPerBeat => Data[2];
         public int ThirtySecondNotesPerMidiQuarterNote => Data[3];
         
-        public TimeSignatureMessage(byte type, byte[] data) : base(type, data)
+        public TimeSignatureMessage(byte[] data) : base(MetaType.TimeSignature, data)
+        {
+        }
+
+        public TimeSignatureMessage(byte numerator, byte denominator, byte clocksPerBeat, byte thirtySecondNotesPerMidiQuarterNote)
+            : this(new byte[] { numerator, denominator, clocksPerBeat, thirtySecondNotesPerMidiQuarterNote })
         {
         }
     }
@@ -572,7 +631,11 @@ namespace Jither.Midi.Messages
         public int Accidentals => Data[0];
         public int Mode => Data[1];
 
-        public KeySignatureMessage(byte type, byte[] data) : base(type, data)
+        public KeySignatureMessage(byte[] data) : base(MetaType.KeySignature, data)
+        {
+        }
+
+        public KeySignatureMessage(sbyte accidentals, bool minor) : this(new byte[] { (byte)accidentals, minor ? (byte)1 : (byte)0 })
         {
         }
     }
@@ -581,7 +644,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "sequencer-specific";
 
-        public SequencerSpecificMessage(byte type, byte[] data) : base(type, data)
+        public SequencerSpecificMessage(byte[] data) : base(MetaType.SequencerSpecific, data)
         {
 
         }
