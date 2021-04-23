@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
-    public class OutputDeviceTransmitter : ITransmitter, IDisposable
+    public class OutputDeviceTransmitter : IOutputTransmitter, ITransmitter, IDisposable
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputDeviceTransmitter));
         private readonly OutputDevice output;

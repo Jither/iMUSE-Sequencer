@@ -2,19 +2,19 @@
 using Jither.Midi.Files;
 using System;
 using System.Runtime.InteropServices;
+using Jither.Midi.Helpers;
 
 namespace Jither.Midi.Devices.Windows
 {
-    internal static class SysexBuilder
+    internal static class WindowsBufferBuilder
     {
         public static IntPtr Build(SysexMessage message)
         {
             byte[] data;
-            int length;
-            
+
             if (!message.Continuation)
             {
-                length = message.Data.Length + 1;
+                int length = message.Data.Length + 1;
                 data = new byte[length];
 
                 data[0] = 0xf0;
@@ -22,29 +22,30 @@ namespace Jither.Midi.Devices.Windows
             }
             else
             {
-                length = message.Data.Length;
-                data = new byte[length];
-
-                Array.Copy(message.Data, data, length);
+                data = message.Data;
             }
 
+            return Build(data);
+        }
+
+        public static IntPtr Build(byte[] data)
+        {
+            int length = data.Length;
             var header = new MidiHeader
             {
-                bufferLength = length,
-                bytesRecorded = length,
-                data = Marshal.AllocHGlobal(length),
-                flags = 0
+                dwBufferLength = length,
+                dwBytesRecorded = length,
+                lpData = Marshal.AllocHGlobal(length),
+                dwFlags = 0
             };
 
-            for (int i = 0; i < length; i++)
-            {
-                Marshal.WriteByte(header.data, i, data[i]);
-            }
+            Marshal.Copy(data, 0, header.lpData, length);
 
-            IntPtr bufferPointer;
+            Console.WriteLine(data.ToHex());
+
             try
             {
-                bufferPointer = Marshal.AllocHGlobal(Marshal.SizeOf<MidiHeader>());
+                var bufferPointer = Marshal.AllocHGlobal(Marshal.SizeOf<MidiHeader>());
                 try
                 {
                     Marshal.StructureToPtr(header, bufferPointer, false);
@@ -58,7 +59,7 @@ namespace Jither.Midi.Devices.Windows
             }
             catch
             {
-                Marshal.FreeHGlobal(header.data);
+                Marshal.FreeHGlobal(header.lpData);
                 throw;
             }
         }
@@ -66,7 +67,7 @@ namespace Jither.Midi.Devices.Windows
         public static void Destroy(IntPtr bufferPointer)
         {
             MidiHeader header = Marshal.PtrToStructure<MidiHeader>(bufferPointer);
-            Marshal.FreeHGlobal(header.data);
+            Marshal.FreeHGlobal(header.lpData);
             Marshal.FreeHGlobal(bufferPointer);
         }
     }

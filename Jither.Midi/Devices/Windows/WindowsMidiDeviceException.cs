@@ -6,14 +6,6 @@ namespace Jither.Midi.Devices.Windows
 {
     public class WindowsMidiDeviceException : MidiDeviceException
     {
-
-#pragma warning disable IDE1006 // Naming Styles - midiOutGetErrorText is WinAPI
-
-        [DllImport("winmm.dll", CharSet = CharSet.Unicode)]
-        private static extern int midiOutGetErrorText(int errCode, StringBuilder message, int sizeOfMessage);
-
-#pragma warning restore IDE1006 // Naming Styles
-
         private static readonly StringBuilder stringBuilder = new(256);
 
         public const int MMSYSERR_NOERROR = 0;
@@ -52,7 +44,7 @@ namespace Jither.Midi.Devices.Windows
 
         private static string GetMessage(int error)
         {
-            int result = midiOutGetErrorText(error, stringBuilder, stringBuilder.Capacity);
+            int result = WinApi.midiOutGetErrorText(error, stringBuilder, stringBuilder.Capacity);
             if (result != MMSYSERR_NOERROR)
             {
                 return $"No error message for this error. Error code: {error}";

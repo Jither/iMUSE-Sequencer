@@ -203,6 +203,7 @@ namespace Jither.Imuse
                     parts.DeallocAllParts();
                     break;
 
+                // TODO: Marker meta messages for hooks
                 // Hooks
                 case ImuseHookJump jump:
                     // TODO: Temporary test measure: We don't allow a jump to execute more than 3 times - otherwise we'll never get done...

@@ -19,20 +19,22 @@ namespace ImuseSequencer.Verbs
         public string OutputPath { get; set; }
 
         [Option('o', "output", Help = "ID of MIDI output device. Cannot be combined with output to file.", ArgName = "device id")]
-        public int DeviceId { get; set; } = -1;
+        public string DeviceId { get; set; }
 
         [Option('t', "target", Help = "Playback target device. 'Unknown' will determine from LEC chunk, if present.", ArgName = "target", Default = SoundTarget.Unknown)]
         public SoundTarget Target { get; set; }
 
+
+
         [Examples]
         public static IEnumerable<Example<PlayOptions>> Examples => new[]
         {
-            new Example<PlayOptions>("Play file using MIDI output device 2", new PlayOptions { InputPath = "LARGO.rol", DeviceId = 2 }),
-            new Example<PlayOptions>("Play file with MT-32 as target", new PlayOptions { InputPath = "OFFICE.mid", DeviceId = 2, Target = SoundTarget.Roland })
+            new Example<PlayOptions>("Play file using MIDI output device 2", new PlayOptions { InputPath = "LARGO.rol", DeviceId = "2" }),
+            new Example<PlayOptions>("Play file with MT-32 as target", new PlayOptions { InputPath = "OFFICE.mid", DeviceId = "2", Target = SoundTarget.Roland })
         };
 
         public bool ToFile => OutputPath != null;
-        public bool ToDevice => DeviceId >= 0;
+        public bool ToDevice => DeviceId != null;
 
         public void AfterParse()
         {
@@ -112,13 +114,42 @@ namespace ImuseSequencer.Verbs
             }
         }
 
+        private IOutputTransmitter CreateTransmitter()
+        {
+            // TODO: Temporary debugging measure - s:<device-id> selects stream transmitter
+            var idParts = options.DeviceId.Split(':');
+            string strDeviceId;
+            string transmitterType = null;
+            if (idParts.Length == 2)
+            {
+                transmitterType = idParts[0];
+                strDeviceId = idParts[1];
+            }
+            else
+            {
+                strDeviceId = idParts[0];
+            }
+
+            if (!Int32.TryParse(strDeviceId, out int deviceId))
+            {
+                throw new ImuseSequencerException($"Invalid device ID: {strDeviceId}");
+            }
+
+            switch (transmitterType)
+            {
+                case "s":
+                    return new OutputStreamTransmitter(deviceId);
+                default:
+                    return new OutputDeviceTransmitter(deviceId);
+            }
+        }
         private void PlayToDevice(SoundFile soundFile, SoundTarget target)
         {
-            logger.Info($"Playing <c:88cc55>{options.InputPath}</c>...");
+            logger.Info($"Playing <c#88cc55>{options.InputPath}</c>...");
 
             try
             {
-                using (var transmitter = new OutputDeviceTransmitter(options.DeviceId))
+                using (var transmitter = CreateTransmitter())
                 {
                     using (var engine = new ImuseEngine(transmitter, target))
                     {

@@ -9,47 +9,21 @@ namespace Jither.Midi.Devices.Windows
 {
     public class WindowsOutputDevice : OutputDevice
     {
-#pragma warning disable IDE1006 // Naming Styles - keeping case of WinAPI functions
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutOpen(out IntPtr handle, int deviceID, MidiOutProc proc, IntPtr instance, int flags);
-
-        private delegate void MidiOutProc(IntPtr hnd, int msg, IntPtr instance, IntPtr param1, IntPtr param2);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutClose(IntPtr handle);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutReset(IntPtr handle);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutShortMsg(IntPtr handle, int message);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutPrepareHeader(IntPtr handle, IntPtr headerPtr, int sizeOfMidiHeader);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutUnprepareHeader(IntPtr handle, IntPtr headerPtr, int sizeOfMidiHeader);
-
-        [DllImport("winmm.dll")]
-        private static extern int midiOutLongMsg(IntPtr handle, IntPtr headerPtr, int sizeOfMidiHeader);
-
-#pragma warning restore IDE1006 // Naming Styles
-
-        protected static readonly int sizeOfMidiHeader = Marshal.SizeOf<MidiHeader>();
-
         private IntPtr handle;
         private readonly MessagingSynchronizationContext context = new();
         private readonly object lockMidi = new();
         private int sysexBufferCount = 0;
-        private readonly MidiOutProc midiOutCallback;
+        private readonly WinApi.MidiOutProc midiOutCallback;
 
         public WindowsOutputDevice(int deviceId) : base(deviceId)
         {
             // We need to manually create the delegate to avoid it being garbage collected
-            midiOutCallback = new MidiOutProc(HandleMessage);
-            int result = midiOutOpen(out handle, deviceId, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
+            midiOutCallback = new WinApi.MidiOutProc(HandleMessage);
+            int result = WinApi.midiOutOpen(out handle, deviceId, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
             EnsureSuccess(result);
+
+            // TODO: Actually start context
+            //context.Start();
         }
 
         ~WindowsOutputDevice()
@@ -61,7 +35,7 @@ namespace Jither.Midi.Devices.Windows
         {
             lock (lockMidi)
             {
-                int result = midiOutShortMsg(handle, message);
+                int result = WinApi.midiOutShortMsg(handle, message);
                 EnsureSuccess(result);
             }
         }
@@ -88,12 +62,8 @@ namespace Jither.Midi.Devices.Windows
         {
             lock (lockMidi)
             {
-                int result = midiOutReset(handle);
+                int result = WinApi.midiOutReset(handle);
                 EnsureSuccess(result);
-                while (sysexBufferCount > 0)
-                {
-                    Monitor.Wait(lockMidi);
-                }
             }
         }
 
@@ -101,24 +71,24 @@ namespace Jither.Midi.Devices.Windows
         {
             lock (lockMidi)
             {
-                IntPtr sysexPointer = SysexBuilder.Build(message);
+                IntPtr sysexPointer = WindowsBufferBuilder.Build(message);
 
                 try
                 {
-                    int result = midiOutPrepareHeader(handle, sysexPointer, sizeOfMidiHeader);
+                    int result = WinApi.midiOutPrepareHeader(handle, sysexPointer, WinApi.SizeOfMidiHeader);
                     EnsureSuccess(result);
 
                     sysexBufferCount++;
 
                     try
                     {
-                        result = midiOutLongMsg(handle, sysexPointer, sizeOfMidiHeader);
+                        result = WinApi.midiOutLongMsg(handle, sysexPointer, WinApi.SizeOfMidiHeader);
                         EnsureSuccess(result);
                     }
                     catch (WindowsMidiDeviceException)
                     {
                         // We already got an exception which is more important, so throw out errors during cleanup
-                        _ = midiOutUnprepareHeader(handle, sysexPointer, sizeOfMidiHeader);
+                        _ = WinApi.midiOutUnprepareHeader(handle, sysexPointer, WinApi.SizeOfMidiHeader);
                         sysexBufferCount--;
                         throw;
                     }
@@ -126,7 +96,7 @@ namespace Jither.Midi.Devices.Windows
                 }
                 catch (WindowsMidiDeviceException)
                 {
-                    SysexBuilder.Destroy(sysexPointer);
+                    WindowsBufferBuilder.Destroy(sysexPointer);
                     throw;
                 }
             }
@@ -153,12 +123,12 @@ namespace Jither.Midi.Devices.Windows
                 IntPtr sysexPointer = (IntPtr)state;
 
                 // Unprepare the buffer.
-                int result = midiOutUnprepareHeader(handle, sysexPointer, sizeOfMidiHeader);
+                int result = WinApi.midiOutUnprepareHeader(handle, sysexPointer, WinApi.SizeOfMidiHeader);
 
                 EnsureSuccess(result);
 
                 // Release the buffer resources.
-                SysexBuilder.Destroy(sysexPointer);
+                WindowsBufferBuilder.Destroy(sysexPointer);
 
                 sysexBufferCount--;
 
@@ -192,17 +162,25 @@ namespace Jither.Midi.Devices.Windows
                         {
                             // e.g. Munt does not support resetting
                         }
-                        int result = midiOutClose(handle);
+                        int result = WinApi.midiOutClose(handle);
                         EnsureSuccess(result);
+                        // TODO: Reinstate this, when context is synchronizing
+                        /*
+                        while (sysexBufferCount > 0)
+                        {
+                            Monitor.Wait(lockMidi);
+                        }
+                        */
                     }
                 }
                 else
                 {
                     // We can't do much about error conditions in these calls.
-                    _ = midiOutReset(handle);
-                    _ = midiOutClose(handle);
+                    _ = WinApi.midiOutReset(handle);
+                    _ = WinApi.midiOutClose(handle);
                 }
                 handle = IntPtr.Zero;
+                //context.Stop();
             }
             finally
             {
