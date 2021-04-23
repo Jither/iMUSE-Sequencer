@@ -13,12 +13,12 @@ namespace Jither.Midi.Files
     public class MidiWriterTests : IDisposable
     {
         private MemoryStream stream;
-        private MidiWriter writer;
+        private MidiFileWriter writer;
 
         public MidiWriterTests()
         {
             stream = new MemoryStream();
-            writer = new MidiWriter(stream);
+            writer = new MidiFileWriter(stream);
         }
 
         public void Dispose()

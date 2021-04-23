@@ -4,7 +4,16 @@ using System.Text;
 
 namespace Jither.Midi.Files
 {
-    public class MidiWriter : IDisposable
+    public interface IMidiWriter
+    {
+        void WriteShortMessage(byte status, byte value1, byte value2);
+        void WriteShortMessage(byte status, byte value);
+        void WriteShortMessage(byte status, ushort value);
+        void WriteSysex(byte status, byte[] data);
+        void WriteMeta(byte status, byte type, byte[] data);
+    }
+
+    public class MidiFileWriter : IMidiWriter, IDisposable
     {
         private Stream stream;
         private bool disposed;
@@ -18,7 +27,7 @@ namespace Jither.Midi.Files
 
         public long Length => stream.Length;
 
-        public MidiWriter(Stream stream)
+        public MidiFileWriter(Stream stream)
         {
             this.stream = stream;
         }
@@ -88,6 +97,39 @@ namespace Jither.Midi.Files
                 stream.WriteByte(buffer[count]);
 
             }
+        }
+
+        public void WriteShortMessage(byte status, byte value1, byte value2)
+        {
+            WriteByte(status);
+            WriteByte(value1);
+            WriteByte(value2);
+        }
+
+        public void WriteShortMessage(byte status, ushort value)
+        {
+            WriteByte(status);
+            WriteByte((byte)((value & 0x3f80) >> 7));
+            WriteByte((byte)(value & 0x7f));
+        }
+
+        public void WriteShortMessage(byte status, byte value)
+        {
+            WriteByte(status);
+            WriteByte(value);
+        }
+
+        public void WriteSysex(byte status, byte[] data)
+        {
+            WriteByte(status);
+            WriteVariableBytes(data);
+        }
+
+        public void WriteMeta(byte status, byte type, byte[] data)
+        {
+            WriteByte(status);
+            WriteByte(type);
+            WriteVariableBytes(data);
         }
 
         public void Dispose()

@@ -28,8 +28,7 @@ namespace Jither.Midi.Messages
 
         public override string ToString() => $"{Name,-14}  {Parameters}";
 
-        public abstract void Write(MidiWriter writer);
-        public abstract void Write(MidiStreamWriter writer);
+        public abstract void Write(IMidiWriter writer);
     }
 
     public abstract class ChannelMessage : MidiMessage
@@ -65,14 +64,7 @@ namespace Jither.Midi.Messages
             Velocity = velocity;
         }
 
-        public override void Write(MidiWriter writer)
-        {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte(Key);
-            writer.WriteByte(Velocity);
-        }
-
-        public override void Write(MidiStreamWriter writer)
+        public override void Write(IMidiWriter writer)
         {
             writer.WriteShortMessage((byte)(Command | Channel), Key, Velocity);
         }
@@ -94,14 +86,7 @@ namespace Jither.Midi.Messages
             Velocity = velocity;
         }
 
-        public override void Write(MidiWriter writer)
-        {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte(Key);
-            writer.WriteByte(Velocity);
-        }
-
-        public override void Write(MidiStreamWriter writer)
+        public override void Write(IMidiWriter writer)
         {
             writer.WriteShortMessage((byte)(Command | Channel), Key, Velocity);
         }
@@ -123,14 +108,7 @@ namespace Jither.Midi.Messages
             Pressure = pressure;
         }
 
-        public override void Write(MidiWriter writer)
-        {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte(Key);
-            writer.WriteByte(Pressure);
-        }
-
-        public override void Write(MidiStreamWriter writer)
+        public override void Write(IMidiWriter writer)
         {
             writer.WriteShortMessage((byte)(Command | Channel), Key, Pressure);
         }
@@ -173,14 +151,7 @@ namespace Jither.Midi.Messages
             };
         }
 
-        public override void Write(MidiWriter writer)
-        {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte((byte)Controller);
-            writer.WriteByte(Value);
-        }
-
-        public override void Write(MidiStreamWriter writer)
+        public override void Write(IMidiWriter writer)
         {
             writer.WriteShortMessage((byte)(Command | Channel), (byte)Controller, Value);
         }
@@ -283,15 +254,9 @@ namespace Jither.Midi.Messages
             Program = program;
         }
 
-        public override void Write(MidiWriter writer)
+        public override void Write(IMidiWriter writer)
         {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte(Program);
-        }
-
-        public override void Write(MidiStreamWriter writer)
-        {
-            writer.WriteShortMessage((byte)(Command | Channel), Program, 0);
+            writer.WriteShortMessage((byte)(Command | Channel), Program);
         }
     }
 
@@ -309,15 +274,9 @@ namespace Jither.Midi.Messages
             Pressure = pressure;
         }
 
-        public override void Write(MidiWriter writer)
+        public override void Write(IMidiWriter writer)
         {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte(Pressure);
-        }
-
-        public override void Write(MidiStreamWriter writer)
-        {
-            writer.WriteShortMessage((byte)(Command | Channel), Pressure, 0);
+            writer.WriteShortMessage((byte)(Command | Channel), Pressure);
         }
     }
 
@@ -335,16 +294,9 @@ namespace Jither.Midi.Messages
             Bender = bender;
         }
 
-        public override void Write(MidiWriter writer)
+        public override void Write(IMidiWriter writer)
         {
-            writer.WriteByte((byte)(Command | Channel));
-            writer.WriteByte((byte)((Bender & 0x3f80) >> 7));
-            writer.WriteByte((byte)(Bender & 0x7f));
-        }
-
-        public override void Write(MidiStreamWriter writer)
-        {
-            writer.WriteShortMessage((byte)(Command | Channel), (byte)(Bender & 0x7f), (byte)((Bender & 0x3f80) >> 7));
+            writer.WriteShortMessage((byte)(Command | Channel), Bender);
         }
     }
 
@@ -380,16 +332,9 @@ namespace Jither.Midi.Messages
             Continuation = continuation;
         }
 
-        public override void Write(MidiWriter writer)
+        public override void Write(IMidiWriter writer)
         {
-            writer.WriteByte(Status);
-            writer.WriteVariableBytes(Data);
-        }
-
-        public override void Write(MidiStreamWriter writer)
-        {
-            // Event code.
-            writer.WriteLongMessage(Status, Data);
+            writer.WriteSysex(Status, Data);
         }
     }
 
@@ -430,17 +375,9 @@ namespace Jither.Midi.Messages
             Data = data;
         }
 
-        public override void Write(MidiWriter writer)
+        public override void Write(IMidiWriter writer)
         {
-            writer.WriteByte(0xff);
-            writer.WriteByte(Type);
-            writer.WriteVariableBytes(Data);
-        }
-
-        public override void Write(MidiStreamWriter writer)
-        {
-            // Meta messages normally shouldn't be written to a stream (except SetTempo, which is special)
-            throw new NotImplementedException();
+            writer.WriteMeta(0xff, Type, Data);
         }
 
         public static MetaMessage Create(byte type, byte[] data)
@@ -594,11 +531,6 @@ namespace Jither.Midi.Messages
 
         public SetTempoMessage(byte type, byte[] data) : base(type, data)
         {
-        }
-
-        public override void Write(MidiStreamWriter writer)
-        {
-            writer.WriteTempo(Tempo);
         }
     }
 

@@ -118,13 +118,13 @@ namespace Jither.Midi.Files
 
         public void Save(Stream stream)
         {
-            using (var writer = new MidiWriter(stream))
+            using (var writer = new MidiFileWriter(stream))
             {
                 Save(writer);
             }
         }
 
-        public void Save(MidiWriter writer)
+        public void Save(MidiFileWriter writer)
         {
             WriteHeaderChunk(writer);
 
@@ -171,7 +171,7 @@ namespace Jither.Midi.Files
             return trackCount;
         }
 
-        private void WriteHeaderChunk(MidiWriter writer)
+        private void WriteHeaderChunk(MidiFileWriter writer)
         {
             writer.WriteChunkType("MThd");
             writer.WriteUint32(6); // chunk size
@@ -248,7 +248,7 @@ namespace Jither.Midi.Files
             return new MidiTrack(trackIndex, events);
         }
 
-        public void WriteTrackChunk(MidiWriter writer, MidiTrack track)
+        public void WriteTrackChunk(MidiFileWriter writer, MidiTrack track)
         {
             writer.WriteChunkType("MTrk");
             long sizePosition = writer.Position;
