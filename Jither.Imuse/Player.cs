@@ -27,6 +27,7 @@ namespace Jither.Imuse
 
         // List of parts currently used by this player
         private readonly PartsCollection linkedParts;
+        private readonly ImuseOptions options;
 
         // TODO: Temporary test measure:
         private readonly Dictionary<ImuseHookJump, int> jumpsExecuted = new();
@@ -43,10 +44,11 @@ namespace Jither.Imuse
         internal PartsCollection Parts => linkedParts;
         internal Sequencer Sequencer => sequencer;
 
-        public Player(Driver driver, PartsManager parts, Sustainer sustainer)
+        public Player(Driver driver, PartsManager parts, Sustainer sustainer, ImuseOptions options)
         {
             this.driver = driver;
             this.parts = parts;
+            this.options = options;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
             HookBlock = new HookBlock(this);
@@ -210,9 +212,9 @@ namespace Jither.Imuse
                 // TODO: Marker meta messages for hooks
                 // Hooks
                 case ImuseHookJump jump:
-                    // TODO: Temporary test measure: We don't allow a jump to execute more than 3 times - otherwise we'll never get done...
                     jumpsExecuted.TryGetValue(jump, out int executedCount);
-                    if (executedCount < 3)
+                    // We allow limiting the number of jumps performed for a given hook. This is useful for non-interactive recording.
+                    if (executedCount < options.JumpLimit)
                     {
                         if (HookBlock.HandleJump(jump.Hook, jump.Chunk, jump.Beat, jump.Tick))
                         {
@@ -238,8 +240,8 @@ namespace Jither.Imuse
 
                 // Loops
                 case ImuseSetLoop setLoop:
-                    // TODO: For now, we're limiting loops to 3 - or we'll get e.g. 1000 generated while testing
-                    int count = Math.Min(setLoop.Count, 2);
+                    // We allow limiting number of loops - this is useful for non-interactive recording
+                    int count = Math.Min(setLoop.Count, options.LoopLimit);
                     sequencer.SetLoop(count, setLoop.StartBeat, setLoop.StartTick, setLoop.EndBeat, setLoop.EndTick);
                     break;
                 case ImuseClearLoop:

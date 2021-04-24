@@ -24,7 +24,7 @@ namespace Jither.Imuse
 
         public ImuseCommands Commands { get; }
 
-        public ImuseEngine(ITransmitter transmitter, SoundTarget target)
+        public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options)
         {
             this.transmitter = transmitter;
             this.target = target;
@@ -37,7 +37,7 @@ namespace Jither.Imuse
 
             var parts = new PartsManager(driver);
             var sustainer = new Sustainer();
-            players = new PlayerManager(files, parts, sustainer, driver);
+            players = new PlayerManager(files, parts, sustainer, driver, options);
 
             Commands = new ImuseCommands(players);
         }

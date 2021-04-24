@@ -14,14 +14,14 @@ namespace Jither.Imuse
         private readonly PartsManager parts;
         private readonly List<Player> players = new();
 
-        public PlayerManager(FileManager files, PartsManager parts, Sustainer sustainer, Driver driver)
+        public PlayerManager(FileManager files, PartsManager parts, Sustainer sustainer, Driver driver, ImuseOptions options)
         {
             this.files = files;
             this.parts = parts;
 
             for (int i = 0; i < playerCount; i++)
             {
-                players.Add(new Player(driver, parts, sustainer));
+                players.Add(new Player(driver, parts, sustainer, options));
             }
         }
 

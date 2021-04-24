@@ -24,7 +24,11 @@ namespace ImuseSequencer.Verbs
         [Option('t', "target", Help = "Playback target device. 'Unknown' will determine from LEC chunk, if present.", ArgName = "target", Default = SoundTarget.Unknown)]
         public SoundTarget Target { get; set; }
 
+        [Option("loop-limit", Help = "Limits the number of loops performed by the sequencer. This is useful (necessary) for e.g. non-interactive recording. 0 indicates no limit for device outputs and 3 for MIDI file output.", ArgName = "limit", Default = 0)]
+        public int LoopLimit { get; set; }
 
+        [Option("jump-limit", Help = "Limits the number of times each jump hook is performed by the sequencer. This is useful (necessary) for e.g. non-interactive recording. 0 indicates no limit for device outputs and 3 for MIDI file output.", ArgName = "limit", Default = 0)]
+        public int JumpLimit { get; set; }
 
         [Examples]
         public static IEnumerable<Example<PlayOptions>> Examples => new[]
@@ -47,6 +51,16 @@ namespace ImuseSequencer.Verbs
             {
                 throw new CustomParserException("Please specify either an output MIDI file or an output MIDI device.");
             }
+
+            if (JumpLimit == 0)
+            {
+                JumpLimit = ToFile ? 3 : int.MaxValue;
+            }
+
+            if (LoopLimit == 0)
+            {
+                LoopLimit = ToFile ? 3 : int.MaxValue;
+            }
         }
     }
 
@@ -55,10 +69,12 @@ namespace ImuseSequencer.Verbs
         private readonly Logger logger = LogProvider.Get(nameof(PlayCommand));
 
         private readonly PlayOptions options;
+        private readonly ImuseOptions imuseOptions;
 
         public PlayCommand(PlayOptions options) : base(options)
         {
             this.options = options;
+            imuseOptions = new ImuseOptions { JumpLimit = options.JumpLimit, LoopLimit = options.LoopLimit };
         }
 
         public override void Execute()
@@ -149,13 +165,15 @@ namespace ImuseSequencer.Verbs
             {
                 using (var transmitter = CreateTransmitter())
                 {
-                    using (var engine = new ImuseEngine(transmitter, target))
+                    using (var engine = new ImuseEngine(transmitter, target, imuseOptions))
                     {
                         // Clean up, even with Ctrl+C
                         SetupCancelHandler(engine, transmitter);
 
                         engine.RegisterSound(0, soundFile);
+
                         engine.StartSound(0);
+                        BuildCommands(engine);
 
                         transmitter.Player = ticks => engine.Play(ticks);
                         transmitter.Start();
@@ -175,7 +193,7 @@ namespace ImuseSequencer.Verbs
         private Dictionary<char, HookInfo> hooksByKey = new Dictionary<char, HookInfo>();
         private string hookChars = "1234567890abcdefghijklmnopqrstuvwxy";
 
-        private void GameLoop(ImuseEngine engine)
+        private void BuildCommands(ImuseEngine engine)
         {
             var interactivityInfo = engine.Commands.GetInteractivityInfo(0);
 
@@ -197,7 +215,10 @@ namespace ImuseSequencer.Verbs
             }
             logger.Info("z: clear-loop");
             logger.Info("");
+        }
 
+        private void GameLoop(ImuseEngine engine)
+        {
             while (true)
             {
                 var keyInfo = Console.ReadKey(intercept: true);
@@ -228,7 +249,7 @@ namespace ImuseSequencer.Verbs
             try
             {
                 var transmitter = new MidiFileWriterTransmitter();
-                using (var engine = new ImuseEngine(transmitter, target))
+                using (var engine = new ImuseEngine(transmitter, target, imuseOptions))
                 {
                     // Clean up, even with Ctrl+C
                     SetupCancelHandler(engine, transmitter);

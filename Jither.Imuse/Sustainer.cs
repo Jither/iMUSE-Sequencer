@@ -154,7 +154,7 @@ namespace Jither.Imuse
 
         private SeekNoteResult SeekNote(SequencerPointer pos)
         {
-            var message = pos.Event.Message;
+            var message = pos.Event?.Message;
             pos.Advance();
             return message switch
             {
