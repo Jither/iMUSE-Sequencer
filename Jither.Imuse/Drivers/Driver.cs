@@ -1,4 +1,5 @@
-﻿using Jither.Logging;
+﻿using Jither.Imuse.Messages;
+using Jither.Logging;
 using Jither.Midi.Messages;
 using System.Collections.Generic;
 
@@ -50,6 +51,11 @@ namespace Jither.Imuse.Drivers
         protected void TransmitEventImmediate(MidiMessage message)
         {
             transmitter.TransmitImmediate(message);
+        }
+
+        public void TransmitNoOp()
+        {
+            TransmitEvent(new NoOpMessage());
         }
 
         public void SetTempo(MidiMessage tempo)

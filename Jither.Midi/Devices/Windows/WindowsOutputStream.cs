@@ -13,15 +13,15 @@ using System.Threading.Tasks;
 
 namespace Jither.Midi.Devices.Windows
 {
-    public class WindowsOutputStream
+    public class WindowsOutputStream : IDisposable
     {
         private readonly WinApi.MidiOutProc midiOutCallback;
         private IntPtr handle;
         private readonly object lockMidi = new();
         private bool disposed;
         private int bufferCount = 0;
-        private readonly MemoryStream eventsStream = new MemoryStream();
-        private readonly MidiStreamWriter writer;
+        private readonly MemoryStream eventsStream = new();
+        private readonly WindowsMidiStreamWriter writer;
         private readonly MessagingSynchronizationContext context = new();
         private const int eventCodeOffset = 8;
         private const int eventTypeIndex = 11;
@@ -37,7 +37,7 @@ namespace Jither.Midi.Devices.Windows
 
             EnsureSuccess(result);
 
-            writer = new MidiStreamWriter(eventsStream);
+            writer = new WindowsMidiStreamWriter(eventsStream);
 
             // TODO: Actually start context
         }
@@ -141,10 +141,12 @@ namespace Jither.Midi.Devices.Windows
                 try
                 {
                     result = WinApi.midiStreamOut(handle, bufferPointer, WinApi.SizeOfMidiHeader);
+                    EnsureSuccess(result);
                 }
                 catch (WindowsMidiDeviceException)
                 {
-                    WinApi.midiOutUnprepareHeader(handle, bufferPointer, WinApi.SizeOfMidiHeader);
+                    result = WinApi.midiOutUnprepareHeader(handle, bufferPointer, WinApi.SizeOfMidiHeader);
+                    EnsureSuccess(result);
                     bufferCount--;
                     throw;
                 }
@@ -153,9 +155,10 @@ namespace Jither.Midi.Devices.Windows
 
         public MMTime GetTime(TimeType type)
         {
-            MMTime time = new MMTime();
-
-            time.type = (int)type;
+            var time = new MMTime
+            {
+                type = (int)type
+            };
 
             lock (lockMidi)
             {
@@ -232,9 +235,10 @@ namespace Jither.Midi.Devices.Windows
         {
             get
             {
-                Property d = new Property();
-
-                d.sizeOfProperty = Marshal.SizeOf<Property>();
+                var d = new Property
+                {
+                    sizeOfProperty = Marshal.SizeOf<Property>()
+                };
 
                 lock (lockMidi)
                 {
@@ -251,10 +255,11 @@ namespace Jither.Midi.Devices.Windows
                     throw new ArgumentOutOfRangeException(nameof(Division), value, "PPQN should be >= 24.");
                 }
 
-                Property d = new Property();
-
-                d.sizeOfProperty = Marshal.SizeOf(typeof(Property));
-                d.property = value;
+                var d = new Property
+                {
+                    sizeOfProperty = Marshal.SizeOf(typeof(Property)),
+                    property = value
+                };
 
                 lock (lockMidi)
                 {
@@ -268,8 +273,10 @@ namespace Jither.Midi.Devices.Windows
         {
             get
             {
-                Property t = new Property();
-                t.sizeOfProperty = Marshal.SizeOf(typeof(Property));
+                var t = new Property
+                {
+                    sizeOfProperty = Marshal.SizeOf(typeof(Property))
+                };
 
                 lock (lockMidi)
                 {
@@ -287,9 +294,11 @@ namespace Jither.Midi.Devices.Windows
                     throw new ArgumentOutOfRangeException(nameof(Tempo), value, "Tempo should be a positive integer");
                 }
 
-                Property t = new Property();
-                t.sizeOfProperty = Marshal.SizeOf(typeof(Property));
-                t.property = value;
+                var t = new Property
+                {
+                    sizeOfProperty = Marshal.SizeOf(typeof(Property)),
+                    property = value
+                };
 
                 lock (lockMidi)
                 {

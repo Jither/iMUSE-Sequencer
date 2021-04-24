@@ -41,8 +41,6 @@ namespace Jither.Midi.Devices.Windows
 
             Marshal.Copy(data, 0, header.lpData, length);
 
-            Console.WriteLine(data.ToHex());
-
             try
             {
                 var bufferPointer = Marshal.AllocHGlobal(Marshal.SizeOf<MidiHeader>());

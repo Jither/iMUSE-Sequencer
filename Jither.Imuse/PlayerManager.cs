@@ -25,6 +25,18 @@ namespace Jither.Imuse
             }
         }
 
+        public Player GetPlayerBySound(int soundId)
+        {
+            foreach (var player in players)
+            {
+                if (player.Status == PlayerStatus.On && player.SoundId == soundId)
+                {
+                    return player;
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         /// Retrieves sound with given ID, and tries to select an available player to play it, based on the sound file's priority.
         /// If a player is selected which is already playing, it will stop that player and restart it with the new sound.
@@ -91,12 +103,9 @@ namespace Jither.Imuse
 
         public PlayerStatus GetStatus(int soundId)
         {
-            foreach (var player in players)
+            if (GetPlayerBySound(soundId) != null)
             {
-                if (player.Status == PlayerStatus.On && player.SoundId == soundId)
-                {
-                    return PlayerStatus.On;
-                }
+                return PlayerStatus.On;
             }
 
             // TODO: Get from queue

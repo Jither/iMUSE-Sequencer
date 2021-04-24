@@ -158,7 +158,7 @@ namespace Jither.Midi.Devices.Windows
         public int songPositionPointer;
     }
 
-    public static class WinApi
+    internal static class WinApi
     {
         public static readonly int SizeOfMidiHeader = Marshal.SizeOf<MidiHeader>();
         public static readonly int SizeOfMidiEvent = 12;

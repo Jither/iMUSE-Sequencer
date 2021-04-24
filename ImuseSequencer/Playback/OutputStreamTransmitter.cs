@@ -12,17 +12,15 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
-    public interface IOutputTransmitter : ITransmitter, IDisposable
-    {
-        void Send();
-     }
-
-    public class OutputStreamTransmitter : IOutputTransmitter, ITransmitter, IDisposable
+    // TODO: Get Windows MIDI Stream stuff working - right now, this is completely non-functional
+    public class OutputStreamTransmitter : ITransmitter
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputStreamTransmitter));
         private readonly WindowsOutputStream stream;
 
         private bool disposed;
+
+        public Action<long> Player { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public OutputStreamTransmitter(int deviceId)
         {
@@ -51,8 +49,7 @@ namespace ImuseSequencer.Playback
             stream.Write(new MidiEvent(-1, message));
         }
 
-        // TODO: Temporary hacky way of sending all events when done
-        public void Send()
+        public void Start()
         {
             stream.Flush();
             stream.Start();
@@ -67,6 +64,8 @@ namespace ImuseSequencer.Playback
             disposed = true;
 
             stream.Dispose();
+
+            GC.SuppressFinalize(this);
         }
     }
 }

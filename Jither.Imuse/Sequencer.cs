@@ -109,6 +109,7 @@ namespace Jither.Imuse
 
         public void ClearLoop()
         {
+            logger.Info("Clearing loop");
             loopsRemaining = 0;
         }
 

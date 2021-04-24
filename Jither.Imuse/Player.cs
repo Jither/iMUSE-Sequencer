@@ -4,6 +4,7 @@ using Jither.Imuse.Messages;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Jither.Imuse
 {
@@ -21,7 +22,8 @@ namespace Jither.Imuse
         private readonly Driver driver;
         private readonly PartsManager parts;
         private readonly Sequencer sequencer;
-        private readonly HookBlock hookBlock;
+        private SoundFile file;
+        public HookBlock HookBlock { get; }
 
         // List of parts currently used by this player
         private readonly PartsCollection linkedParts;
@@ -47,7 +49,7 @@ namespace Jither.Imuse
             this.parts = parts;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
-            hookBlock = new HookBlock(this);
+            HookBlock = new HookBlock(this);
             sequencer = new Sequencer(this, sustainer);
         }
 
@@ -78,6 +80,8 @@ namespace Jither.Imuse
         /// <returns><c>true</c> if playback successfully started. Otherwise <c>false</c>.</returns>
         public void Start(int id, SoundFile file)
         {
+            this.file = file;
+
             Status = PlayerStatus.On;
             SoundId = id;
             Priority = file.ImuseHeader?.Priority ?? 0;
@@ -86,7 +90,7 @@ namespace Jither.Imuse
             Transpose = file.ImuseHeader?.Transpose ?? 0;
             Detune = file.ImuseHeader?.Detune ?? 0;
 
-            hookBlock.Clear();
+            HookBlock.Clear();
 
             sequencer.Start(file.Midi);
         }
@@ -210,26 +214,26 @@ namespace Jither.Imuse
                     jumpsExecuted.TryGetValue(jump, out int executedCount);
                     if (executedCount < 3)
                     {
-                        if (hookBlock.HandleJump(jump.Hook, jump.Chunk, jump.Beat, jump.Tick))
+                        if (HookBlock.HandleJump(jump.Hook, jump.Chunk, jump.Beat, jump.Tick))
                         {
                             jumpsExecuted[jump] = executedCount + 1;
                         }
                     }
                     break;
                 case ImuseHookTranspose transpose:
-                    hookBlock.HandleTranspose(transpose.Hook, transpose.Interval, transpose.Relative != 0);
+                    HookBlock.HandleTranspose(transpose.Hook, transpose.Interval, transpose.Relative != 0);
                     break;
                 case ImuseHookPartEnable partEnable:
-                    hookBlock.HandlePartEnable(partEnable.Hook, partEnable.Channel, partEnable.Enabled != 0);
+                    HookBlock.HandlePartEnable(partEnable.Hook, partEnable.Channel, partEnable.Enabled != 0);
                     break;
                 case ImuseHookPartVol partVolume:
-                    hookBlock.HandlePartVolume(partVolume.Hook, partVolume.Channel, partVolume.Volume);
+                    HookBlock.HandlePartVolume(partVolume.Hook, partVolume.Channel, partVolume.Volume);
                     break;
                 case ImuseHookPartPgmch partPgmCh:
-                    hookBlock.HandlePartProgramChange(partPgmCh.Hook, partPgmCh.Channel, partPgmCh.Program);
+                    HookBlock.HandlePartProgramChange(partPgmCh.Hook, partPgmCh.Channel, partPgmCh.Program);
                     break;
                 case ImuseHookPartTranspose partTranspose:
-                    hookBlock.HandlePartTranspose(partTranspose.Hook, partTranspose.Channel, partTranspose.Interval, partTranspose.Relative != 0);
+                    HookBlock.HandlePartTranspose(partTranspose.Hook, partTranspose.Channel, partTranspose.Interval, partTranspose.Relative != 0);
                     break;
 
                 // Loops
@@ -267,6 +271,11 @@ namespace Jither.Imuse
                     driver.TransmitMeta(message);
                     break;
             }
+        }
+
+        public InteractivityInfo GetInteractivityInfo()
+        {
+            return file?.GetInteractivityInfo();
         }
     }
 }

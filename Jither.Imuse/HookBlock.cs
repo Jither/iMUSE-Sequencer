@@ -1,16 +1,24 @@
 ﻿using Jither.Logging;
+using Jither.Utilities;
 using System;
+using System.Runtime.Serialization;
 
 namespace Jither.Imuse
 {
     public enum Hook
     {
+        [EnumMember(Value = "jump")]
         Jump,
+        [EnumMember(Value = "transpose")]
         Transpose,
+        [EnumMember(Value = "part-enable")]
         PartEnable,
+        [EnumMember(Value = "part-volume")]
         PartVolume,
+        [EnumMember(Value = "part-program-change")]
         PartProgramChange,
-        PartTranspose,
+        [EnumMember(Value = "part-transpose")]
+        PartTranspose
     }
 
     /// <summary>
@@ -35,6 +43,14 @@ namespace Jither.Imuse
 
         public void SetHook(Hook type, int value, int channel)
         {
+            if (type == Hook.Jump || type == Hook.Transpose)
+            {
+                logger.Info($"Setting {type.GetFriendlyName()} hook to {value}");
+            }
+            else
+            {
+                logger.Info($"Setting {type.GetFriendlyName()} hook for channel {channel} to {value}");
+            }
             switch (type)
             {
                 case Hook.Jump:
@@ -66,7 +82,7 @@ namespace Jither.Imuse
                 {
                     Jump = 0;
                 }
-                logger.Info($"hook: jump to track {trackIndex} @ {beat}.{tickInBeat:000}");
+                logger.Info($"hook {messageHook}: jump to track {trackIndex} @ {beat}.{tickInBeat:000}");
                 player.Sequencer.Jump(trackIndex, beat, tickInBeat, $"hook {messageHook}");
                 
                 return true;
@@ -82,7 +98,7 @@ namespace Jither.Imuse
                 {
                     Transpose = 0;
                 }
-                logger.Info($"hook: transpose {interval} semitones{(relative ? " (relative)" : "")}");
+                logger.Info($"hook {messageHook}: transpose {interval} semitones{(relative ? " (relative)" : "")}");
                 player.SetTranspose(interval, relative);
 
                 return true;
@@ -99,7 +115,7 @@ namespace Jither.Imuse
                 {
                     PartEnable[channel] = 0;
                 }
-                logger.Info($"hook: {(enabled ? "enable" : "disable")} part on channel {channel}");
+                logger.Info($"hook {messageHook}: {(enabled ? "enable" : "disable")} part on channel {channel}");
                 player.Parts.SetEnabled(channel, enabled);
 
                 return true;
@@ -117,7 +133,7 @@ namespace Jither.Imuse
                     PartVolume[channel] = 0;
                 }
 
-                logger.Info($"hook: set volume = {volume} on channel {channel}");
+                logger.Info($"hook {messageHook}: set volume = {volume} on channel {channel}");
                 player.Parts.SetVolume(channel, volume);
 
                 return true;
@@ -135,7 +151,7 @@ namespace Jither.Imuse
                     PartProgramChange[channel] = 0;
                 }
 
-                logger.Info($"hook: change program = {program} on channel {channel}");
+                logger.Info($"hook {messageHook}: change program = {program} on channel {channel}");
                 player.Parts.DoProgramChange(channel, program);
 
                 return true;
@@ -152,7 +168,7 @@ namespace Jither.Imuse
                 {
                     PartTranspose[channel] = 0;
                 }
-                logger.Info($"hook: transpose {interval} semitones{(relative ? " (relative)" : "")} on channel {channel}");
+                logger.Info($"hook {messageHook}: transpose {interval} semitones{(relative ? " (relative)" : "")} on channel {channel}");
                 player.Parts.SetTranspose(channel, interval, relative);
 
                 return true;

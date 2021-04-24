@@ -14,27 +14,28 @@ namespace Jither.Midi.Sequencing
         private readonly object lockRun = new();
         private readonly object lockThread = new();
 
-        private readonly Stopwatch stopwatch = new();
-
-        private int microsecondsPerBeat = 500000;
+        // Thread safe, only accessed from single thread, or only set while thread isn't running:
+        private CancellationTokenSource cancelSource;
+        private long startTimestamp;
         private readonly int ticksPerQuarterNote;
+        private long _isRunning;
+        // Tick currently being processed on scheduling thread
+        private long currentTick = 0; // Only accessed by scheduler thread
+
+        // 32-bit value = atomic update
+        private int microsecondsPerBeat = 500000;
 
         // Accumulated offset due to tempo changes
         private long microsecondsOffset = 0;
-        private bool isRunning = false;
 
         [ThreadStatic]
         private static bool isSchedulerThread;
-        private bool cancelThread;
-
-        // Tick currently being processed on scheduling thread
-        private long currentTick = 0;
 
         private readonly ScheduleQueue<T> queue = new();
         private Thread thread = null;
 
         private long MicrosecondsPerTick => microsecondsPerBeat * ticksPerQuarterNote;
-        private long ElapsedMicroseconds => stopwatch.ElapsedTicks * 1000_000 / Stopwatch.Frequency;
+        private long ElapsedMicroseconds => (Stopwatch.GetTimestamp() - startTimestamp) * 1000_000 / Stopwatch.Frequency;
 
         public event Action<List<T>> SliceReached;
         public event Action<int> TempoChanged;
@@ -92,10 +93,7 @@ namespace Jither.Midi.Sequencing
                 {
                     return currentTick;
                 }
-                lock (lockTiming)
-                {
-                    return (ElapsedMicroseconds + microsecondsOffset) / MicrosecondsPerTick;
-                }
+                return (ElapsedMicroseconds + microsecondsOffset) / MicrosecondsPerTick;
             }
         }
 
@@ -103,14 +101,11 @@ namespace Jither.Midi.Sequencing
         {
             get
             {
-                if (isSchedulerThread)
-                {
-                    return true;
-                }
-                lock (lockRun)
-                {
-                    return isRunning;
-                }
+                return Interlocked.Read(ref _isRunning) == 1;
+            }
+            set
+            {
+                Interlocked.Exchange(ref _isRunning, value ? 1 : 0);
             }
         }
 
@@ -122,27 +117,17 @@ namespace Jither.Midi.Sequencing
 
         public void Start()
         {
-            if (isSchedulerThread)
+            if (isSchedulerThread || IsRunning)
             {
                 throw new InvalidOperationException("MidiScheduler is already running");
             }
-            lock (lockRun)
-            {
-                if (isRunning)
-                {
-                    throw new InvalidOperationException("MidiScheduler is already running");
-                }
 
-                stopwatch.Start();
+            this.cancelSource = new CancellationTokenSource();
 
-                cancelThread = false;
-
-                // TODO: Use Task
-                thread = new Thread(new ThreadStart(ThreadRun));
-                thread.Start();
-
-                isRunning = true;
-            }
+            thread = new Thread(() => ThreadRun(cancelSource.Token));
+            startTimestamp = Stopwatch.GetTimestamp();
+            thread.Start();
+            IsRunning = true;
         }
 
         public void Stop()
@@ -152,26 +137,18 @@ namespace Jither.Midi.Sequencing
                 throw new InvalidOperationException("Cannot stop MidiScheduler from the scheduler thread.");
             }
 
-            lock (lockRun)
+            if (!IsRunning)
             {
-                if (!isRunning)
-                {
-                    throw new InvalidOperationException("MidiScheduler is not running.");
-                }
-
-                lock (lockThread)
-                {
-                    cancelThread = true;
-                    Monitor.Pulse(lockThread);
-                }
-
-                thread.Join();
-                thread = null;
-
-                stopwatch.Stop();
-
-                isRunning = false;
+                throw new InvalidOperationException("MidiScheduler is not running.");
             }
+
+            // No need for lock here (I think)
+            cancelSource.Cancel();
+
+            thread.Join();
+            thread = null;
+
+            IsRunning = false;
         }
 
         public void Reset()
@@ -183,13 +160,13 @@ namespace Jither.Midi.Sequencing
 
             lock (lockRun)
             {
-                if (isRunning)
+                if (IsRunning)
                 {
                     throw new InvalidOperationException("Cannot reset MidiScheduler while it's running.");
                 }
 
-                stopwatch.Reset();
-                microsecondsOffset = 0;
+                startTimestamp = Stopwatch.GetTimestamp();
+                Interlocked.Exchange(ref microsecondsOffset, 0);
 
                 lock (lockThread)
                 {
@@ -228,14 +205,14 @@ namespace Jither.Midi.Sequencing
             return delta >= 0 ? delta : 0;
         }
 
-        private void ThreadRun()
+        private void ThreadRun(CancellationToken cancellationToken)
         {
             isSchedulerThread = true;
             lock (lockThread)
             {
                 while (true)
                 {
-                    if (cancelThread)
+                    if (cancellationToken.IsCancellationRequested)
                     {
                         return;
                     }
@@ -286,7 +263,7 @@ namespace Jither.Midi.Sequencing
             if (!disposed)
             {
                 disposed = true;
-                if (isRunning)
+                if (IsRunning)
                 {
                     Stop();
                     Reset();

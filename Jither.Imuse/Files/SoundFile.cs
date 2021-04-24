@@ -1,12 +1,209 @@
 ﻿using Jither.Imuse.Messages;
 using Jither.Logging;
 using Jither.Midi.Files;
+using Jither.Midi.Messages;
 using Jither.Utilities;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Jither.Imuse.Files
 {
+    public class Position
+    {
+        public int TrackIndex { get; }
+        public int Beat { get; }
+        public int Tick { get; }
+
+        public Position(int trackIndex, BeatPosition beatPosition) : this(trackIndex, beatPosition.TotalBeat, beatPosition.Tick)
+        {
+        }
+
+        public Position(int trackIndex, int beat, int tick)
+        {
+            TrackIndex = trackIndex;
+            Beat = beat;
+            Tick = tick;
+        }
+
+        public override string ToString()
+        {
+            return $"{TrackIndex}b{Beat + 1}.{Tick}";
+        }
+    }
+
+    public class HookInfo
+    {
+        private readonly List<Position> positions = new List<Position>();
+
+        public Hook Type { get; }
+        public int Id { get; }
+        public int Channel { get; }
+        public IEnumerable<Position> Positions => positions;
+
+        public HookInfo(Hook type, int id, int channel)
+        {
+            Type = type;
+            Id = id;
+            Channel = channel;
+        }
+
+        public void AddPosition(int trackIndex, BeatPosition beatPosition)
+        {
+            positions.Add(new Position(trackIndex, beatPosition));
+        }
+
+        public override string ToString()
+        {
+            string result = $"set-{Type.GetFriendlyName()}-hook {Id}";
+            if (Type != Hook.Jump && Type != Hook.Transpose)
+            {
+                result += $" {Channel}";
+            }
+            return result;
+        }
+    }
+
+    public class MarkerInfo
+    {
+        public int Id { get; }
+        public Position Position { get; }
+
+        public MarkerInfo(int trackIndex, BeatPosition beatPosition, int id)
+        {
+            Position = new Position(trackIndex, beatPosition);
+            Id = id;
+        }
+
+        public override string ToString()
+        {
+            return $"  {Id} @ {Position}";
+        }
+    }
+
+    public class SetLoopInfo
+    {
+        public int Count { get; }
+        public Position StartPosition { get; }
+        public Position EndPosition { get; }
+
+        public SetLoopInfo(int trackIndex, ImuseSetLoop setLoop)
+        {
+            Count = setLoop.Count;
+            StartPosition = new Position(trackIndex, setLoop.StartBeat, setLoop.StartTick);
+            EndPosition = new Position(trackIndex, setLoop.EndBeat, setLoop.EndTick);
+        }
+
+        public override string ToString()
+        {
+            return $"{StartPosition} - {EndPosition}  {Count} times";
+        }
+    }
+
+    public class ClearLoopInfo
+    {
+        public Position Position { get; }
+        public ClearLoopInfo(int trackIndex, BeatPosition position)
+        {
+            Position = new Position(trackIndex, position);
+        }
+
+        public override string ToString()
+        {
+            return $"{Position}";
+        }
+    }
+
+    public class InteractivityInfo
+    {
+        private readonly List<HookInfo> hooks = new();
+        private readonly List<ClearLoopInfo> clearLoops = new();
+        private readonly List<SetLoopInfo> setLoops = new();
+        private readonly List<MarkerInfo> markers = new();
+
+        public IEnumerable<HookInfo> Hooks => hooks;
+        public IEnumerable<SetLoopInfo> SetLoops => setLoops;
+        public IEnumerable<ClearLoopInfo> ClearLoops => clearLoops;
+        public IEnumerable<MarkerInfo> Markers => markers;
+
+        public InteractivityInfo()
+        {
+
+        }
+
+        public void AddMessage(int trackIndex, BeatPosition position, ImuseMessage message)
+        {
+            switch (message)
+            {
+                case ImuseClearLoop:
+                    clearLoops.Add(new ClearLoopInfo(trackIndex, position));
+                    break;
+                case ImuseSetLoop setLoop:
+                    setLoops.Add(new SetLoopInfo(trackIndex, setLoop));
+                    break;
+                case ImuseHook hookMessage:
+                    var hook = hooks.Find(h => h.Type == hookMessage.Type && h.Id == hookMessage.Hook && h.Channel == hookMessage.Channel);
+                    if (hook == null)
+                    {
+                        hook = new HookInfo(hookMessage.Type, hookMessage.Hook, hookMessage.Channel);
+                        hooks.Add(hook);
+                    }
+                    hook.AddPosition(trackIndex, position);
+                    break;
+                case ImuseMarker marker:
+                    markers.Add(new MarkerInfo(trackIndex, position, marker.Id));
+                    break;
+                case ImuseV2Marker marker2:
+                    markers.Add(new MarkerInfo(trackIndex, position, marker2.Id));
+                    break;
+            }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            if (setLoops.Count > 0)
+            {
+                builder.AppendLine("Loops:");
+                foreach (var loop in setLoops)
+                {
+                    builder.AppendLine($"  {loop}");
+                }
+            }
+
+            if (clearLoops.Count > 0)
+            {
+                builder.AppendLine("Clear-loops:");
+                foreach (var clearLoop in clearLoops)
+                {
+                    builder.AppendLine($"  {clearLoop}");
+                }
+            }
+
+            if (hooks.Count > 0)
+            {
+                builder.AppendLine("Hooks:");
+                foreach (var hook in hooks)
+                {
+                    builder.AppendLine($"  {hook}");
+                }
+            }
+
+            if (markers.Count > 0)
+            {
+                builder.AppendLine("Markers:");
+                foreach (var marker in markers)
+                {
+                    builder.AppendLine($"  {marker}");
+                }
+            }
+
+            return builder.ToString();
+        }
+    }
+
     public class SoundFile
     {
         private static readonly Logger logger = LogProvider.Get(nameof(SoundFile));
@@ -49,6 +246,7 @@ namespace Jither.Imuse.Files
                     FindMidiHeader(reader);
                     // Now continue reading the actual MIDI:
                     Midi = new MidiFile(reader, new MidiFileOptions().WithParser(new ImuseSysexParser()));
+                    Midi.Timeline.ApplyBeatPositions();
                 }
             }
         }
@@ -113,6 +311,24 @@ namespace Jither.Imuse.Files
             }
             // Rewind to start of MThd
             reader.Position -= 4;
+        }
+
+        public InteractivityInfo GetInteractivityInfo()
+        {
+            var info = new InteractivityInfo();
+            for (int trackIndex = 0; trackIndex < Midi.TrackCount; trackIndex++)
+            {
+                var track = Midi.Tracks[trackIndex];
+                foreach (var evt in track.Events)
+                {
+                    if (evt.Message is ImuseMessage imuse)
+                    {
+                        info.AddMessage(trackIndex, evt.BeatPosition, imuse);
+                    }
+                }
+            }
+
+            return info;
         }
 
         public override string ToString()

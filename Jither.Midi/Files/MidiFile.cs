@@ -177,22 +177,15 @@ namespace Jither.Midi.Files
             writer.WriteUint32(6); // chunk size
             writer.WriteUint16((ushort)Format);
             writer.WriteUint16((ushort)TrackCount);
-
-            ushort division;
-            switch (DivisionType)
+            var division = DivisionType switch
             {
-                case DivisionType.Ppqn:
-                    division = (ushort)TicksPerQuarterNote;
-                    break;
-                case DivisionType.Smpte24:
-                case DivisionType.Smpte25:
-                case DivisionType.Smpte29:
-                case DivisionType.Smpte30:
-                    division = (ushort)(-(ushort)DivisionType << 8 | TicksPerFrame);
-                    break;
-                default:
-                    throw new MidiFileException($"Unsupported division type: {DivisionType}");
-            }
+                DivisionType.Ppqn => (ushort)TicksPerQuarterNote,
+                DivisionType.Smpte24 or 
+                DivisionType.Smpte25 or 
+                DivisionType.Smpte29 or 
+                DivisionType.Smpte30 => (ushort)(-(ushort)DivisionType << 8 | TicksPerFrame),
+                _ => throw new MidiFileException($"Unsupported division type: {DivisionType}"),
+            };
             writer.WriteUint16(division);
         }
 

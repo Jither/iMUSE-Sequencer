@@ -14,13 +14,15 @@ namespace Jither.Imuse
         private readonly ITransmitter transmitter;
         private readonly SoundTarget target;
         private readonly Driver driver;
-        
+
         private readonly PlayerManager players;
         private readonly FileManager files = new();
 
         private int? ticksPerQuarterNote;
 
         private bool disposed;
+
+        public ImuseCommands Commands { get; }
 
         public ImuseEngine(ITransmitter transmitter, SoundTarget target)
         {
@@ -36,6 +38,8 @@ namespace Jither.Imuse
             var parts = new PartsManager(driver);
             var sustainer = new Sustainer();
             players = new PlayerManager(files, parts, sustainer, driver);
+
+            Commands = new ImuseCommands(players);
         }
 
         public void RegisterSound(int id, SoundFile file)
@@ -67,17 +71,30 @@ namespace Jither.Imuse
             players.StartSound(id);
         }
 
-        public void Play()
+        public long Play(long ticks)
         {
-            StartSound(0);
-
-            bool done;
-            do
+            if (ticks <= 0)
             {
-                done = players.Tick();
-                driver.CurrentTick++;
+                ticks = Int64.MaxValue;
             }
-            while (!done);
+            long currentTick = 0;
+
+            // We use this no-op MIDI message to indicate the start of this batch of MIDI messages.
+            // When the no-op reaches the transmitter, it can use it as an indication that it should start
+            // preparing the next batch.
+            driver.TransmitNoOp();
+
+            while (currentTick < ticks)
+            {
+                bool done = players.Tick();
+                driver.CurrentTick++;
+                if (done)
+                {
+                    return currentTick;
+                }
+                currentTick++;
+            }
+            return ticks;
         }
 
         public void Stop()

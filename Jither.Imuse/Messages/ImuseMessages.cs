@@ -246,19 +246,29 @@ namespace Jither.Imuse.Messages
         }
     }
 
-    public class ImuseHookJump : ImuseMessage
+    public abstract class ImuseHook : ImuseMessage
+    {
+        public int Hook { get; }
+        public abstract Hook Type { get; }
+
+        protected ImuseHook(byte[] data) : base(data)
+        {
+            Hook = ImuseData[0];
+        }
+    }
+
+    public class ImuseHookJump : ImuseHook
     {
         protected override string ImuseMessageName => "hook-jump";
         protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,5}, beat: {Beat,5}, tick: {Tick,5}";
+        public override Hook Type => Imuse.Hook.Jump;
 
-        public int Hook { get; }
         public int Chunk { get; }
         public int Beat { get; }
         public int Tick { get; }
 
         public ImuseHookJump(byte[] data) : base(data)
         {
-            Hook = ImuseData[0];
             // Yes, ImuseData is full 8-bit bytes (unpacked from nibbles), so << 8 is correct.
             Chunk = ImuseData[1] << 8 | ImuseData[2];
             Beat = ImuseData[3] << 8 | ImuseData[4];
@@ -266,14 +276,15 @@ namespace Jither.Imuse.Messages
         }
     }
 
-    public class ImuseV2HookJump : ImuseMessage
+    public class ImuseV2HookJump : ImuseHook
     {
         protected override string ImuseMessageName => "hook-jump-v2";
         protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,3}, measure: {Measure,5}, beat: {Beat,3}, tick: {Tick,3}, sustain: {Sustain}";
         protected override int ByteDataLength => 8;
         protected override bool HasChannel => false;
 
-        public int Hook { get; }
+        public override Hook Type => Imuse.Hook.Jump;
+
         public int Chunk { get; }
         public int Measure { get; }
         public int Beat { get; }
@@ -282,7 +293,6 @@ namespace Jither.Imuse.Messages
 
         public ImuseV2HookJump(byte[] data) : base(data)
         {
-            Hook = ImuseByteData[0];
             Chunk = ImuseByteData[1] - 1; // Chunk is 1-indexed rather than 0-indexed in v2. We keep it 0-indexed.
             Measure = ImuseByteData[2] << 7 | ImuseByteData[3]; // Measure is 1-indexed
             Beat = ImuseByteData[4];
@@ -297,80 +307,80 @@ namespace Jither.Imuse.Messages
         }
     }
 
-    public class ImuseHookTranspose : ImuseMessage
+    public class ImuseHookTranspose : ImuseHook
     {
         protected override string ImuseMessageName => "hook-transpose";
         protected override string Info => $"hook: {Hook,3}, relative: {Relative,3}, interval: {Interval,3}";
 
-        public int Hook { get; }
+        public override Hook Type => Imuse.Hook.Transpose;
+
         public int Relative { get; }
         public int Interval { get; }
 
         public ImuseHookTranspose(byte[] data) : base(data)
         {
-            Hook = ImuseData[0];
             Relative = ImuseData[1];
             Interval = (sbyte)ImuseData[2];
         }
     }
 
-    public class ImuseHookPartEnable : ImuseMessage
+    public class ImuseHookPartEnable : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-enable";
         protected override string Info => $"hook: {Hook,3}, state: {Enabled,3}";
 
-        public int Hook { get; }
+        public override Hook Type => Imuse.Hook.PartEnable;
+
         public int Enabled { get; }
 
         public ImuseHookPartEnable(byte[] data) : base(data)
         {
-            Hook = ImuseData[0];
             Enabled = ImuseData[1];
         }
     }
 
-    public class ImuseHookPartVol : ImuseMessage
+    public class ImuseHookPartVol : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-vol";
         protected override string Info => $"hook: {Hook,3}, vol: {Volume,3}";
 
-        public int Hook { get; }
+        public override Hook Type => Imuse.Hook.PartVolume;
+
         public int Volume { get; }
 
         public ImuseHookPartVol(byte[] data) : base(data)
         {
-            Hook = ImuseData[0];
             Volume = ImuseData[1];
         }
     }
 
-    public class ImuseHookPartPgmch : ImuseMessage
+    public class ImuseHookPartPgmch : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-pgmch";
         protected override string Info => $"hook: {Hook,3}, vol: {Program,3}";
 
-        public int Hook { get; }
+        public override Hook Type => Imuse.Hook.PartProgramChange;
+
         public int Program { get; }
 
         public ImuseHookPartPgmch(byte[] data) : base(data)
         {
-            Hook = ImuseData[0];
             Program = ImuseData[1];
         }
     }
 
-    public class ImuseHookPartTranspose : ImuseMessage
+    public class ImuseHookPartTranspose : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-transpose";
         protected override string Info => $"hook: {Hook,3}, relative: {Relative,3}, interval: {Interval,3}";
 
-        public int Hook { get; }
+        public override Hook Type => Imuse.Hook.PartTranspose;
+
         public int Relative { get; }
         public int Interval { get; }
 
         public ImuseHookPartTranspose(byte[] data) : base(data)
         {
-            Hook = ImuseData[0];
             Relative = ImuseData[1];
             Interval = (sbyte)ImuseData[2];
         }

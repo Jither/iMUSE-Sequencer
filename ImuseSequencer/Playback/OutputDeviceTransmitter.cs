@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse;
+using Jither.Imuse.Messages;
 using Jither.Logging;
 using Jither.Midi.Devices;
 using Jither.Midi.Devices.Windows;
@@ -12,14 +13,16 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
-    public class OutputDeviceTransmitter : IOutputTransmitter, ITransmitter, IDisposable
+    public class OutputDeviceTransmitter : ITransmitter
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputDeviceTransmitter));
         private readonly OutputDevice output;
         private MidiScheduler<MidiEvent> scheduler;
-        private List<MidiEvent> events;
+        private readonly List<MidiEvent> events;
 
         private bool disposed;
+
+        public Action<long> Player { get; set; }
 
         public OutputDeviceTransmitter(int deviceId)
         {
@@ -55,14 +58,23 @@ namespace ImuseSequencer.Playback
                 for (int i = 0; i < slice.Count; i++)
                 {
                     var message = slice[i].Message;
-                    if (message is SetTempoMessage meta)
+                    switch (message)
                     {
-                        scheduler.MicrosecondsPerBeat = meta.Tempo;
-                    }
-                    else
-                    {
-                        logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
-                        output.SendMessage(message);
+                        case NoOpMessage:
+                            // Prepare and send another batch of MIDI messages
+                            Send();
+                            break;
+                        case SetTempoMessage setTempo:
+                            scheduler.MicrosecondsPerBeat = setTempo.Tempo;
+                            break;
+                        case MetaMessage meta:
+                            logger.Verbose($"Discarding meta message: {message}");
+                            break;
+                        default:
+                            // All other messages are sent to output
+                            logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
+                            output.SendMessage(message);
+                            break;
                     }
                 }
             };
@@ -72,12 +84,20 @@ namespace ImuseSequencer.Playback
             };
         }
 
-        // TODO: Temporary hacky way of sending all events when done
-        public void Send()
+        public void Start()
         {
-            scheduler.Schedule(events);
-
+            Send();
             scheduler.Start();
+        }
+
+        private void Send()
+        {
+            // Get events for next 480 ticks
+            Player?.Invoke(480);
+
+            logger.Verbose($"Sending {events.Count} events to scheduler...");
+            scheduler.Schedule(events);
+            events.Clear();
         }
 
         public void Dispose()
@@ -90,6 +110,8 @@ namespace ImuseSequencer.Playback
 
             scheduler.Dispose();
             output.Dispose();
+
+            GC.SuppressFinalize(this);
         }
     }
 }

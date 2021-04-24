@@ -12,8 +12,8 @@ namespace Jither.Midi.Files
 {
     public class MidiWriterTests : IDisposable
     {
-        private MemoryStream stream;
-        private MidiFileWriter writer;
+        private readonly MemoryStream stream;
+        private readonly MidiFileWriter writer;
 
         public MidiWriterTests()
         {
@@ -25,6 +25,7 @@ namespace Jither.Midi.Files
         {
             writer.Dispose();
             stream.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         [Theory]

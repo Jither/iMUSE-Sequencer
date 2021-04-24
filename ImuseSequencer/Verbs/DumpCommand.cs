@@ -74,6 +74,7 @@ namespace ImuseSequencer.Verbs
 
             if (options.IncludeEvents || options.IncludeNotes || options.IncludeImuse)
             {
+                soundFile.Midi.Timeline.ApplyBeatPositions();
                 logger.Info("");
                 logger.Info("<b>Events</b>");
                 foreach (var track in soundFile.Midi.Tracks)

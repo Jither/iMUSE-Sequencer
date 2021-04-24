@@ -22,7 +22,7 @@ namespace Jither.Midi.Messages
             string result = $"({AbsoluteTicks,8}):  {Message}";
             if (BeatPosition != null)
             {
-                result = $"{BeatPosition,10} {result}";
+                result = $"{BeatPosition,20} {result}";
             }
             return result;
         }

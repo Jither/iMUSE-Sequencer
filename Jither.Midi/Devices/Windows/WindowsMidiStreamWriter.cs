@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Jither.Midi.Devices.Windows
 {
-    public class MidiStreamWriter : IMidiWriter
+    public class WindowsMidiStreamWriter : IMidiWriter
     {
         private readonly Stream stream;
         private readonly byte[] buffer = new byte[4];
@@ -13,7 +13,7 @@ namespace Jither.Midi.Devices.Windows
 
         public uint PreviousTicks => previousTicks;
 
-        public MidiStreamWriter(Stream stream)
+        public WindowsMidiStreamWriter(Stream stream)
         {
             this.stream = stream;
         }

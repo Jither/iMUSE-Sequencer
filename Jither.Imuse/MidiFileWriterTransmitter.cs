@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Jither.Imuse.Messages;
 
 namespace Jither.Imuse
 {
@@ -17,7 +18,9 @@ namespace Jither.Imuse
         private int ticksPerQuarterNote;
         private long currentTick = 0;
 
-        private List<MidiEvent> events = new List<MidiEvent>();
+        private readonly List<MidiEvent> events = new();
+
+        public Action<long> Player { get; set; }
 
         public MidiFileWriterTransmitter()
         {
@@ -28,8 +31,17 @@ namespace Jither.Imuse
             this.ticksPerQuarterNote = ticksPerQuarterNote;
         }
 
+        public void Start()
+        {
+            Player?.Invoke(-1); // Ask the player to just send everything at once.
+        }
+
         public void Transmit(MidiEvent evt)
         {
+            if (evt.Message is NoOpMessage)
+            {
+                return;
+            }
             currentTick = evt.AbsoluteTicks;
             events.Add(evt);
         }
@@ -82,6 +94,12 @@ namespace Jither.Imuse
             }
 
             file.Save(path);
+        }
+
+        public void Dispose()
+        {
+            // Do nothing
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -114,7 +114,7 @@ namespace ImuseSequencer.Verbs
             }
         }
 
-        private IOutputTransmitter CreateTransmitter()
+        private ITransmitter CreateTransmitter()
         {
             // TODO: Temporary debugging measure - s:<device-id> selects stream transmitter
             var idParts = options.DeviceId.Split(':');
@@ -135,13 +135,11 @@ namespace ImuseSequencer.Verbs
                 throw new ImuseSequencerException($"Invalid device ID: {strDeviceId}");
             }
 
-            switch (transmitterType)
+            return transmitterType switch
             {
-                case "s":
-                    return new OutputStreamTransmitter(deviceId);
-                default:
-                    return new OutputDeviceTransmitter(deviceId);
-            }
+                "s" => new OutputStreamTransmitter(deviceId),
+                _ => new OutputDeviceTransmitter(deviceId),
+            };
         }
         private void PlayToDevice(SoundFile soundFile, SoundTarget target)
         {
@@ -157,12 +155,12 @@ namespace ImuseSequencer.Verbs
                         SetupCancelHandler(engine, transmitter);
 
                         engine.RegisterSound(0, soundFile);
-                        engine.Play();
+                        engine.StartSound(0);
 
-                        // TODO: Temporary quick-hack to play everything when engine is done.
-                        transmitter.Send();
+                        transmitter.Player = ticks => engine.Play(ticks);
+                        transmitter.Start();
 
-                        Console.ReadKey(intercept: true);
+                        GameLoop(engine);
 
                         TearDownCancelHandler();
                     }
@@ -172,6 +170,55 @@ namespace ImuseSequencer.Verbs
             {
                 throw new ImuseSequencerException(ex.Message, ex);
             }
+        }
+
+        private Dictionary<char, HookInfo> hooksByKey = new Dictionary<char, HookInfo>();
+        private string hookChars = "1234567890abcdefghijklmnopqrstuvwxy";
+
+        private void GameLoop(ImuseEngine engine)
+        {
+            var interactivityInfo = engine.Commands.GetInteractivityInfo(0);
+
+            int index = 0;
+
+            logger.Info("");
+            logger.Info("Commands:");
+            foreach (var hook in interactivityInfo.Hooks)
+            {
+                if (hook.Id == 0)
+                {
+                    // Hook 0 is unconditional
+                    continue;
+                }
+                var c = hookChars[index];
+                hooksByKey.Add(c, hook);
+                logger.Info($"{c}: {hook}");
+                index++;
+            }
+            logger.Info("z: clear-loop");
+            logger.Info("");
+
+            while (true)
+            {
+                var keyInfo = Console.ReadKey(intercept: true);
+                switch (keyInfo.Key)
+                {
+                    case ConsoleKey.Z:
+                        engine.Commands.ClearLoop(0);
+                        break;
+
+                    case ConsoleKey.Q:
+                        return;
+
+                    default:
+                        if (hooksByKey.TryGetValue(keyInfo.KeyChar, out var hookInfo))
+                        {
+                            engine.Commands.SetHook(0, hookInfo.Type, hookInfo.Id, hookInfo.Channel);
+                        }
+                        break;
+                }
+            }
+
         }
 
         private void PlayToFile(SoundFile soundFile, SoundTarget target)
@@ -187,7 +234,11 @@ namespace ImuseSequencer.Verbs
                     SetupCancelHandler(engine, transmitter);
 
                     engine.RegisterSound(0, soundFile);
-                    engine.Play();
+                    engine.StartSound(0);
+
+                    transmitter.Player = ticks => engine.Play(ticks);
+
+                    transmitter.Start();
 
                     // TODO: Temporary quick-hack to play everything when engine is done.
                     transmitter.Write(options.OutputPath);

@@ -8,8 +8,8 @@ namespace Jither.Midi.Messages
 {
     public class MessageTests : IDisposable
     {
-        private MemoryStream stream;
-        private MidiFileWriter writer;
+        private readonly MemoryStream stream;
+        private readonly MidiFileWriter writer;
 
         public MessageTests()
         {
@@ -21,6 +21,7 @@ namespace Jither.Midi.Messages
         {
             writer.Dispose();
             stream.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         [Fact]

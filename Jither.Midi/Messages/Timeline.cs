@@ -72,6 +72,11 @@ namespace Jither.Midi.Messages
         /// </summary>
         public int StartMeasure { get; internal set; }
 
+        /// <summary>
+        /// The total beat where this meter starts (i.e. the beat counted from start of MIDI)
+        /// </summary>
+        public int StartTotalBeat { get; internal set; }
+
         public Meter Next { get; private set; }
         public Meter Previous { get; private set; }
 
@@ -126,22 +131,30 @@ namespace Jither.Midi.Messages
         public int Beat { get; }
         public int Tick { get; }
 
+        public int TotalBeat { get; }
+
         public BeatPosition(long absoluteTicks, Meter meter)
         {
             long ticks = absoluteTicks - meter.StartTicks;
             Tick = (int)(ticks % meter.TicksPerBeat);
             ticks -= Tick;
 
-            long beats = ticks / meter.TicksPerBeat;
+            long beats = (ticks / meter.TicksPerBeat);
+            TotalBeat = (int)beats + meter.StartTotalBeat;
             Beat = (int)(beats % meter.BeatsPerMeasure);
             beats -= Beat;
 
-            Measure = (int)(beats / meter.BeatsPerMeasure) + meter.StartMeasure;
+            Measure = (int)(beats / meter.BeatsPerMeasure + meter.StartMeasure);
         }
 
         public override string ToString()
         {
-            return $"{Measure + 1}.{Beat + 1}.{Tick:000}";
+            return $"{ToString(collapseMeasuresToBeats: false)} [{ToString(collapseMeasuresToBeats: true),7}]";
+        }
+
+        public string ToString(bool collapseMeasuresToBeats)
+        {
+            return collapseMeasuresToBeats ? $"{TotalBeat + 1}.{Tick:000}" : $"{Measure + 1}.{Beat + 1}.{Tick:000}";
         }
     }
 
@@ -155,10 +168,9 @@ namespace Jither.Midi.Messages
         {
             this.file = file;
             Populate();
-            ApplyToFile();
         }
 
-        private void ApplyToFile()
+        public void ApplyBeatPositions()
         {
             foreach (var track in file.Tracks)
             {
@@ -218,10 +230,12 @@ namespace Jither.Midi.Messages
                     var beatPosition = new BeatPosition(change.StartTicks, previous);
                     // ... and use it to assign a starting measure for this change
                     change.StartMeasure = previous.StartMeasure + beatPosition.Measure;
+                    change.StartTotalBeat = previous.StartTotalBeat + beatPosition.TotalBeat;
                 }
                 else
                 {
                     change.StartMeasure = 0;
+                    change.StartTotalBeat = 0;
                 }
                 previous = change;
             }
