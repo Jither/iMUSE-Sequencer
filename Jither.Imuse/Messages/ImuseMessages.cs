@@ -2,13 +2,12 @@
 using Jither.Midi.Messages;
 using Jither.Midi.Files;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Jither.Imuse.Messages
 {
+    /// <summary>
+    /// Parses MIDI sysex messages with manufacturer ID 0x7d (iMUSE messages) during MIDI file loading.
+    /// </summary>
     public class ImuseSysexParser : ISysexParser
     {
         public int ManufacturerId => 0x7d;
@@ -28,8 +27,8 @@ namespace Jither.Imuse.Messages
                 0x30 => new ImuseHookJump(data),
                 0x31 => new ImuseHookTranspose(data),
                 0x32 => new ImuseHookPartEnable(data),
-                0x33 => new ImuseHookPartVol(data),
-                0x34 => new ImuseHookPartPgmch(data),
+                0x33 => new ImuseHookPartVolume(data),
+                0x34 => new ImuseHookPartProgramChange(data),
                 0x35 => new ImuseHookPartTranspose(data),
                 0x40 => new ImuseMarker(data),
                 0x50 => new ImuseSetLoop(data),
@@ -40,6 +39,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// Base class for iMUSE MIDI (sysex) messages.
+    /// </summary>
     public abstract class ImuseMessage : SysexMessage
     {
         public override string Name => "imuse";
@@ -61,7 +63,9 @@ namespace Jither.Imuse.Messages
         {
             // Skip manufacturer ID and type
             int dataIndex = 2;
-            // The first few bytes after that are 7 bit data - length depends on message type
+            
+            // The first few bytes after that are 7 bit data - length depends on message type.
+            // Note that for v2, all (well, both) iMUSE messages only have byte data.
             ImuseByteData = new ArraySegment<byte>(data, dataIndex, ByteDataLength);
 
             // In v1, the first byte is the channel
@@ -76,7 +80,7 @@ namespace Jither.Imuse.Messages
 
             dataIndex += ByteDataLength;
 
-            // The remainder is bytes with nibbles distributed into two bytes
+            // The remainder is bytes with nibbles (4 bits) distributed into two bytes
             UnpackNibbles(data, dataIndex);
         }
 
@@ -114,6 +118,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// Unrecognized iMUSE MIDI message.
+    /// </summary>
     public class ImuseUnknown : ImuseMessage
     {
         protected override string Info => Data.ToHex();
@@ -123,6 +130,11 @@ namespace Jither.Imuse.Messages
         {
         }
     }
+
+    /// <summary>
+    /// iMUSE alloc_part MIDI (sysex) message. Signals to attempt to allocate a Part (input channel) to a free Slot on the Player.
+    /// It also includes initial playback parameters for the part.
+    /// </summary>
     public class ImuseAllocPart : ImuseMessage
     {
         public const int transposeLockedFlag = -128;
@@ -155,6 +167,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE dealloc_part MIDI (sysex) message. Signals to deallocate a Part (input channel) from its Slot on the Player.
+    /// </summary>
     public class ImuseDeallocPart : ImuseMessage
     {
         protected override string ImuseMessageName => "dealloc-part";
@@ -165,6 +180,10 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE dealloc_all_parts MIDI (sysex) message. Signals to deallocate all parts from their Slots on the Player. This is
+    /// usually included at the start of a sound file, before allocating new parts with <see cref="ImuseAllocPart"/>.
+    /// </summary>
     public class ImuseDeallocAllParts : ImuseMessage
     {
         protected override string ImuseMessageName => "dealloc-all-parts";
@@ -175,6 +194,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE active_setup MIDI (sysex) message. Signals to send instrument setup data to the output device driver.
+    /// </summary>
     public class ImuseActiveSetup : ImuseMessage
     {
         protected override string ImuseMessageName => "active-setup";
@@ -191,6 +213,10 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE stored_setup MIDI (sysex) message. Signals to send instrument setup data to the output device driver, and
+    /// stores it for later reloading.
+    /// </summary>
     public class ImuseStoredSetup : ImuseMessage
     {
         protected override string ImuseMessageName => "stored-setup";
@@ -229,6 +255,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE setup_param MIDI (sysex) message. Signals to set a single instrument parameter on the output device driver.
+    /// </summary>
     public class ImuseSetupParam : ImuseMessage
     {
         protected override string ImuseMessageName => "setup-param";
@@ -246,10 +275,13 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// Base class for iMUSE hook MIDI (sysex) message.
+    /// </summary>
     public abstract class ImuseHook : ImuseMessage
     {
         public int Hook { get; }
-        public abstract Hook Type { get; }
+        public abstract HookType Type { get; }
 
         protected ImuseHook(byte[] data) : base(data)
         {
@@ -257,11 +289,14 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE hook_jump MIDI (sysex) message. Signals to jump to a new position in the soundfile, if the given hook is set.
+    /// </summary>
     public class ImuseHookJump : ImuseHook
     {
         protected override string ImuseMessageName => "hook-jump";
         protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,5}, beat: {Beat,5}, tick: {Tick,5}";
-        public override Hook Type => Imuse.Hook.Jump;
+        public override HookType Type => Imuse.HookType.Jump;
 
         public int Chunk { get; }
         public int Beat { get; }
@@ -276,6 +311,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE hook_jump MIDI (sysex) message for iMUSE v2 (Sam and Max). Signals to jump to a new position in the soundfile, if the given hook is set.
+    /// </summary>
     public class ImuseV2HookJump : ImuseHook
     {
         protected override string ImuseMessageName => "hook-jump-v2";
@@ -283,7 +321,7 @@ namespace Jither.Imuse.Messages
         protected override int ByteDataLength => 8;
         protected override bool HasChannel => false;
 
-        public override Hook Type => Imuse.Hook.Jump;
+        public override HookType Type => Imuse.HookType.Jump;
 
         public int Chunk { get; }
         public int Measure { get; }
@@ -307,12 +345,15 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE hook_transpose MIDI (sysex) message. Signals to transpose all Parts in the Player, if the given hook is set.
+    /// </summary>
     public class ImuseHookTranspose : ImuseHook
     {
         protected override string ImuseMessageName => "hook-transpose";
         protected override string Info => $"hook: {Hook,3}, relative: {Relative,3}, interval: {Interval,3}";
 
-        public override Hook Type => Imuse.Hook.Transpose;
+        public override HookType Type => Imuse.HookType.Transpose;
 
         public int Relative { get; }
         public int Interval { get; }
@@ -324,12 +365,16 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE hook_part_enable MIDI (sysex) message. Signals to enable or disable a single Part in the Player, if the given hook is set.
+    /// When disabled, all output from the part is suppressed.
+    /// </summary>
     public class ImuseHookPartEnable : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-enable";
         protected override string Info => $"hook: {Hook,3}, state: {Enabled,3}";
 
-        public override Hook Type => Imuse.Hook.PartEnable;
+        public override HookType Type => Imuse.HookType.PartEnable;
 
         public int Enabled { get; }
 
@@ -339,42 +384,51 @@ namespace Jither.Imuse.Messages
         }
     }
 
-    public class ImuseHookPartVol : ImuseHook
+    /// <summary>
+    /// iMUSE hook_part_vol MIDI (sysex) message. Signals to change the volume of a single Part in the Player, if the given hook is set.
+    /// </summary>
+    public class ImuseHookPartVolume : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-vol";
         protected override string Info => $"hook: {Hook,3}, vol: {Volume,3}";
 
-        public override Hook Type => Imuse.Hook.PartVolume;
+        public override HookType Type => Imuse.HookType.PartVolume;
 
         public int Volume { get; }
 
-        public ImuseHookPartVol(byte[] data) : base(data)
+        public ImuseHookPartVolume(byte[] data) : base(data)
         {
             Volume = ImuseData[1];
         }
     }
 
-    public class ImuseHookPartPgmch : ImuseHook
+    /// <summary>
+    /// iMUSE hook_part_pgmch MIDI (sysex) message. Signals to change the program of a single Part in the Player, if the given hook is set.
+    /// </summary>
+    public class ImuseHookPartProgramChange : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-pgmch";
         protected override string Info => $"hook: {Hook,3}, vol: {Program,3}";
 
-        public override Hook Type => Imuse.Hook.PartProgramChange;
+        public override HookType Type => Imuse.HookType.PartProgramChange;
 
         public int Program { get; }
 
-        public ImuseHookPartPgmch(byte[] data) : base(data)
+        public ImuseHookPartProgramChange(byte[] data) : base(data)
         {
             Program = ImuseData[1];
         }
     }
 
+    /// <summary>
+    /// iMUSE hook_part_transpose MIDI (sysex) message. Signals to transpose a single Part in the Player, if the given hook is set.
+    /// </summary>
     public class ImuseHookPartTranspose : ImuseHook
     {
         protected override string ImuseMessageName => "hook-part-transpose";
         protected override string Info => $"hook: {Hook,3}, relative: {Relative,3}, interval: {Interval,3}";
 
-        public override Hook Type => Imuse.Hook.PartTranspose;
+        public override HookType Type => Imuse.HookType.PartTranspose;
 
         public int Relative { get; }
         public int Interval { get; }
@@ -386,6 +440,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE marker MIDI (sysex) message. Signals to trigger iMUSE (script) commands queued for the Player.
+    /// </summary>
     public class ImuseMarker : ImuseMessage
     {
         protected override string ImuseMessageName => "marker";
@@ -400,6 +457,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE marker MIDI (sysex) message for iMUSE v2 (Sam and Max). Signals to trigger iMUSE (script) commands queued for the Player.
+    /// </summary>
     public class ImuseV2Marker : ImuseMessage
     {
         protected override string ImuseMessageName => "marker-v2";
@@ -415,6 +475,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE set_loop MIDI (sysex) message. Signals to the sequencer to start looping between the given start position and end position in the current track.
+    /// </summary>
     public class ImuseSetLoop : ImuseMessage
     {
         protected override string ImuseMessageName => "set-loop";
@@ -436,6 +499,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE clear_loop MIDI (sysex) message. Signals to the sequencer to stop looping.
+    /// </summary>
     public class ImuseClearLoop : ImuseMessage
     {
         protected override string ImuseMessageName => "clear-loop";
@@ -446,6 +512,9 @@ namespace Jither.Imuse.Messages
         }
     }
 
+    /// <summary>
+    /// iMUSE load_setup MIDI (sysex) message. Signals to load given previously stored instrument setup into the Part.
+    /// </summary>
     public class ImuseLoadSetup : ImuseMessage
     {
         protected override string ImuseMessageName => "load-setup";

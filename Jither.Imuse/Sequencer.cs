@@ -4,17 +4,17 @@ using Jither.Midi.Files;
 
 namespace Jither.Imuse
 {
-    public enum SequencerStatus
-    {
-        Off,
-        On
-    }
-
     /// <summary>
-    /// Each Player has a dedicated Sequencer handling the sequencing of the sound that's currently assigned to that player.
+    /// Each Player has a dedicated Sequencer handling the sequencing of the sound file that's currently assigned to that player.
     /// </summary>
     public class Sequencer
     {
+        private enum SequencerStatus
+        {
+            Off,
+            On
+        }
+
         private static readonly Logger logger = LogProvider.Get(nameof(Sequencer));
 
         private readonly Player player;

@@ -3,6 +3,10 @@ using System;
 
 namespace Jither.Imuse
 {
+    /// <summary>
+    /// Transmitters handle the final output of iMUSE. This allows directing that output to e.g. a physical MIDI device
+    /// or write it to a file.
+    /// </summary>
     public interface ITransmitter : IDisposable
     {
         Action<long> Player { get; set; }

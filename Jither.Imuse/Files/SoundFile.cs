@@ -38,12 +38,12 @@ namespace Jither.Imuse.Files
     {
         private readonly List<Position> positions = new List<Position>();
 
-        public Hook Type { get; }
+        public HookType Type { get; }
         public int Id { get; }
         public int Channel { get; }
         public IEnumerable<Position> Positions => positions;
 
-        public HookInfo(Hook type, int id, int channel)
+        public HookInfo(HookType type, int id, int channel)
         {
             Type = type;
             Id = id;
@@ -58,7 +58,7 @@ namespace Jither.Imuse.Files
         public override string ToString()
         {
             string result = $"set-{Type.GetFriendlyName()}-hook {Id}";
-            if (Type != Hook.Jump && Type != Hook.Transpose)
+            if (Type != HookType.Jump && Type != HookType.Transpose)
             {
                 result += $" {Channel}";
             }

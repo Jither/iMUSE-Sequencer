@@ -1,26 +1,9 @@
 ﻿using Jither.Logging;
 using Jither.Utilities;
 using System;
-using System.Runtime.Serialization;
 
 namespace Jither.Imuse
 {
-    public enum Hook
-    {
-        [EnumMember(Value = "jump")]
-        Jump,
-        [EnumMember(Value = "transpose")]
-        Transpose,
-        [EnumMember(Value = "part-enable")]
-        PartEnable,
-        [EnumMember(Value = "part-volume")]
-        PartVolume,
-        [EnumMember(Value = "part-program-change")]
-        PartProgramChange,
-        [EnumMember(Value = "part-transpose")]
-        PartTranspose
-    }
-
     /// <summary>
     /// The HookBlock handles hooks (conditional iMUSE midi messages) for a single Player.
     /// </summary>
@@ -41,9 +24,9 @@ namespace Jither.Imuse
             this.player = player;
         }
 
-        public void SetHook(Hook type, int value, int channel)
+        public void SetHook(HookType type, int value, int channel)
         {
-            if (type == Hook.Jump || type == Hook.Transpose)
+            if (type == HookType.Jump || type == HookType.Transpose)
             {
                 logger.Info($"Setting {type.GetFriendlyName()} hook to {value}");
             }
@@ -53,22 +36,22 @@ namespace Jither.Imuse
             }
             switch (type)
             {
-                case Hook.Jump:
+                case HookType.Jump:
                     Jump = value;
                     break;
-                case Hook.Transpose:
+                case HookType.Transpose:
                     Transpose = value;
                     break;
-                case Hook.PartEnable:
+                case HookType.PartEnable:
                     SetPartHook(PartEnable, value, channel);
                     break;
-                case Hook.PartVolume:
+                case HookType.PartVolume:
                     SetPartHook(PartVolume, value, channel);
                     break;
-                case Hook.PartProgramChange:
+                case HookType.PartProgramChange:
                     SetPartHook(PartProgramChange, value, channel);
                     break;
-                case Hook.PartTranspose:
+                case HookType.PartTranspose:
                     SetPartHook(PartTranspose, value, channel);
                     break;
             }

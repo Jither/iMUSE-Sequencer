@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace Jither.Imuse
 {
+    /// <summary>
+    /// Manages all the players of the ImuseEngine.
+    /// </summary>
     public class PlayerManager
     {
         private static readonly Logger logger = LogProvider.Get(nameof(PlayerManager));
@@ -57,12 +60,18 @@ namespace Jither.Imuse
             return true;
         }
 
-        // TODO: Temporary quick-hack
+        /// <summary>
+        /// Renders (to the Driver) the next tick on every Player.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if all players have reached EndOfTrack. Otherwise <c>false</c>.
+        /// </returns>
         public bool Tick()
         {
             bool done = true;
             foreach (var player in players)
             {
+                // If any single player is not done (EndOfTrack reached), then WE're not done.
                 if (!player.Tick())
                 {
                     done = false;

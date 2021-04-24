@@ -21,14 +21,14 @@ namespace Jither.Imuse
             GetPlayer(soundId)?.Sequencer.ClearLoop();
         }
 
-        public void SetHook(int soundId, Hook type, int hook, int channel)
+        public void SetHook(int soundId, HookType type, int hook, int channel)
         {
             GetPlayer(soundId)?.HookBlock.SetHook(type, hook, channel);
         }
 
         public void SetJumpHook(int soundId, int hook)
         {
-            SetHook(soundId, Hook.Jump, hook, 0);
+            SetHook(soundId, HookType.Jump, hook, 0);
         }
 
         public InteractivityInfo GetInteractivityInfo(int soundId)

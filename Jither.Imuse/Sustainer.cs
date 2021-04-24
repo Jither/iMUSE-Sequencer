@@ -6,78 +6,71 @@ using System.Linq;
 
 namespace Jither.Imuse
 {
-    public class SustainDef
-    {
-        public int Note { get; }
-        public int Channel { get; }
-        public Sequencer Sequencer { get; }
-        public long SustainTicks { get; }
-        public int TickCount { get; set; }
-
-        public SustainDef(Sequencer sequencer, int note, int channel, long sustainTime)
-        {
-            Sequencer = sequencer;
-            Note = note;
-            Channel = channel;
-            SustainTicks = sustainTime;
-            TickCount = 0;
-        }
-    }
-
-    public enum SeekNoteStatus
-    {
-        NoteOnFound,
-        NoteOffFound,
-        NoteNotFound
-    }
-
-    public class SeekNoteResult
-    {
-        public SeekNoteStatus Status { get; }
-        public int Channel { get; }
-        public int Note { get; }
-        public int Velocity { get; }
-
-        public SeekNoteResult(SeekNoteStatus status, int channel, int note, int velocity)
-        {
-            Status = status;
-            Channel = channel;
-            Note = note;
-            Velocity = velocity;
-        }
-    }
-
-    public class SequencerPointer
-    {
-        public MidiTrack Track { get; }
-        public int EventIndex { get; private set; }
-        public MidiEvent Event => EventIndex < Track.Events.Count ? Track.Events[EventIndex] : null;
-        public long NextEventTick => Event?.AbsoluteTicks ?? -1;
-
-        public SequencerPointer(MidiTrack track, int eventIndex)
-        {
-            Track = track;
-            EventIndex = eventIndex;
-        }
-
-        public void Advance()
-        {
-            EventIndex++;
-        }
-    }
-
+    /// <summary>
+    /// The sustain module is used during jumps (and loops). It finds all notes that should be sustained across
+    /// the jump, and schedules note-offs for those notes at the correct point at the location after the jump.
+    /// It also ensures that those note-offs won't interfere if the same note is played at the new location before
+    /// the sustain ends.
+    /// </summary>
+    /// <remarks>
+    /// Note that the sustain module is shared among all the sequencers in the engine.
+    /// </remarks>
     // TODO: Unlike iMUSE, which only allows 24 sustained notes at a time, this implementation is unlimited.
     public class Sustainer
     {
+        private class SustainDefinition
+        {
+            public int Note { get; }
+            public int Channel { get; }
+            public Sequencer Sequencer { get; }
+            public long SustainTicks { get; }
+            public int TickCount { get; set; }
+
+            public SustainDefinition(Sequencer sequencer, int note, int channel, long sustainTime)
+            {
+                Sequencer = sequencer;
+                Note = note;
+                Channel = channel;
+                SustainTicks = sustainTime;
+                TickCount = 0;
+            }
+        }
+
+        private enum SeekNoteStatus
+        {
+            NoteOnFound,
+            NoteOffFound,
+            NoteNotFound
+        }
+
+        private class SeekNoteResult
+        {
+            public SeekNoteStatus Status { get; }
+            public int Channel { get; }
+            public int Note { get; }
+            public int Velocity { get; }
+
+            public SeekNoteResult(SeekNoteStatus status, int channel, int note, int velocity)
+            {
+                Status = status;
+                Channel = channel;
+                Note = note;
+                Velocity = velocity;
+            }
+        }
+
         private static readonly Logger logger = LogProvider.Get(nameof(Sustainer));
 
-        private readonly List<SustainDef> activeSustainDefs = new();
+        private readonly List<SustainDefinition> activeSustainDefs = new();
         private readonly HashSet<int> noteTable = new();
 
         public Sustainer()
         {
         }
 
+        /// <summary>
+        /// Renders any pending note-offs for the next tick.
+        /// </summary>
         public void Tick()
         {
             // Find sustain definitions at the current position and apply their note-offs.
@@ -87,7 +80,7 @@ namespace Jither.Imuse
                 sustainDef.TickCount++;
                 if (sustainDef.TickCount >= sustainDef.SustainTicks)
                 {
-                    // Velocity doesn't matter. Driver will replace it.
+                    // Velocity for note-offs doesn't matter. Driver will replace it.
                     var message = new NoteOffMessage(sustainDef.Channel, (byte)sustainDef.Note, 0);
                     logger.Debug($"Stopping sustained note {message}");
                     sustainDef.Sequencer.Parts.HandleEvent(message);
@@ -96,9 +89,12 @@ namespace Jither.Imuse
             }
         }
 
+        /// <summary>
+        /// Analyzes a jump, preparing the sustain definitions that will be active after that jump.
+        /// </summary>
         public void AnalyzeSustain(Sequencer sequencer, SequencerPointer oldTrackPos, SequencerPointer newTrackPos, long newSustainTicks)
         {
-            var sustainDefs = new List<SustainDef>();
+            var sustainDefs = new List<SustainDefinition>();
 
             // Get all notes that are currently on:
             noteTable.Clear();
@@ -120,12 +116,13 @@ namespace Jither.Imuse
                     if (noteTable.Contains(result.Note))
                     {
                         noteTable.Remove(result.Note);
-                        sustainDefs.Add(new SustainDef(sequencer, result.Note, result.Channel, sustainTicks));
+                        sustainDefs.Add(new SustainDefinition(sequencer, result.Note, result.Channel, sustainTicks));
                     }
                 }
                 sustainTicks = oldTrackPos.NextEventTick - sequencer.CurrentTick;
             }
 
+            // Find the longest sustain we found. That's how far we need to search below.
             long maxTicks = 0;
             if (sustainDefs.Count > 0)
             {

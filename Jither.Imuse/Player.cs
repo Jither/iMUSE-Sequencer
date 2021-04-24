@@ -29,7 +29,7 @@ namespace Jither.Imuse
         private readonly PartsCollection linkedParts;
         private readonly ImuseOptions options;
 
-        // TODO: Temporary test measure:
+        // Used for keeping track of number of jumps for a given hook - to allow limiting.
         private readonly Dictionary<ImuseHookJump, int> jumpsExecuted = new();
 
         public PlayerStatus Status { get; private set; }
@@ -97,7 +97,21 @@ namespace Jither.Imuse
             sequencer.Start(file.Midi);
         }
 
-        // Temporary
+        /// <summary>
+        /// Gets information on loops, hooks and markers for the sound file currently being played by this Player.
+        /// </summary>
+        /// <returns></returns>
+        public InteractivityInfo GetInteractivityInfo()
+        {
+            return file?.GetInteractivityInfo();
+        }
+
+        /// <summary>
+        /// Asks player to render events for the next tick. (They'll end up being sent to the driver).
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if EndOfTrack message was reached during processing. Otherwise <c>false</c>.
+        /// </returns>
         public bool Tick()
         {
             return sequencer.Tick();
@@ -115,12 +129,20 @@ namespace Jither.Imuse
         }
 
         // TODO: Does anything actually need these "SetX" methods? (other than SetTranspose, used by hooks)
+        // If they are, they could probably be made setters on the properties.
+        
+        /// <summary>
+        /// Sets the priority of this Player, and updates priorities of all its parts.
+        /// </summary>
         public void SetPriority(int priority)
         {
             Priority = priority;
             linkedParts.SetPriority();
         }
 
+        /// <summary>
+        /// Sets the volume of this Player, and updates the volume of all its parts.
+        /// </summary>
         public bool SetVolume(int volume)
         {
             if (volume > 127)
@@ -132,12 +154,18 @@ namespace Jither.Imuse
             return true;
         }
 
+        /// <summary>
+        /// Sets the panning of this Player, and updates the panning of all its parts.
+        /// </summary>
         public void SetPan(int pan)
         {
             Pan = pan;
             linkedParts.SetPan();
         }
 
+        /// <summary>
+        /// Sets transposition of this Player, and updates the transposition of all its parts.
+        /// </summary>
         public bool SetTranspose(int interval, bool relative)
         {
             if (interval < -24 || interval > 24)
@@ -158,6 +186,9 @@ namespace Jither.Imuse
             return true;
         }
 
+        /// <summary>
+        /// Sets the detune of this Player, and updates the detune of all its parts.
+        /// </summary>
         public void SetDetune(int detune)
         {
             Detune = detune;
@@ -228,10 +259,10 @@ namespace Jither.Imuse
                 case ImuseHookPartEnable partEnable:
                     HookBlock.HandlePartEnable(partEnable.Hook, partEnable.Channel, partEnable.Enabled != 0);
                     break;
-                case ImuseHookPartVol partVolume:
+                case ImuseHookPartVolume partVolume:
                     HookBlock.HandlePartVolume(partVolume.Hook, partVolume.Channel, partVolume.Volume);
                     break;
-                case ImuseHookPartPgmch partPgmCh:
+                case ImuseHookPartProgramChange partPgmCh:
                     HookBlock.HandlePartProgramChange(partPgmCh.Hook, partPgmCh.Channel, partPgmCh.Program);
                     break;
                 case ImuseHookPartTranspose partTranspose:
@@ -273,11 +304,6 @@ namespace Jither.Imuse
                     driver.TransmitMeta(message);
                     break;
             }
-        }
-
-        public InteractivityInfo GetInteractivityInfo()
-        {
-            return file?.GetInteractivityInfo();
         }
     }
 }

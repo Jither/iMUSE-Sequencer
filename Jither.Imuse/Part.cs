@@ -6,6 +6,11 @@ using System.Collections.Generic;
 
 namespace Jither.Imuse
 {
+    /// <summary>
+    /// A Part represents a single channel in a MIDI being played. It handles its playback properties
+    /// (instrument/program, volume, panning, priority etc.), and takes care of sending the channel's
+    /// events and playback changes to the driver.
+    /// </summary>
     // TODO: Make base class - this is Roland-specific
     public class Part
     {

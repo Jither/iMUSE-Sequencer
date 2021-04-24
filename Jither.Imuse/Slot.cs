@@ -3,11 +3,12 @@ using System.Collections.Generic;
 
 namespace Jither.Imuse
 {
-    // TODO: Make base class - this is Roland-specific
     /// <summary>
     /// Slots represent the usable channels on a synth with limited channels (e.g. MT-32 with 8 melodic channels + 1 percussion).
-    /// Parts are assigned to a slot based on priority (combined from player/sound priority + part priority offset).
+    /// Parts are assigned to a slot based on priority (combined from player/sound priority + part priority offset). Parts without
+    /// a slot are not played.
     /// </summary>
+    // TODO: Make base class - this is Roland-specific
     public class Slot
     {
         private Part part;
