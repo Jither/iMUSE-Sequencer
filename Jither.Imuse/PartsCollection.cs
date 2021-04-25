@@ -159,6 +159,21 @@ namespace Jither.Imuse
             GetByChannel(channel)?.SetEnabled(enabled);
         }
 
+        public void SetupParam(int channel, int setupNumber, int value)
+        {
+            GetByChannel(channel)?.SetupParam(setupNumber, value);
+        }
+
+        public void ActiveSetup(int channel, byte[] setup)
+        {
+            GetByChannel(channel)?.ActiveSetup(setup);
+        }
+
+        public void StoredSetup(int channel, int setupNumber, byte[] setup)
+        {
+            GetByChannel(channel)?.StoredSetup(setupNumber, setup);
+        }
+
         public void DoProgramChange(int channel, int program)
         {
             GetByChannel(channel)?.DoProgramChange(program);

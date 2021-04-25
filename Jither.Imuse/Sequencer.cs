@@ -44,7 +44,7 @@ namespace Jither.Imuse
         internal long CurrentTick => currentTick;
         private MidiTrack CurrentTrack => file.Tracks[currentTrackIndex];
 
-        public SequencerStatus Status { get; private set; }
+        private SequencerStatus status;
 
         public Sequencer(Player player, Sustainer sustainer)
         {
@@ -76,12 +76,12 @@ namespace Jither.Imuse
             tickInBeat = 0;
             currentBeat = 1;
 
-            Status = SequencerStatus.On;
+            status = SequencerStatus.On;
         }
 
         public void Stop()
         {
-            Status = SequencerStatus.Off;
+            status = SequencerStatus.Off;
             bail = true;
         }
 
@@ -121,7 +121,7 @@ namespace Jither.Imuse
         /// </returns>
         public bool Tick()
         {
-            if (Status != SequencerStatus.On)
+            if (status != SequencerStatus.On)
             {
                 return true;
             }
@@ -216,7 +216,7 @@ namespace Jither.Imuse
 
         public bool Jump(int newTrackIndex, int newBeat, int newTickInBeat, string reason)
         {
-            if (Status == SequencerStatus.Off)
+            if (status == SequencerStatus.Off)
             {
                 return false;
             }

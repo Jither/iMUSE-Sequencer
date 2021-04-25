@@ -166,14 +166,10 @@ namespace Jither.Imuse
             switch (message)
             {
                 case ImuseActiveSetup activeSetup:
-                    driver.ActiveSetup(this, activeSetup.Setup);
+                    ActiveSetup(activeSetup.Setup);
                     break;
                 case ImuseStoredSetup storedSetup:
-                    // Should be done... elsewhere - not part-related
-                    if (storedSetup.SetupNumber < Roland.StoredSetupCount)
-                    {
-                        driver.StoredSetup(storedSetup.SetupNumber, storedSetup.Setup);
-                    }
+                    StoredSetup(storedSetup.SetupNumber, storedSetup.Setup);
                     break;
                 case ImuseSetupBank:
                     // Not used by Roland
@@ -182,10 +178,7 @@ namespace Jither.Imuse
                     // Not used by Roland
                     break;
                 case ImuseSetupParam setupParam:
-                    if (setupParam.Number < Roland.StoredSetupCount)
-                    {
-                        driver.SetupParam(this, setupParam.Number, setupParam.Value);
-                    }
+                    SetupParam(setupParam.Number, setupParam.Value);
                     break;
                 case ImuseMarker:
                     break;
@@ -262,6 +255,28 @@ namespace Jither.Imuse
         {
             Program = program;
             driver.LoadRomSetup(this, program);
+        }
+
+        public void ActiveSetup(byte[] setup)
+        {
+            driver.ActiveSetup(this, setup);
+        }
+
+        public void StoredSetup(int setupNumber, byte[] setup)
+        {
+            // Should be done... elsewhere - not part-related
+            if (setupNumber < Roland.StoredSetupCount)
+            {
+                driver.StoredSetup(setupNumber, setup);
+            }
+        }
+
+        public void SetupParam(int setupNumber, int value)
+        {
+            if (setupNumber < Roland.StoredSetupCount)
+            {
+                driver.SetupParam(this, setupNumber, value);
+            }
         }
     }
 }

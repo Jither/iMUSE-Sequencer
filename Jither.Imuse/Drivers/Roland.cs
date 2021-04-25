@@ -311,9 +311,9 @@ namespace Jither.Imuse.Drivers
         }
 
         // AKA DoStoredDump
-        public override void StoredSetup(int program, byte[] data)
+        public override void StoredSetup(int setupNumber, byte[] data)
         {
-            TransmitSysex(storedSetupAddresses[program], data);
+            TransmitSysex(storedSetupAddresses[setupNumber], data);
         }
 
         // AKA LoadStoredSetup
@@ -362,6 +362,61 @@ namespace Jither.Imuse.Drivers
         public override void GetSustainNotes(Slot slot, HashSet<int> notes)
         {
             notes.UnionWith(slot.NoteTable);
+        }
+
+        public override void TransmitSysex(SysexMessage message, PartsCollection parts)
+        {
+            // TODO: This is a bit roundabout - driver calling back into parts
+            // But eventually, all the Roland specific stuff should be handled by the driver, not parts or player...
+            int index = 0;
+            byte[] data = message.Data;
+            byte manufacturerId = data[index++];
+            if (manufacturerId != Roland.sysexId)
+            {
+                logger.Warning("Unknown sysex manufacturer ID");
+                return;
+            }
+
+            // Length of data minus manufacturer ID and ending F7.
+            int count = data.Length - 2;
+            int channel = data[index++];
+            int setupNumber = channel;
+
+            index += 2; // Skip model and command IDs
+            int address = (data[index++] << 14) | (data[index++] << 7) | (data[index++]);
+            int offset = address - ActiveSetupBaseAddress;
+
+            switch (count)
+            {
+                case 8:
+                    if (offset < ActiveSetupSize && channel < 16)
+                    {
+                        parts.SetupParam(channel, offset, data[index++]);
+                    }
+                    return;
+                case 9:
+                    if (offset < ActiveSetupSize && channel < 16)
+                    {
+                        parts.SetupParam(channel, offset, data[index++]);
+                        parts.SetupParam(channel, offset + 1, data[index++]);
+                    }
+                    return;
+                case 253:
+                    if (offset == 0 && channel < 16)
+                    {
+                        var setup = data[index..^2];
+                        parts.ActiveSetup(channel, setup);
+                    }
+                    else
+                    {
+                        var setup = data[index..^2];
+                        StoredSetup(setupNumber, setup);
+                    }
+                    return;
+            }
+
+            // No other sysex please - so not calling base
+            logger.Warning("Roland driver got unknown/bad Roland sysex");
         }
     }
 }

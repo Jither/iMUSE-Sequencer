@@ -70,7 +70,7 @@ namespace Jither.Imuse.Drivers
             TransmitEvent(message);
         }
 
-        public void TransmitSysex(SysexMessage message)
+        public virtual void TransmitSysex(SysexMessage message, PartsCollection parts)
         {
             TransmitEvent(message);
         }

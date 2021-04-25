@@ -286,8 +286,7 @@ namespace Jither.Imuse
 
         private void HandleSysex(SysexMessage message)
         {
-            // TODO: Full handling
-            driver.TransmitSysex(message);
+            driver.TransmitSysex(message, linkedParts);
         }
 
         private void HandleMetaEvent(MetaMessage message)
