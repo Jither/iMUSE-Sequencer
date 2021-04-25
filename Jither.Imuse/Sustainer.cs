@@ -47,11 +47,15 @@ namespace Jither.Imuse
         {
             NoteOnFound,
             NoteOffFound,
-            NoteNotFound
+            NoteNotFound,
+            ReachedEndOfTrack
         }
 
         private class SeekNoteResult
         {
+            public static readonly SeekNoteResult ReachedEndOfTrack = new SeekNoteResult(SeekNoteStatus.ReachedEndOfTrack, 0, 0, 0);
+            public static readonly SeekNoteResult NoteNotFound = new SeekNoteResult(SeekNoteStatus.NoteNotFound, 0, 0, 0);
+
             public SeekNoteStatus Status { get; }
             public int Channel { get; }
             public int Note { get; }
@@ -122,6 +126,15 @@ namespace Jither.Imuse
             while (noteTable.Count > 0)
             {
                 var result = SeekNote(oldTrackPos);
+
+                if (result.Status == SeekNoteStatus.ReachedEndOfTrack)
+                {
+                    // We may reach end of track without finding note-off for all notes in noteTable.
+                    // That would cause an infinite loop.
+                    // (see e.g. STAN.rol or LECHUCK.rol). So abandon all hope:
+                    break;
+                }
+                
                 if (result.Status == SeekNoteStatus.NoteOffFound)
                 {
                     var note = new SustainedNote(result.Channel, result.Note);
@@ -170,8 +183,11 @@ namespace Jither.Imuse
             return message switch
             {
                 NoteOffMessage noteOff => new SeekNoteResult(SeekNoteStatus.NoteOffFound, noteOff.Channel, noteOff.Key, noteOff.Velocity),
-                NoteOnMessage noteOn => new SeekNoteResult(noteOn.Velocity > 0 ? SeekNoteStatus.NoteOnFound : SeekNoteStatus.NoteOffFound, noteOn.Channel, noteOn.Key, noteOn.Velocity),// iMUSE accepts velocity 0 as note-off
-                _ => new SeekNoteResult(SeekNoteStatus.NoteNotFound, 0, 0, 0),
+                NoteOnMessage noteOn => new SeekNoteResult(
+                    noteOn.Velocity > 0 ? SeekNoteStatus.NoteOnFound : SeekNoteStatus.NoteOffFound, 
+                    noteOn.Channel, noteOn.Key, noteOn.Velocity),// iMUSE accepts velocity 0 as note-off
+                EndOfTrackMessage => SeekNoteResult.ReachedEndOfTrack,
+                _ => SeekNoteResult.NoteNotFound
             };
         }
     }

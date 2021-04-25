@@ -274,6 +274,11 @@ namespace Jither.Imuse
                     HookBlock.HandlePartTranspose(partTranspose.Hook, partTranspose.Channel, partTranspose.Interval, partTranspose.Relative != 0);
                     break;
 
+                case ImuseMarker marker:
+                    // TODO: Handle markers
+                    logger.Info($"marker {marker.Id}");
+                    break;
+
                 // Loops
                 case ImuseSetLoop setLoop:
                     // We allow limiting number of loops - this is useful for non-interactive recording
