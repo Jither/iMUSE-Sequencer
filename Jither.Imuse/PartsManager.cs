@@ -142,6 +142,7 @@ namespace Jither.Imuse
 
             if (weakestSlot != null)
             {
+                logger.Verbose($"Stealing slot {weakestSlot.Index} from part {weakestSlot.Part.Index}");
                 driver.StopAllNotes(weakestSlot);
                 LinkSlotless(weakestSlot.Part);
                 weakestSlot.AbandonPart();
@@ -190,6 +191,7 @@ namespace Jither.Imuse
 
         private void ReleaseSlot(Slot slot)
         {
+            driver.StopAllNotes(slot);
             slot.AbandonPart();
 
             var part = FindHighestPrioritySlotlessPart();

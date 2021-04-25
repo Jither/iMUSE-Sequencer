@@ -92,11 +92,13 @@ namespace Jither.Imuse
                 driver.CurrentTick++;
                 if (!continuePlaying)
                 {
-                    return currentTick;
+                    break;
                 }
                 currentTick++;
             }
-            return ticks;
+            // Return number of ticks played so far. Will be less than the requested number of ticks, if player
+            // signaled a stop.
+            return currentTick;
         }
 
         public void Stop()

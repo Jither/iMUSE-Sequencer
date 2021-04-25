@@ -34,11 +34,14 @@ namespace Jither.Imuse
         public int SlotSetupAddress { get; }
         public HashSet<int> NoteTable { get; } = new();
 
-        public Slot(int number)
+        public int Index { get; }
+
+        public Slot(int index)
         {
-            OutputChannel = number + 1; // Channels 2-9 (1-8 zero-indexed), percussion = 10 (9 zero-indexed)
-            ExternalAddress = Roland.RealPartBaseAddress + Roland.RealPartSize * number;
-            SlotSetupAddress = Roland.ActiveSetupBaseAddress + Roland.ActiveSetupSize * number;
+            Index = index;
+            OutputChannel = index + 1; // Channels 2-9 (1-8 zero-indexed), percussion = 10 (9 zero-indexed)
+            ExternalAddress = Roland.RealPartBaseAddress + Roland.RealPartSize * index;
+            SlotSetupAddress = Roland.ActiveSetupBaseAddress + Roland.ActiveSetupSize * index;
         }
 
         public void AssignPart(Part part)

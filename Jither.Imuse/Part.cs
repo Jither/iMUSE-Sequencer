@@ -21,7 +21,7 @@ namespace Jither.Imuse
         public int ExternalAddress { get; }
         public int PartSetupAddress { get; }
 
-        public int Number { get; private set; }
+        public int Index { get; private set; }
         
         /// <summary>
         /// The channel whose input messages this part will handle.
@@ -65,12 +65,12 @@ namespace Jither.Imuse
         public int DetuneEffective => Math.Clamp(player.Detune + Detune, -128, 127);
         public int PitchOffset => Math.Clamp(Pitchbend + DetuneEffective + (TransposeEffective << 7), -0x800, 0x7ff);
 
-        public Part(int number, Driver driver)
+        public Part(int index, Driver driver)
         {
             this.driver = driver;
-            Number = number;
-            ExternalAddress = Roland.VirtualPartBaseAddress + Roland.VirtualPartSize * number;
-            PartSetupAddress = Roland.StoredSetupBaseAddress + Roland.StoredSetupSize * number;
+            Index = index;
+            ExternalAddress = Roland.VirtualPartBaseAddress + Roland.VirtualPartSize * index;
+            PartSetupAddress = Roland.StoredSetupBaseAddress + Roland.StoredSetupSize * index;
         }
 
         public void LinkPlayer(Player player)

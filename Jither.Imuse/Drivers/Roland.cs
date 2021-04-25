@@ -272,7 +272,7 @@ namespace Jither.Imuse.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Number); // Load external part into slot
+                TransmitProgramChange(part.Slot.OutputChannel, part.Index); // Load external part into slot
             }
 
             SetModWheel(part);
@@ -291,7 +291,7 @@ namespace Jither.Imuse.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Index);
             }
         }
 
@@ -300,14 +300,14 @@ namespace Jither.Imuse.Drivers
         {
             byte[] buffer = new byte[2];
             buffer[0] = MemoryBank;
-            buffer[1] = (byte)part.Number;
+            buffer[1] = (byte)part.Index;
             TransmitSysex(part.ExternalAddress, buffer);
 
             TransmitSysex(part.PartSetupAddress, data);
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Index);
             }
         }
 
@@ -327,7 +327,7 @@ namespace Jither.Imuse.Drivers
 
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Index);
             }
         }
 
@@ -335,7 +335,7 @@ namespace Jither.Imuse.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Number);
+                TransmitProgramChange(part.Slot.OutputChannel, part.Index);
             }
         }
 
@@ -357,7 +357,7 @@ namespace Jither.Imuse.Drivers
             slot.NoteTable.Clear();
 
             TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
-            TransmitControl(slot.OutputChannel, MidiController.AllSoundOff, 0);
+            TransmitControl(slot.OutputChannel, MidiController.AllNotesOff, 0);
         }
 
         public override void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes)
