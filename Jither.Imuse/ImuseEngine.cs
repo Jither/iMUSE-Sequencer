@@ -14,8 +14,9 @@ namespace Jither.Imuse
         private readonly ITransmitter transmitter;
         private readonly SoundTarget target;
         private readonly Driver driver;
-
+        private readonly Sustainer sustainer;
         private readonly PlayerManager players;
+        private readonly PartsManager parts;
         private readonly FileManager files = new();
 
         private int? ticksPerQuarterNote;
@@ -37,8 +38,8 @@ namespace Jither.Imuse
 
             driver.Init();
 
-            var parts = new PartsManager(driver);
-            var sustainer = new Sustainer();
+            parts = new PartsManager(driver);
+            sustainer = new Sustainer();
             players = new PlayerManager(files, parts, sustainer, driver, options);
 
             Commands = new ImuseCommands(players);
@@ -89,9 +90,15 @@ namespace Jither.Imuse
             while (currentTick < ticks)
             {
                 bool continuePlaying = players.Tick();
+                continuePlaying = sustainer.Tick() || continuePlaying;
                 driver.CurrentTick++;
                 if (!continuePlaying)
                 {
+                    var sustainNotes = parts.GetSustainNotes();
+                    foreach (var note in sustainNotes)
+                    {
+                        logger.Warning($"Still playing note: {note}");
+                    }
                     break;
                 }
                 currentTick++;

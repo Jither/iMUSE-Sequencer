@@ -99,6 +99,7 @@ namespace ImuseSequencer.Playback
             // Get events for next 480 ticks
             long ticksPlayed = Engine.Play(480);
 
+            // Zero ticks played means the engine is done playing
             if (ticksPlayed == 0)
             {
                 return;
@@ -117,8 +118,8 @@ namespace ImuseSequencer.Playback
             }
             disposed = true;
 
-            scheduler.Dispose();
-            output.Dispose();
+            scheduler?.Dispose();
+            output?.Dispose();
 
             GC.SuppressFinalize(this);
         }

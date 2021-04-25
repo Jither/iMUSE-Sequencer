@@ -129,9 +129,6 @@ namespace Jither.Imuse
                 return false;
             }
 
-            // Send note-off for sustained notes (if any)
-            sustainer.Tick();
-
             // Update beat time
             if (tickInBeat >= ticksPerQuarterNote)
             {

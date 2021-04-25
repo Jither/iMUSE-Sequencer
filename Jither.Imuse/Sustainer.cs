@@ -78,7 +78,10 @@ namespace Jither.Imuse
         /// <summary>
         /// Renders any pending note-offs for the next tick.
         /// </summary>
-        public void Tick()
+        /// <returns>
+        /// <c>true</c> if more note-offs are still pending. Otherwise <c>false</c>.
+        /// </returns>
+        public bool Tick()
         {
             // Find sustain definitions at the current position and apply their note-offs.
             for (int i = activeSustainDefs.Count - 1; i >= 0; i--)
@@ -94,6 +97,7 @@ namespace Jither.Imuse
                     activeSustainDefs.RemoveAt(i);
                 }
             }
+            return activeSustainDefs.Count > 0;
         }
 
         /// <summary>

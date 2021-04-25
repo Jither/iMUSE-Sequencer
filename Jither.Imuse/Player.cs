@@ -299,6 +299,8 @@ namespace Jither.Imuse
             switch (message)
             {
                 case SetTempoMessage tempo:
+                    // TODO: Actually, the Sequencer should handle tempo changes (and combine them with Speed (percentage with 128 being 100%))
+                    // - since tempo may differ between soundfiles playing at the same time.
                     driver.SetTempo(tempo);
                     break;
                 case EndOfTrackMessage:

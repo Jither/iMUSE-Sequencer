@@ -1,5 +1,6 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Messages;
+using Jither.Midi.Helpers;
 using Jither.Midi.Messages;
 using System;
 using System.Collections;
@@ -16,6 +17,11 @@ namespace Jither.Imuse
         {
             Channel = channel;
             Key = key;
+        }
+
+        public override string ToString()
+        {
+            return $"Channel {Channel}, Key {MidiHelper.NoteNumberToName(Key)} ({Key})";
         }
     }
 

@@ -282,6 +282,9 @@ namespace Jither.Imuse.Files
                             throw new MidiFileException($"Not a valid SOU MIDI file: Incorrect SOU chunk size");
                         }
                         break;
+                    case "AUhd":
+                        // This is in SBL files - which aren't MIDIs but audio data
+                        throw new MidiFileException($"Not a valid MIDI file: Looks like SBL audio.");
                     case "MDhd":
                         // Found in most (all?) target chunks - variable length (0 in DOTT)
                         // Contains various properties for iMUSE (e.g. sound priority etc.)

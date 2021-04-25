@@ -99,6 +99,16 @@ namespace Jither.Imuse
             }
         }
 
+        public HashSet<SustainedNote> GetSustainNotes()
+        {
+            var result = new HashSet<SustainedNote>();
+            foreach (var slot in slots)
+            {
+                driver.GetSustainNotes(slot, result);
+            }
+            return result;
+        }
+
         private Part SelectPart(int priority)
         {
             Part weakestPart = null;
