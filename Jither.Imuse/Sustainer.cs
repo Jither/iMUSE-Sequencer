@@ -3,6 +3,8 @@ using Jither.Midi.Messages;
 using Jither.Midi.Files;
 using System.Collections.Generic;
 using System.Linq;
+using Jither.Midi.Helpers;
+using System;
 
 namespace Jither.Imuse
 {
@@ -34,6 +36,11 @@ namespace Jither.Imuse
                 SustainTicks = sustainTime;
                 TickCount = 0;
             }
+
+            public override string ToString()
+            {
+                return $"Sustain: {MidiHelper.NoteNumberToName(Note)} ({Note}) on seq {Sequencer.Index}, channel {Channel} will be sustained for {SustainTicks} ticks";
+            }
         }
 
         private enum SeekNoteStatus
@@ -62,7 +69,7 @@ namespace Jither.Imuse
         private static readonly Logger logger = LogProvider.Get(nameof(Sustainer));
 
         private readonly List<SustainDefinition> activeSustainDefs = new();
-        private readonly HashSet<int> noteTable = new();
+        private readonly HashSet<SustainedNote> noteTable = new();
 
         public Sustainer()
         {
@@ -82,7 +89,7 @@ namespace Jither.Imuse
                 {
                     // Velocity for note-offs doesn't matter. Driver will replace it.
                     var message = new NoteOffMessage(sustainDef.Channel, (byte)sustainDef.Note, 0);
-                    logger.Debug($"Stopping sustained note {message}");
+                    logger.Verbose($"Stopping sustained note {message}");
                     sustainDef.Sequencer.Parts.HandleEvent(message);
                     activeSustainDefs.RemoveAt(i);
                 }
@@ -113,9 +120,10 @@ namespace Jither.Imuse
                 var result = SeekNote(oldTrackPos);
                 if (result.Status == SeekNoteStatus.NoteOffFound)
                 {
-                    if (noteTable.Contains(result.Note))
+                    var note = new SustainedNote(result.Channel, result.Note);
+                    if (noteTable.Contains(note))
                     {
-                        noteTable.Remove(result.Note);
+                        noteTable.Remove(note);
                         sustainDefs.Add(new SustainDefinition(sequencer, result.Note, result.Channel, sustainTicks));
                     }
                 }
@@ -147,6 +155,8 @@ namespace Jither.Imuse
             }
 
             activeSustainDefs.AddRange(sustainDefs);
+
+            logger.Verbose(String.Join(Environment.NewLine, activeSustainDefs));
         }
 
         private SeekNoteResult SeekNote(SequencerPointer pos)

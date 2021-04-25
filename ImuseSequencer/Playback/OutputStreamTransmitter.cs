@@ -20,7 +20,7 @@ namespace ImuseSequencer.Playback
 
         private bool disposed;
 
-        public Action<long> Player { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public ImuseEngine Engine { get; set; }
 
         public OutputStreamTransmitter(int deviceId)
         {

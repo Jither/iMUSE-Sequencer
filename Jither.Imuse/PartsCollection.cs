@@ -7,6 +7,18 @@ using System.Collections.Generic;
 
 namespace Jither.Imuse
 {
+    public struct SustainedNote
+    {
+        public int Channel { get; }
+        public int Key { get; }
+
+        public SustainedNote(int channel, int key)
+        {
+            Channel = channel;
+            Key = key;
+        }
+    }
+
     public class PartsCollection : IReadOnlyList<Part>
     {
         private readonly Driver driver;
@@ -48,7 +60,7 @@ namespace Jither.Imuse
             }
         }
 
-        public void GetSustainNotes(HashSet<int> notes)
+        public void GetSustainNotes(HashSet<SustainedNote> notes)
         {
             foreach (var part in parts)
             {

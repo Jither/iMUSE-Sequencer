@@ -24,7 +24,7 @@ namespace Jither.Imuse
 
             for (int i = 0; i < playerCount; i++)
             {
-                players.Add(new Player(driver, parts, sustainer, options));
+                players.Add(new Player(i, driver, parts, sustainer, options));
             }
         }
 
@@ -64,20 +64,20 @@ namespace Jither.Imuse
         /// Renders (to the Driver) the next tick on every Player.
         /// </summary>
         /// <returns>
-        /// <c>true</c> if all players have reached EndOfTrack. Otherwise <c>false</c>.
+        /// <c>false</c> if all players have reached EndOfTrack. Otherwise <c>true</c> (active).
         /// </returns>
         public bool Tick()
         {
-            bool done = true;
+            int playersActive = 0;
             foreach (var player in players)
             {
                 // If any single player is not done (EndOfTrack reached), then WE're not done.
-                if (!player.Tick())
+                if (player.Tick())
                 {
-                    done = false;
+                    playersActive++;
                 }
             }
-            return done;
+            return playersActive > 0;
         }
 
         /// <summary>

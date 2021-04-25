@@ -209,7 +209,7 @@ namespace Jither.Imuse
             }
         }
 
-        public void GetSustainNotes(HashSet<int> notes)
+        public void GetSustainNotes(HashSet<SustainedNote> notes)
         {
             if (slot != null)
             {

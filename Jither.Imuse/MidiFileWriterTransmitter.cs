@@ -20,7 +20,7 @@ namespace Jither.Imuse
 
         private readonly List<MidiEvent> events = new();
 
-        public Action<long> Player { get; set; }
+        public ImuseEngine Engine { get; set; }
 
         public MidiFileWriterTransmitter()
         {
@@ -33,7 +33,11 @@ namespace Jither.Imuse
 
         public void Start()
         {
-            Player?.Invoke(-1); // Ask the player to just send everything at once.
+            if (Engine == null)
+            {
+                throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
+            }
+            Engine.Play(-1); // Ask the engine to just send everything at once.
         }
 
         public void Transmit(MidiEvent evt)

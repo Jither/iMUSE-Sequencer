@@ -22,7 +22,7 @@ namespace ImuseSequencer.Playback
 
         private bool disposed;
 
-        public Action<long> Player { get; set; }
+        public ImuseEngine Engine { get; set; }
 
         public OutputDeviceTransmitter(int deviceId)
         {
@@ -72,7 +72,7 @@ namespace ImuseSequencer.Playback
                             break;
                         default:
                             // All other messages are sent to output
-                            logger.Verbose($"{scheduler.TimeInTicks,10} {message}");
+                            logger.Debug($"{scheduler.TimeInTicks,10} {message}");
                             output.SendMessage(message);
                             break;
                     }
@@ -86,6 +86,10 @@ namespace ImuseSequencer.Playback
 
         public void Start()
         {
+            if (Engine == null)
+            {
+                throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
+            }
             Send();
             scheduler.Start();
         }
@@ -93,9 +97,14 @@ namespace ImuseSequencer.Playback
         private void Send()
         {
             // Get events for next 480 ticks
-            Player?.Invoke(480);
+            long ticksPlayed = Engine.Play(480);
 
-            logger.Verbose($"Sending {events.Count} events to scheduler...");
+            if (ticksPlayed == 0)
+            {
+                return;
+            }
+
+            logger.Debug($"Sending {events.Count} events to scheduler...");
             scheduler.Schedule(events);
             events.Clear();
         }

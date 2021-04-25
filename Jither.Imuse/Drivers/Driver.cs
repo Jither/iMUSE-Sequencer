@@ -40,7 +40,11 @@ namespace Jither.Imuse.Drivers
 
         public abstract void StopAllNotes(Slot slot);
 
-        public abstract void GetSustainNotes(Slot slot, HashSet<int> notes);
+        /// <summary>
+        /// Retrieves the currently held notes on the given slot. Note that the channel returned for each
+        /// each note the Part (input) channel, not the Slot (output) channel.
+        /// </summary>
+        public abstract void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes);
 
         protected void TransmitEvent(MidiMessage message)
         {

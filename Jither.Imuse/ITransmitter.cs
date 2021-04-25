@@ -9,7 +9,7 @@ namespace Jither.Imuse
     /// </summary>
     public interface ITransmitter : IDisposable
     {
-        Action<long> Player { get; set; }
+        ImuseEngine Engine { get; set; }
 
         void Init(int ticksPerQuarterNote);
         void Start();

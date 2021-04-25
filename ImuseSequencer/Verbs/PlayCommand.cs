@@ -175,7 +175,6 @@ namespace ImuseSequencer.Verbs
                         engine.StartSound(0);
                         BuildCommands(engine);
 
-                        transmitter.Player = ticks => engine.Play(ticks);
                         transmitter.Start();
 
                         GameLoop(engine);
@@ -256,8 +255,6 @@ namespace ImuseSequencer.Verbs
 
                     engine.RegisterSound(0, soundFile);
                     engine.StartSound(0);
-
-                    transmitter.Player = ticks => engine.Play(ticks);
 
                     transmitter.Start();
 

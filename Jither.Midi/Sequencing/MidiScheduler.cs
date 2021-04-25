@@ -1,4 +1,4 @@
-﻿using Jither.Midi.Messages;
+using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -144,6 +144,12 @@ namespace Jither.Midi.Sequencing
 
             // No need for lock here (I think)
             cancelSource.Cancel();
+
+            // Tell thread to stop waiting if the queue is empty.
+            lock (lockThread)
+            {
+                Monitor.Pulse(lockThread);
+            }
 
             thread.Join();
             thread = null;

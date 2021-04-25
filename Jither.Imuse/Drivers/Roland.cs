@@ -1,6 +1,7 @@
 ﻿using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -359,9 +360,9 @@ namespace Jither.Imuse.Drivers
             TransmitControl(slot.OutputChannel, MidiController.AllSoundOff, 0);
         }
 
-        public override void GetSustainNotes(Slot slot, HashSet<int> notes)
+        public override void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes)
         {
-            notes.UnionWith(slot.NoteTable);
+            notes.UnionWith(slot.NoteTable.Select(n => new SustainedNote(slot.Part.InputChannel, n)));
         }
 
         public override void TransmitSysex(SysexMessage message, PartsCollection parts)

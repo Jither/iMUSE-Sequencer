@@ -46,8 +46,11 @@ namespace Jither.Imuse
 
         private SequencerStatus status;
 
-        public Sequencer(Player player, Sustainer sustainer)
+        public int Index { get; }
+
+        public Sequencer(int index, Player player, Sustainer sustainer)
         {
+            Index = index;
             this.player = player;
             this.sustainer = sustainer;
         }
@@ -117,13 +120,13 @@ namespace Jither.Imuse
         /// Processes events at the current tick.
         /// </summary>
         /// <returns>
-        /// <c>true</c> if EndOfTrack message was reached during processing. Otherwise <c>false</c>.
+        /// <c>false</c> if EndOfTrack message was reached during processing. Otherwise <c>true</c> (sequencer active).
         /// </returns>
         public bool Tick()
         {
             if (status != SequencerStatus.On)
             {
-                return true;
+                return false;
             }
 
             // Send note-off for sustained notes (if any)
@@ -152,12 +155,12 @@ namespace Jither.Imuse
             // This helps us ensure that we don't move to the next event when we're not supposed to.
             bail = false;
 
-            bool end = false;
+            bool done = false;
 
             while (currentTick >= nextEventTick)
             {
-                end = ProcessEvent();
-                // We don't need to check end - if end is set, bail is too (but not vice versa)
+                done = ProcessEvent();
+                // We don't need to check done - if done is set, bail is too (but not vice versa)
                 if (bail)
                 {
                     break;
@@ -165,14 +168,14 @@ namespace Jither.Imuse
                 nextEventIndex++;
                 nextEventTick = GetNextEventTick();
             }
-            // We don't need to check end - if end is set, bail is too (but not vice versa)
+            // We don't need to check end - if done is set, bail is too (but not vice versa)
             if (!bail)
             {
                 currentTick++;
                 tickInBeat++;
             }
 
-            return end;
+            return !done;
         }
 
         private bool ProcessEvent()
@@ -201,6 +204,7 @@ namespace Jither.Imuse
                     logger.DebugWarning("Hey! iMUSE would like you to quit the aftertouch...");
                     break;
                 case EndOfTrackMessage:
+                    logger.Verbose("End of track reached...");
                     trackEnded = true;
                     break;
             }

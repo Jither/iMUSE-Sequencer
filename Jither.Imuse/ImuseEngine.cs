@@ -27,6 +27,8 @@ namespace Jither.Imuse
         public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options)
         {
             this.transmitter = transmitter;
+            transmitter.Engine = this;
+
             this.target = target;
 
             driver = GetDriver();
@@ -86,9 +88,9 @@ namespace Jither.Imuse
 
             while (currentTick < ticks)
             {
-                bool done = players.Tick();
+                bool continuePlaying = players.Tick();
                 driver.CurrentTick++;
-                if (done)
+                if (!continuePlaying)
                 {
                     return currentTick;
                 }

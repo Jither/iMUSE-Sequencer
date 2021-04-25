@@ -1,6 +1,7 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
 using Jither.Imuse.Messages;
+using Jither.Logging;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,8 @@ namespace Jither.Imuse
     /// </summary>
     public class Player
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(Player));
+        private readonly int index;
         private readonly Driver driver;
         private readonly PartsManager parts;
         private readonly Sequencer sequencer;
@@ -44,15 +47,16 @@ namespace Jither.Imuse
         internal PartsCollection Parts => linkedParts;
         internal Sequencer Sequencer => sequencer;
 
-        public Player(Driver driver, PartsManager parts, Sustainer sustainer, ImuseOptions options)
+        public Player(int index, Driver driver, PartsManager parts, Sustainer sustainer, ImuseOptions options)
         {
+            this.index = index;
             this.driver = driver;
             this.parts = parts;
             this.options = options;
             linkedParts = new PartsCollection(driver);
             Status = PlayerStatus.Off;
             HookBlock = new HookBlock(this);
-            sequencer = new Sequencer(this, sustainer);
+            sequencer = new Sequencer(index, this, sustainer);
         }
 
         public void LinkPart(Part part)
@@ -110,7 +114,7 @@ namespace Jither.Imuse
         /// Asks player to render events for the next tick. (They'll end up being sent to the driver).
         /// </summary>
         /// <returns>
-        /// <c>true</c> if EndOfTrack message was reached during processing. Otherwise <c>false</c>.
+        /// <c>false</c> if EndOfTrack message was reached during processing. Otherwise <c>true</c> (player active).
         /// </returns>
         public bool Tick()
         {
@@ -126,6 +130,7 @@ namespace Jither.Imuse
             // TODO: StopFade();
             UnlinkAllParts();
             Status = PlayerStatus.Off;
+            logger.Verbose($"Player {index} stopped.");
         }
 
         // TODO: Does anything actually need these "SetX" methods? (other than SetTranspose, used by hooks)
