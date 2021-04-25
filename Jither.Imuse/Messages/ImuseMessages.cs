@@ -2,6 +2,7 @@
 using Jither.Midi.Messages;
 using Jither.Midi.Files;
 using System;
+using Jither.Logging;
 
 namespace Jither.Imuse.Messages
 {
@@ -44,10 +45,11 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public abstract class ImuseMessage : SysexMessage
     {
+        protected static Logger logger = LogProvider.Get(nameof(ImuseMessage));
         public override string Name => "imuse";
         public override string Parameters => $"{ImuseMessageName,-20} {Info}";
         protected abstract string Info { get; }
-        protected abstract string ImuseMessageName { get; }
+        public abstract string ImuseMessageName { get; }
 
         public override string ToString() => $"{Name,-11} {Channel,2}  {Parameters}";
 
@@ -56,17 +58,24 @@ namespace Jither.Imuse.Messages
 
         public int Channel { get; }
 
-        protected virtual int ByteDataLength => 1;
         protected virtual bool HasChannel => true;
 
-        protected ImuseMessage(byte[] data) : base(data)
+        protected ImuseMessage(byte[] data, int byteDataLength) : base(data)
         {
             // Skip manufacturer ID and type
             int dataIndex = 2;
-            
+
+            // A few rare sound files have different sized iMUSE markers (RUDE8 in MI2) - we truncate the data in that case.
+            int bytesLeftForData = data.Length - 3;
+            if (byteDataLength > bytesLeftForData)
+            {
+                logger.Warning($"Found iMUSE {ImuseMessageName} with less than {byteDataLength} bytes of data ({bytesLeftForData})");
+                byteDataLength = bytesLeftForData;
+            }
+
             // The first few bytes after that are 7 bit data - length depends on message type.
             // Note that for v2, all (well, both) iMUSE messages only have byte data.
-            ImuseByteData = new ArraySegment<byte>(data, dataIndex, ByteDataLength);
+            ImuseByteData = new ArraySegment<byte>(data, dataIndex, byteDataLength);
 
             // In v1, the first byte is the channel
             if (HasChannel)
@@ -78,7 +87,7 @@ namespace Jither.Imuse.Messages
                 Channel = ImuseByteData[0];
             }
 
-            dataIndex += ByteDataLength;
+            dataIndex += byteDataLength;
 
             // The remainder is bytes with nibbles (4 bits) distributed into two bytes
             UnpackNibbles(data, dataIndex);
@@ -124,9 +133,9 @@ namespace Jither.Imuse.Messages
     public class ImuseUnknown : ImuseMessage
     {
         protected override string Info => Data.ToHex();
-        protected override string ImuseMessageName => "unknown";
+        public override string ImuseMessageName => "unknown";
 
-        public ImuseUnknown(byte[] data) : base(data)
+        public ImuseUnknown(byte[] data) : base(data, 1)
         {
         }
     }
@@ -139,7 +148,7 @@ namespace Jither.Imuse.Messages
     {
         public const int transposeLockedFlag = -128;
 
-        protected override string ImuseMessageName => "alloc-part";
+        public override string ImuseMessageName => "alloc-part";
         protected override string Info => $"enabled: {Enabled,5}, reverb: {Reverb,5}, prioffs: {PriorityOffset,3}, vol: {Volume,3}, pan: {Pan,3}, trans: {(TransposeLocked ? "lock" : Transpose),4}, detune: {Detune,3}, pbr: {PitchBendRange,3}, pgm: {Program,3}";
 
         public bool Enabled { get; }
@@ -153,7 +162,7 @@ namespace Jither.Imuse.Messages
         public int Program { get; }
         public bool TransposeLocked => Transpose == transposeLockedFlag;
 
-        public ImuseAllocPart(byte[] data) : base(data)
+        public ImuseAllocPart(byte[] data) : base(data, 1)
         {
             Enabled = (ImuseData[0] & 0x01) != 0;
             Reverb = (ImuseData[0] & 0x02) != 0;
@@ -172,10 +181,10 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseDeallocPart : ImuseMessage
     {
-        protected override string ImuseMessageName => "dealloc-part";
+        public override string ImuseMessageName => "dealloc-part";
         protected override string Info => "";
 
-        public ImuseDeallocPart(byte[] data) : base(data)
+        public ImuseDeallocPart(byte[] data) : base(data, 1)
         {
         }
     }
@@ -186,10 +195,10 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseDeallocAllParts : ImuseMessage
     {
-        protected override string ImuseMessageName => "dealloc-all-parts";
+        public override string ImuseMessageName => "dealloc-all-parts";
         protected override string Info => "";
 
-        public ImuseDeallocAllParts(byte[] data) : base(data)
+        public ImuseDeallocAllParts(byte[] data) : base(data, 1)
         {
         }
     }
@@ -199,14 +208,13 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseActiveSetup : ImuseMessage
     {
-        protected override string ImuseMessageName => "active-setup";
+        public override string ImuseMessageName => "active-setup";
         protected override string Info => $"hw-id: {HardwareId,3}, setup: {Setup.ToHex()}";
-        protected override int ByteDataLength => 2;
 
         public HardwareId HardwareId { get; }
         public byte[] Setup { get; }
 
-        public ImuseActiveSetup(byte[] data) : base(data)
+        public ImuseActiveSetup(byte[] data) : base(data, 2)
         {
             HardwareId = (HardwareId)ImuseByteData[1];
             Setup = ImuseData;
@@ -219,15 +227,14 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseStoredSetup : ImuseMessage
     {
-        protected override string ImuseMessageName => "stored-setup";
+        public override string ImuseMessageName => "stored-setup";
         protected override string Info => $"hw-id: {HardwareId,3}, setup-number: {SetupNumber,3}, setup: {Setup.ToHex()}";
-        protected override int ByteDataLength => 3;
 
         public HardwareId HardwareId { get; }
         public int SetupNumber { get; }
         public byte[] Setup { get; }
 
-        public ImuseStoredSetup(byte[] data) : base(data)
+        public ImuseStoredSetup(byte[] data) : base(data, 3)
         {
             HardwareId = (HardwareId)ImuseByteData[1];
             SetupNumber = ImuseByteData[2];
@@ -237,20 +244,20 @@ namespace Jither.Imuse.Messages
 
     public class ImuseSetupBank : ImuseMessage
     {
-        protected override string ImuseMessageName => "setup-bank";
+        public override string ImuseMessageName => "setup-bank";
         protected override string Info => "";
 
-        public ImuseSetupBank(byte[] data) : base(data)
+        public ImuseSetupBank(byte[] data) : base(data, 1)
         {
         }
     }
 
     public class ImuseSystemParam : ImuseMessage
     {
-        protected override string ImuseMessageName => "system-param";
+        public override string ImuseMessageName => "system-param";
         protected override string Info => "";
 
-        public ImuseSystemParam(byte[] data) : base(data)
+        public ImuseSystemParam(byte[] data) : base(data, 1)
         {
         }
     }
@@ -260,14 +267,13 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseSetupParam : ImuseMessage
     {
-        protected override string ImuseMessageName => "setup-param";
+        public override string ImuseMessageName => "setup-param";
         protected override string Info => $"hw-id: {HardwareId,3}, param number: {Number,5}, value: {Value,5}";
-        protected override int ByteDataLength => 2;
 
         public HardwareId HardwareId { get; }
         public int Number { get; }
         public int Value { get; }
-        public ImuseSetupParam(byte[] data) : base(data)
+        public ImuseSetupParam(byte[] data) : base(data, 2)
         {
             HardwareId = (HardwareId)ImuseByteData[1];
             Number = ImuseData[0] << 8 | ImuseData[1];
@@ -280,12 +286,11 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public abstract class ImuseHook : ImuseMessage
     {
-        public int Hook { get; }
+        public int Hook { get; protected set; }
         public abstract HookType Type { get; }
 
-        protected ImuseHook(byte[] data) : base(data)
+        protected ImuseHook(byte[] data, int byteDataLength) : base(data, byteDataLength)
         {
-            Hook = ImuseData[0];
         }
     }
 
@@ -294,7 +299,7 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseHookJump : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-jump";
+        public override string ImuseMessageName => "hook-jump";
         protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,5}, beat: {Beat,5}, tick: {Tick,5}";
         public override HookType Type => Imuse.HookType.Jump;
 
@@ -302,8 +307,9 @@ namespace Jither.Imuse.Messages
         public int Beat { get; }
         public int Tick { get; }
 
-        public ImuseHookJump(byte[] data) : base(data)
+        public ImuseHookJump(byte[] data) : base(data, 1)
         {
+            Hook = ImuseData[0];
             // Yes, ImuseData is full 8-bit bytes (unpacked from nibbles), so << 8 is correct.
             Chunk = ImuseData[1] << 8 | ImuseData[2];
             Beat = ImuseData[3] << 8 | ImuseData[4];
@@ -316,9 +322,8 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseV2HookJump : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-jump-v2";
+        public override string ImuseMessageName => "hook-jump-v2";
         protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,3}, measure: {Measure,5}, beat: {Beat,3}, tick: {Tick,3}, sustain: {Sustain}";
-        protected override int ByteDataLength => 8;
         protected override bool HasChannel => false;
 
         public override HookType Type => Imuse.HookType.Jump;
@@ -329,8 +334,9 @@ namespace Jither.Imuse.Messages
         public int Tick { get; }
         public bool Sustain { get; }
 
-        public ImuseV2HookJump(byte[] data) : base(data)
+        public ImuseV2HookJump(byte[] data) : base(data, 8)
         {
+            Hook = ImuseByteData[0];
             Chunk = ImuseByteData[1] - 1; // Chunk is 1-indexed rather than 0-indexed in v2. We keep it 0-indexed.
             Measure = ImuseByteData[2] << 7 | ImuseByteData[3]; // Measure is 1-indexed
             Beat = ImuseByteData[4];
@@ -350,7 +356,7 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseHookTranspose : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-transpose";
+        public override string ImuseMessageName => "hook-transpose";
         protected override string Info => $"hook: {Hook,3}, relative: {Relative,3}, interval: {Interval,3}";
 
         public override HookType Type => Imuse.HookType.Transpose;
@@ -358,8 +364,9 @@ namespace Jither.Imuse.Messages
         public int Relative { get; }
         public int Interval { get; }
 
-        public ImuseHookTranspose(byte[] data) : base(data)
+        public ImuseHookTranspose(byte[] data) : base(data, 1)
         {
+            Hook = ImuseData[0];
             Relative = ImuseData[1];
             Interval = (sbyte)ImuseData[2];
         }
@@ -371,15 +378,16 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseHookPartEnable : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-part-enable";
+        public override string ImuseMessageName => "hook-part-enable";
         protected override string Info => $"hook: {Hook,3}, state: {Enabled,3}";
 
         public override HookType Type => Imuse.HookType.PartEnable;
 
         public int Enabled { get; }
 
-        public ImuseHookPartEnable(byte[] data) : base(data)
+        public ImuseHookPartEnable(byte[] data) : base(data, 1)
         {
+            Hook = ImuseData[0];
             Enabled = ImuseData[1];
         }
     }
@@ -389,15 +397,16 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseHookPartVolume : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-part-vol";
+        public override string ImuseMessageName => "hook-part-vol";
         protected override string Info => $"hook: {Hook,3}, vol: {Volume,3}";
 
         public override HookType Type => Imuse.HookType.PartVolume;
 
         public int Volume { get; }
 
-        public ImuseHookPartVolume(byte[] data) : base(data)
+        public ImuseHookPartVolume(byte[] data) : base(data, 1)
         {
+            Hook = ImuseData[0];
             Volume = ImuseData[1];
         }
     }
@@ -407,15 +416,16 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseHookPartProgramChange : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-part-pgmch";
+        public override string ImuseMessageName => "hook-part-pgmch";
         protected override string Info => $"hook: {Hook,3}, vol: {Program,3}";
 
         public override HookType Type => Imuse.HookType.PartProgramChange;
 
         public int Program { get; }
 
-        public ImuseHookPartProgramChange(byte[] data) : base(data)
+        public ImuseHookPartProgramChange(byte[] data) : base(data, 1)
         {
+            Hook = ImuseData[0];
             Program = ImuseData[1];
         }
     }
@@ -425,7 +435,7 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseHookPartTranspose : ImuseHook
     {
-        protected override string ImuseMessageName => "hook-part-transpose";
+        public override string ImuseMessageName => "hook-part-transpose";
         protected override string Info => $"hook: {Hook,3}, relative: {Relative,3}, interval: {Interval,3}";
 
         public override HookType Type => Imuse.HookType.PartTranspose;
@@ -433,8 +443,9 @@ namespace Jither.Imuse.Messages
         public int Relative { get; }
         public int Interval { get; }
 
-        public ImuseHookPartTranspose(byte[] data) : base(data)
+        public ImuseHookPartTranspose(byte[] data) : base(data, 1)
         {
+            Hook = ImuseData[0];
             Relative = ImuseData[1];
             Interval = (sbyte)ImuseData[2];
         }
@@ -445,15 +456,22 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseMarker : ImuseMessage
     {
-        protected override string ImuseMessageName => "marker";
+        public override string ImuseMessageName => "marker";
         protected override string Info => $"id: {Id,3}";
-        protected override int ByteDataLength => 2;
 
         public int Id { get; }
 
-        public ImuseMarker(byte[] data) : base(data)
+        public ImuseMarker(byte[] data) : base(data, 2)
         {
-            Id = ImuseByteData[1];
+            // Markers have been spotted with a single byte of data...
+            if (ImuseByteData.Count == 2)
+            {
+                Id = ImuseByteData[1];
+            }
+            else
+            {
+                logger.Warning("Short marker. Assuming ID 0.");
+            }
         }
     }
 
@@ -462,14 +480,14 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseV2Marker : ImuseMessage
     {
-        protected override string ImuseMessageName => "marker-v2";
+        public override string ImuseMessageName => "marker-v2";
         protected override string Info => $"id: {Id,3}";
 
         protected override bool HasChannel => false;
 
         public int Id { get; }
 
-        public ImuseV2Marker(byte[] data) : base(data)
+        public ImuseV2Marker(byte[] data) : base(data, 1)
         {
             Id = ImuseByteData[0];
         }
@@ -480,7 +498,7 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseSetLoop : ImuseMessage
     {
-        protected override string ImuseMessageName => "set-loop";
+        public override string ImuseMessageName => "set-loop";
         protected override string Info => $"count: {Count,5}, start-beat: {StartBeat,5}, start-tick: {StartTick,5}, end-beat: {EndBeat,5}, end-tick: {EndTick,5}";
 
         public int Count { get; }
@@ -489,7 +507,7 @@ namespace Jither.Imuse.Messages
         public int EndBeat { get; }
         public int EndTick { get; }
 
-        public ImuseSetLoop(byte[] data) : base(data)
+        public ImuseSetLoop(byte[] data) : base(data, 1)
         {
             Count = ImuseData[0] << 8 | ImuseData[1];
             StartBeat = ImuseData[2] << 8 | ImuseData[3];
@@ -504,10 +522,10 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseClearLoop : ImuseMessage
     {
-        protected override string ImuseMessageName => "clear-loop";
+        public override string ImuseMessageName => "clear-loop";
         protected override string Info => "";
 
-        public ImuseClearLoop(byte[] data) : base(data)
+        public ImuseClearLoop(byte[] data) : base(data, 1)
         {
         }
     }
@@ -517,12 +535,12 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public class ImuseLoadSetup : ImuseMessage
     {
-        protected override string ImuseMessageName => "load-setup";
+        public override string ImuseMessageName => "load-setup";
         protected override string Info => $"setup-number: {SetupNumber,5}";
 
         public int SetupNumber { get; }
 
-        public ImuseLoadSetup(byte[] data) : base(data)
+        public ImuseLoadSetup(byte[] data) : base(data, 1)
         {
             SetupNumber = ImuseData[0] << 8 | ImuseData[1];
         }

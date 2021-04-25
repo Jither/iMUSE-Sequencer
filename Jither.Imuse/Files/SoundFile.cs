@@ -246,6 +246,10 @@ namespace Jither.Imuse.Files
                     FindMidiHeader(reader);
                     // Now continue reading the actual MIDI:
                     Midi = new MidiFile(reader, new MidiFileOptions().WithParser(new ImuseSysexParser()));
+                    if (Midi.Timeline == null)
+                    {
+                        throw new MidiFileException($"iMUSE does not support non-PPQN files");
+                    }
                     Midi.Timeline.ApplyBeatPositions();
                 }
             }
@@ -282,13 +286,17 @@ namespace Jither.Imuse.Files
                         // Found in most (all?) target chunks - variable length (0 in DOTT)
                         // Contains various properties for iMUSE (e.g. sound priority etc.)
                         uint mdhdSize = reader.ReadUint32();
-                        try
+                        // Size of 0 is expected - just skip it.
+                        if (mdhdSize > 0)
                         {
-                            ImuseHeader = new ImuseMidiHeader(reader, mdhdSize);
-                        }
-                        catch (ImuseMidiHeaderException ex)
-                        {
-                            logger.Warning(ex.Message);
+                            try
+                            {
+                                ImuseHeader = new ImuseMidiHeader(reader, mdhdSize);
+                            }
+                            catch (ImuseMidiHeaderException ex)
+                            {
+                                logger.Warning(ex.Message);
+                            }
                         }
                         break;
                     case "MDpg":

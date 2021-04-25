@@ -19,7 +19,7 @@ namespace ImuseSequencer
                     .WithVerb<PlayOptions>(o => new PlayCommand(o).Execute())
                     .WithVerb<DumpOptions>(o => new DumpCommand(o).Execute())
                     .WithVerb<ListOutputsOptions>(o => new ListOutputsCommand(o).Execute())
-                    .WithVerb<TestOptions>(o => new TestCommand(o).Execute())
+                    .WithVerb<ScanOptions>(o => new ScanCommand(o).Execute())
                     .WithErrorHandler(err => err.Parser.WriteHelp(err));
 
                 parser.Parse(args);

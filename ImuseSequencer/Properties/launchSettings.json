@@ -2,7 +2,7 @@
   "profiles": {
     "ImuseSequencer": {
       "commandName": "Project",
-      "commandLineArgs": "play -o 1 \"\\scumm\\MIDIs\\MI2\\LARGO.ROL\""
+      "commandLineArgs": "scan \"\\scumm\\MIDIs\""
     }
   }
 }
