@@ -61,7 +61,7 @@ namespace Jither.Imuse
         {
             if (messageHook == 0 || messageHook == Jump)
             {
-                if (messageHook != 0)
+                if (ShouldReset(messageHook))
                 {
                     Jump = 0;
                 }
@@ -77,7 +77,7 @@ namespace Jither.Imuse
         {
             if (messageHook == 0 || messageHook == Transpose)
             {
-                if (messageHook != 0)
+                if (ShouldReset(messageHook))
                 {
                     Transpose = 0;
                 }
@@ -94,7 +94,7 @@ namespace Jither.Imuse
         {
             if (messageHook == 0 || messageHook == PartEnable[channel])
             {
-                if (messageHook != 0)
+                if (ShouldReset(messageHook))
                 {
                     PartEnable[channel] = 0;
                 }
@@ -111,7 +111,7 @@ namespace Jither.Imuse
         {
             if (messageHook == 0 || messageHook == PartVolume[channel])
             {
-                if (messageHook != 0)
+                if (ShouldReset(messageHook))
                 {
                     PartVolume[channel] = 0;
                 }
@@ -129,7 +129,7 @@ namespace Jither.Imuse
         {
             if (messageHook == 0 || messageHook == PartProgramChange[channel])
             {
-                if (messageHook != 0)
+                if (ShouldReset(messageHook))
                 {
                     PartProgramChange[channel] = 0;
                 }
@@ -147,7 +147,7 @@ namespace Jither.Imuse
         {
             if (messageHook == 0 || messageHook == PartTranspose[channel])
             {
-                if (messageHook != 0)
+                if (ShouldReset(messageHook))
                 {
                     PartTranspose[channel] = 0;
                 }
@@ -158,6 +158,14 @@ namespace Jither.Imuse
             }
 
             return false;
+        }
+
+        private bool ShouldReset(int hook)
+        {
+            // Starting with DOTT, there's a flag on bit 7 of the hook ID indicating that a hook shouldn't be reset when triggered.
+            // Such a high ID is never encountered in earlier games, so safe to use for MI2 and FOA too.
+            // (In fact, it's never actually encountered/used in any game - at least not the adventure games)
+            return hook != 0 && (hook & 0x80) != 0;
         }
 
         public void Clear()

@@ -213,6 +213,7 @@ namespace ImuseSequencer.Verbs
                 index++;
             }
             logger.Info("z: clear-loop");
+            logger.Info("q: quit");
             logger.Info("");
         }
 

@@ -1,3 +1,4 @@
+using Jither.Logging;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
@@ -208,7 +209,7 @@ namespace Jither.Midi.Sequencing
             long time = tick * microsecondsPerBeat / ticksPerQuarterNote;
             long now = ElapsedMicroseconds + microsecondsOffset;
             long delta = time - now;
-            return delta >= 0 ? delta : 0;
+            return delta;
         }
 
         private void ThreadRun(CancellationToken cancellationToken)
