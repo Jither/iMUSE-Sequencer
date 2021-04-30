@@ -572,6 +572,9 @@ namespace Jither.Midi.Messages
         public override string TypeName => "set-tempo";
         public override string Info => Tempo.ToString();
 
+        /// <summary>
+        /// Tempo measured in microseconds per quarter note.
+        /// </summary>
         public int Tempo => (Data[0] << 16) | (Data[1] << 8) | Data[2];
 
         public SetTempoMessage(byte[] data) : base(MetaType.SetTempo, data)

@@ -11,6 +11,8 @@ namespace Jither.Imuse.Drivers
 
         public long CurrentTick { get; set; }
 
+        private int ticksPerQuarterNote;
+
         private readonly ITransmitter transmitter;
 
         protected Driver(ITransmitter transmitter)
@@ -18,8 +20,14 @@ namespace Jither.Imuse.Drivers
             this.transmitter = transmitter;
         }
 
-        public abstract void Init();
-        public abstract void Reset();
+        public void Init(int ticksPerQuarterNote)
+        {
+            this.ticksPerQuarterNote = ticksPerQuarterNote;
+            Init();
+        }
+
+        protected abstract void Init();
+        public abstract void Close();
 
         public abstract void StartNote(Part part, int key, int velocity);
         public abstract void StopNote(Part part, int key);
@@ -46,23 +54,30 @@ namespace Jither.Imuse.Drivers
         /// </summary>
         public abstract void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes);
 
+        protected void Delay(int milliseconds)
+        {
+            // Hardcoded microseconds per quarternote = 500000. We (hopefully) only use Delay during initialization
+            long ticks = milliseconds * 1000 * ticksPerQuarterNote / 500000;
+            CurrentTick += ticks;
+        }
+
         protected void TransmitEvent(MidiMessage message)
         {
             var evt = new MidiEvent(CurrentTick, message);
             transmitter.Transmit(evt);
         }
 
-        protected void TransmitEventImmediate(MidiMessage message)
+        protected void TransmitImmediate(MidiMessage message)
         {
             transmitter.TransmitImmediate(message);
         }
 
-        public void TransmitNoOp()
+        public void TransmitNoOp(NoOpSignal signal)
         {
-            TransmitEvent(new NoOpMessage());
+            TransmitEvent(new NoOpMessage(signal));
         }
 
-        public void SetTempo(MidiMessage tempo)
+        public void SetTempo(SetTempoMessage tempo)
         {
             TransmitEvent(tempo);
         }

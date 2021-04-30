@@ -45,7 +45,7 @@ namespace Jither.Imuse.Messages
     /// </summary>
     public abstract class ImuseMessage : SysexMessage
     {
-        protected static Logger logger = LogProvider.Get(nameof(ImuseMessage));
+        protected static readonly Logger logger = LogProvider.Get(nameof(ImuseMessage));
         public override string Name => "imuse";
         public override string Parameters => $"{ImuseMessageName,-20} {Info}";
         protected abstract string Info { get; }

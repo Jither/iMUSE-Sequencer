@@ -16,7 +16,6 @@ namespace Jither.Imuse
     public class MidiFileWriterTransmitter : ITransmitter
     {
         private int ticksPerQuarterNote;
-        private long currentTick = 0;
 
         private readonly List<MidiEvent> events = new();
 
@@ -37,23 +36,25 @@ namespace Jither.Imuse
             {
                 throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
             }
-            Engine.Play(-1); // Ask the engine to just send everything at once.
+            // Ask the engine to just send everything at once.
+            Engine.Init();
+            Engine.Play(-1);
         }
 
         public void Transmit(MidiEvent evt)
         {
-            if (evt.Message is NoOpMessage)
+            if (evt.Message is NoOpMessage noop)
             {
+                switch (noop.Signal)
+                {
+                    case NoOpSignal.Initialized:
+                        // Nice marker indicating when initialization is done:
+                        events.Add(new MidiEvent(evt.AbsoluteTicks, new MarkerMessage("initialization done")));
+                        break;
+                }
+                // No-op 
                 return;
             }
-            currentTick = evt.AbsoluteTicks;
-            events.Add(evt);
-        }
-
-        public void TransmitImmediate(MidiMessage message)
-        {
-            // Add at same time as previous event
-            var evt = new MidiEvent(currentTick, message);
             events.Add(evt);
         }
 
@@ -104,6 +105,11 @@ namespace Jither.Imuse
         {
             // Do nothing
             GC.SuppressFinalize(this);
+        }
+
+        public void TransmitImmediate(MidiMessage message)
+        {
+            // Used for resetting MIDI devices etc. Don't store anything in the MIDI file.
         }
     }
 }

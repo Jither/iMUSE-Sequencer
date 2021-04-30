@@ -20,12 +20,15 @@ namespace ImuseSequencer.Playback
         private MidiScheduler<MidiEvent> scheduler;
         private readonly List<MidiEvent> events;
 
+        private readonly int ticksPerBatch;
+
         private bool disposed;
 
         public ImuseEngine Engine { get; set; }
 
-        public OutputDeviceTransmitter(int deviceId)
+        public OutputDeviceTransmitter(int deviceId, int ticksPerBatch)
         {
+            this.ticksPerBatch = ticksPerBatch;
             try
             {
                 output = new WindowsOutputDevice(deviceId);
@@ -46,7 +49,6 @@ namespace ImuseSequencer.Playback
 
         public void TransmitImmediate(MidiMessage message)
         {
-            // TODO: Also send this through scheduler
             output.SendMessage(message);
         }
 
@@ -61,8 +63,9 @@ namespace ImuseSequencer.Playback
                     switch (message)
                     {
                         case NoOpMessage:
+                            // We don't really care what the signal is.
                             // Prepare and send another batch of MIDI messages
-                            Send();
+                            Play();
                             break;
                         case SetTempoMessage setTempo:
                             scheduler.MicrosecondsPerBeat = setTempo.Tempo;
@@ -90,14 +93,16 @@ namespace ImuseSequencer.Playback
             {
                 throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
             }
+
+            Engine.Init();
             Send();
             scheduler.Start();
         }
 
-        private void Send()
+        private void Play()
         {
             // Get events for next 480 ticks
-            long ticksPlayed = Engine.Play(480);
+            long ticksPlayed = Engine.Play(ticksPerBatch);
 
             // Zero ticks played means the engine is done playing
             if (ticksPlayed == 0)
@@ -105,6 +110,11 @@ namespace ImuseSequencer.Playback
                 return;
             }
 
+            Send();
+        }
+
+        private void Send()
+        {
             logger.Debug($"Sending {events.Count} events to scheduler...");
             scheduler.Schedule(events);
             events.Clear();

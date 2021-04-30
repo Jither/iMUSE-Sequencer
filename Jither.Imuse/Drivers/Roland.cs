@@ -74,7 +74,7 @@ namespace Jither.Imuse.Drivers
         {
         }
 
-        public override void Init()
+        protected override void Init()
         {
             // Gather addresses for stored setup
             int address = StoredSetupBaseAddress + (StoredSetupSize * storedSetupStart);
@@ -86,34 +86,44 @@ namespace Jither.Imuse.Drivers
 
             // Set display string (just for fun)
             byte[] display = Encoding.ASCII.GetBytes(initDisplayString);
-            TransmitSysexImmediate(displayAddress, display);
-            
+            TransmitSysex(displayAddress, display);
+            Delay(10);
+
             Reset();
+            Delay(300);
 
             // Initialize master system settings
-            TransmitSysexImmediate(systemAddress, initSysString);
+            TransmitSysex(systemAddress, initSysString);
+            Delay(10);
             // Initialize rhythm keys
-            TransmitSysexImmediate(rhythmAddress, initRhythmString);
+            TransmitSysex(rhythmAddress, initRhythmString);
+            Delay(10);
 
             // Initialize rhythm channel volume
             rhythmVolume = 127;
-            TransmitControlImmediate(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
+            TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
 
             // Initialize pitch bend range for all parts
             address = VirtualPartBaseAddress + pitchBendRangeOffset;
             var pbr = new byte[] { 16 };
             for (int part = 0; part < partCount; part++)
             {
-                TransmitSysexImmediate(address, pbr);
+                TransmitSysex(address, pbr);
                 address += VirtualPartSize;
+                Delay(10);
             }
         }
 
-        public override void Reset()
+        private void Reset()
         {
-            TransmitSysexImmediate(resetAddress, Array.Empty<byte>());
-            // TODO: This should actually delay the events (by way of CurrentTick) to be effective...
-            Task.Delay(300);
+            TransmitSysex(resetAddress, Array.Empty<byte>());
+        }
+
+        public override void Close()
+        {
+            // Immediately send reset:
+            var message = new SysexMessage(GenerateSysex(resetAddress, Array.Empty<byte>()));
+            TransmitImmediate(message);
         }
 
         private void TransmitControl(int channel, MidiController controller, int value)
@@ -130,20 +140,8 @@ namespace Jither.Imuse.Drivers
 
         private void TransmitSysex(int address, byte[] data)
         {
-            var evt = new SysexMessage(GenerateSysex(address, data));
-            TransmitEvent(evt);
-        }
-
-        private void TransmitSysexImmediate(int address, byte[] data)
-        {
             var message = new SysexMessage(GenerateSysex(address, data));
-            TransmitEventImmediate(message);
-        }
-
-        private void TransmitControlImmediate(int channel, MidiController controller, int value)
-        {
-            var message = ControlChangeMessage.Create(channel, controller, (byte)value);
-            TransmitEventImmediate(message);
+            TransmitEvent(message);
         }
 
         private static byte[] GenerateSysex(int address, byte[] data)

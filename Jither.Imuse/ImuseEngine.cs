@@ -19,7 +19,7 @@ namespace Jither.Imuse
         private readonly PartsManager parts;
         private readonly FileManager files = new();
 
-        private int? ticksPerQuarterNote;
+        private int ticksPerQuarterNote;
 
         private bool disposed;
 
@@ -36,8 +36,6 @@ namespace Jither.Imuse
 
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
-            driver.Init();
-
             parts = new PartsManager(driver);
             sustainer = new Sustainer();
             players = new PlayerManager(files, parts, sustainer, driver, options);
@@ -52,7 +50,7 @@ namespace Jither.Imuse
                 throw new ImuseException($"iMUSE only supports PPQN division MIDI files - this appears to be SMPTE.");
             }
 
-            if (this.ticksPerQuarterNote != null)
+            if (this.ticksPerQuarterNote != 0)
             {
                 if (file.Midi.TicksPerQuarterNote != this.ticksPerQuarterNote)
                 {
@@ -62,8 +60,6 @@ namespace Jither.Imuse
             else
             {
                 this.ticksPerQuarterNote = file.Midi.TicksPerQuarterNote;
-                // First file - we have a PPQN, so we can initialize:
-                transmitter.Init(file.Midi.TicksPerQuarterNote);
             }
 
             files.Register(id, file);
@@ -72,6 +68,16 @@ namespace Jither.Imuse
         public void StartSound(int id)
         {
             players.StartSound(id);
+        }
+
+        public void Init()
+        {
+            transmitter.Init(ticksPerQuarterNote);
+            driver.Init(ticksPerQuarterNote);
+            // Send no-op MIDI message to indicate initialization is done.
+            // When the no-op reaches the transmitter, it can use it as an indication that playback should
+            // be started.
+            driver.TransmitNoOp(Messages.NoOpSignal.Initialized);
         }
 
         public long Play(long ticks)
@@ -85,7 +91,7 @@ namespace Jither.Imuse
             // We use this no-op MIDI message to indicate the start of this batch of MIDI messages.
             // When the no-op reaches the transmitter, it can use it as an indication that it should start
             // preparing the next batch.
-            driver.TransmitNoOp();
+            driver.TransmitNoOp(Messages.NoOpSignal.ReadyForNextBatch);
 
             while (currentTick < ticks)
             {
@@ -110,7 +116,7 @@ namespace Jither.Imuse
 
         public void Stop()
         {
-            driver.Reset();
+            driver.Close();
         }
 
         private Driver GetDriver()

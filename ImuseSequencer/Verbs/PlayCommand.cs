@@ -30,6 +30,9 @@ namespace ImuseSequencer.Verbs
         [Option("jump-limit", Help = "Limits the number of times each jump hook is performed by the sequencer. This is useful (necessary) for e.g. non-interactive recording. 0 indicates no limit for device outputs and 3 for MIDI file output.", ArgName = "limit", Default = 0)]
         public int JumpLimit { get; set; }
 
+        [Option("latency", Help = "Latency (in ticks) of playback. Only has an effect on device output. You probably shouldn't set this to something silly like 1...", ArgName = "ticks", Default = 480)]
+        public int Latency { get; set; }
+
         [Examples]
         public static IEnumerable<Example<PlayOptions>> Examples => new[]
         {
@@ -60,6 +63,11 @@ namespace ImuseSequencer.Verbs
             if (LoopLimit == 0)
             {
                 LoopLimit = ToFile ? 3 : int.MaxValue;
+            }
+
+            if (Latency < 1)
+            {
+                throw new CustomParserException("Don't set latency to a silly value...");
             }
         }
     }
@@ -154,7 +162,7 @@ namespace ImuseSequencer.Verbs
             return transmitterType switch
             {
                 "s" => new OutputStreamTransmitter(deviceId),
-                _ => new OutputDeviceTransmitter(deviceId),
+                _ => new OutputDeviceTransmitter(deviceId, options.Latency),
             };
         }
         private void PlayToDevice(SoundFile soundFile, SoundTarget target)
@@ -189,8 +197,8 @@ namespace ImuseSequencer.Verbs
             }
         }
 
-        private Dictionary<char, HookInfo> hooksByKey = new Dictionary<char, HookInfo>();
-        private string hookChars = "1234567890abcdefghijklmnopqrstuvwxy";
+        private readonly Dictionary<char, HookInfo> hooksByKey = new Dictionary<char, HookInfo>();
+        private readonly string hookChars = "1234567890abcdefghijklmnoprstuvwxy";
 
         private void BuildCommands(ImuseEngine engine)
         {
