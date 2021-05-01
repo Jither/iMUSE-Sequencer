@@ -23,18 +23,18 @@ namespace Jither.Imuse.Drivers
         private const int rhythmChannel = 9;
         private const int partCount = 32;
 
-        public const int RealPartBaseAddress = 0x0c000;
-        public const int RealPartSize = 0x10;
+        private const int RealPartBaseAddress = 0x0c000;
+        private const int RealPartSize = 0x10;
 
-        public const int ActiveSetupBaseAddress = 0x10000;
-        public const int ActiveSetupSize = 0xf6;
+        private const int ActiveSetupBaseAddress = 0x10000;
+        private const int ActiveSetupSize = 0xf6;
 
-        public const int VirtualPartBaseAddress = 0x14000;
-        public const int VirtualPartSize = 0x08;
+        private const int VirtualPartBaseAddress = 0x14000;
+        private const int VirtualPartSize = 0x08;
 
-        public const int StoredSetupBaseAddress = 0x20000;
-        public const int StoredSetupSize = 0x100;
-        public const int StoredSetupCount = 0x20;
+        private const int StoredSetupBaseAddress = 0x20000;
+        private const int StoredSetupSize = 0x100;
+        private const int StoredSetupCount = 0x20;
 
         private readonly int[] storedSetupAddresses = new int[StoredSetupCount];
 
@@ -264,9 +264,9 @@ namespace Jither.Imuse.Drivers
             buffer[3] = 50; // fine tune
             buffer[4] = 16; // bender range
             buffer[5] = 0; // assign mode
-            buffer[6] = (byte)(part.Reverb ? 1 : 0);
+            buffer[6] = (byte)(part.Reverb != 0 ? 1 : 0);
 
-            TransmitSysex(part.ExternalAddress, buffer);
+            TransmitSysex(GetExternalAddress(part), buffer);
 
             if (part.Slot != null)
             {
@@ -285,7 +285,7 @@ namespace Jither.Imuse.Drivers
             byte[] buffer = new byte[2];
             buffer[0] = (byte)(program >> 6);
             buffer[1] = (byte)(program & 0x3f);
-            TransmitSysex(part.ExternalAddress, buffer);
+            TransmitSysex(GetExternalAddress(part), buffer);
 
             if (part.Slot != null)
             {
@@ -299,9 +299,9 @@ namespace Jither.Imuse.Drivers
             byte[] buffer = new byte[2];
             buffer[0] = MemoryBank;
             buffer[1] = (byte)part.Index;
-            TransmitSysex(part.ExternalAddress, buffer);
+            TransmitSysex(GetExternalAddress(part), buffer);
 
-            TransmitSysex(part.PartSetupAddress, data);
+            TransmitSysex(GetPartSetupAddress(part), data);
 
             if (part.Slot != null)
             {
@@ -310,23 +310,35 @@ namespace Jither.Imuse.Drivers
         }
 
         // AKA DoStoredDump
-        public override void StoredSetup(int setupNumber, byte[] data)
+        public override bool StoredSetup(int setupNumber, byte[] data)
         {
+            if (setupNumber >= Roland.StoredSetupCount)
+            {
+                return false;
+            }
             TransmitSysex(storedSetupAddresses[setupNumber], data);
+            return true;
         }
 
         // AKA LoadStoredSetup
-        public override void LoadSetup(Part part, int program)
+        public override bool LoadSetup(Part part, int program)
         {
+            if (program >= Roland.StoredSetupCount)
+            {
+                return false;
+            }
+
             byte[] buffer = new byte[2];
             buffer[0] = MemoryBank;
             buffer[1] = (byte)(program + storedSetupStart);
-            TransmitSysex(part.ExternalAddress, buffer);
+            TransmitSysex(GetExternalAddress(part), buffer);
 
             if (part.Slot != null)
             {
                 TransmitProgramChange(part.Slot.OutputChannel, part.Index);
             }
+
+            return true;
         }
 
         public override void UpdateSetup(Part part)
@@ -338,16 +350,23 @@ namespace Jither.Imuse.Drivers
         }
 
         // AKA DoParamAdjust
-        public override void SetupParam(Part part, int param, int value)
+        public override bool SetupParam(Part part, int param, int value)
         {
+            if (param >= Roland.StoredSetupCount)
+            {
+                return false;
+            }
+
             byte[] buffer = new byte[1];
             buffer[0] = (byte)value;
-            TransmitSysex(part.PartSetupAddress + param, buffer);
+            TransmitSysex(GetPartSetupAddress(part) + param, buffer);
 
             if (part.Slot != null)
             {
-                TransmitSysex(part.Slot.SlotSetupAddress + param, buffer);
+                TransmitSysex(GetSlotSetupAddress(part.Slot) + param, buffer);
             }
+
+            return true;
         }
 
         public override void StopAllNotes(Slot slot)
@@ -416,6 +435,26 @@ namespace Jither.Imuse.Drivers
 
             // No other sysex please - so not calling base
             logger.Warning("Roland driver got unknown/bad Roland sysex");
+        }
+
+        private int GetExternalAddress(Part part)
+        {
+            return VirtualPartBaseAddress + VirtualPartSize * part.Index;
+        }
+
+        private int GetPartSetupAddress(Part part)
+        {
+            return StoredSetupBaseAddress + StoredSetupSize * part.Index;
+        }
+
+        private int GetSlotExternalAddress(Slot slot)
+        {
+            return RealPartBaseAddress + RealPartSize * slot.Index;
+        }
+
+        private int GetSlotSetupAddress(Slot slot)
+        {
+            return ActiveSetupBaseAddress + ActiveSetupSize * slot.Index;
         }
     }
 }

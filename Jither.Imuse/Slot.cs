@@ -1,5 +1,4 @@
-﻿using Jither.Imuse.Drivers;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Jither.Imuse
 {
@@ -8,7 +7,6 @@ namespace Jither.Imuse
     /// Parts are assigned to a slot based on priority (combined from player/sound priority + part priority offset). Parts without
     /// a slot are not played.
     /// </summary>
-    // TODO: Make base class - this is Roland-specific
     public class Slot
     {
         private Part part;
@@ -30,8 +28,6 @@ namespace Jither.Imuse
 
         public int PriorityEffective => part?.PriorityEffective ?? -1;
 
-        public int ExternalAddress { get; }
-        public int SlotSetupAddress { get; }
         public HashSet<int> NoteTable { get; } = new();
 
         public int Index { get; }
@@ -40,8 +36,6 @@ namespace Jither.Imuse
         {
             Index = index;
             OutputChannel = index + 1; // Channels 2-9 (1-8 zero-indexed), percussion = 10 (9 zero-indexed)
-            ExternalAddress = Roland.RealPartBaseAddress + Roland.RealPartSize * index;
-            SlotSetupAddress = Roland.ActiveSetupBaseAddress + Roland.ActiveSetupSize * index;
         }
 
         public void AssignPart(Part part)

@@ -48,6 +48,7 @@ namespace Jither.Imuse
             var part = SelectPart(priority);
             if (part == null)
             {
+                logger.Warning($"No available part for {alloc}");
                 return;
             }
 
@@ -170,27 +171,26 @@ namespace Jither.Imuse
         private void AssignFreeSlots()
         {
             logger.Verbose("Reassigning slots...");
+            // TODO: Rid this method of LINQ
             // Find parts needing a slot
-            var slotlessParts = new List<Part>();
-            foreach (var part in parts)
-            {
-                if (part.NeedsSlot)
-                {
-                    slotlessParts.Add(part);
-                }
-            }
+            var slotlessParts = parts.Where(p => p.NeedsSlot);
             
-            if (slotlessParts.Count == 0)
+            if (!slotlessParts.Any())
             {
                 return;
             }
 
             // Sort relevant parts by descending priority:
-            slotlessParts.Sort((a, b) => b.PriorityEffective - a.PriorityEffective);
+            slotlessParts = slotlessParts.OrderByDescending(p => p.PriorityEffective);
 
-            // Sort slots by descending priority (slots not in use have negative effective priority) 
-            // This in order to assign the most picky slots first, if possible
-            var slotCandidates = slots.OrderBy(slot => slot.PriorityEffective).ToList();
+            // Sort slots by descending priority, but unused slots first.
+            // This way, slots will be assigned in this order:
+            // * First, unused slots (this isn't entirely optimal: A high priority part may get an unused slot in spite of qualifying for a low priority slot -
+            //   while a lower priority part may not get the low priority slot. However, this is what original iMUSE does).
+            // * Then, slots whose parts have lower priority than a slotless part.
+            var slotCandidates = slots.OrderBy(slot => slot.IsInUse)
+                .ThenByDescending(slot => slot.PriorityEffective)
+                .ToList();
 
             int slotIndex = 0;
             foreach (var part in slotlessParts)

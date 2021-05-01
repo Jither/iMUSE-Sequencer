@@ -41,10 +41,10 @@ namespace Jither.Imuse.Drivers
         public abstract void LoadPart(Part part);
         public abstract void LoadRomSetup(Part part, int program);
         public abstract void ActiveSetup(Part part, byte[] data);
-        public abstract void StoredSetup(int program, byte[] data);
-        public abstract void LoadSetup(Part part, int number);
+        public abstract bool StoredSetup(int program, byte[] data);
+        public abstract bool LoadSetup(Part part, int number);
         public abstract void UpdateSetup(Part part);
-        public abstract void SetupParam(Part part, int param, int value);
+        public abstract bool SetupParam(Part part, int param, int value);
 
         public abstract void StopAllNotes(Slot slot);
 

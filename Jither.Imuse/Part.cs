@@ -11,15 +11,11 @@ namespace Jither.Imuse
     /// (instrument/program, volume, panning, priority etc.), and takes care of sending the channel's
     /// events and playback changes to the driver.
     /// </summary>
-    // TODO: Make base class - this is Roland-specific
     public class Part
     {
         private readonly Driver driver;
         private Player player;
         private Slot slot;
-
-        public int ExternalAddress { get; }
-        public int PartSetupAddress { get; }
 
         public int Index { get; private set; }
 
@@ -33,7 +29,7 @@ namespace Jither.Imuse
 
         private bool transposeLocked;
         private int modWheel;
-        private bool reverb;
+        private int reverb;
         private int sustain;
         private int pitchBend;
         private int pitchBendRange;
@@ -192,7 +188,7 @@ namespace Jither.Imuse
             }
         }
 
-        public bool Reverb
+        public int Reverb
         {
             get => reverb;
             private set
@@ -323,8 +319,6 @@ namespace Jither.Imuse
         {
             this.driver = driver;
             Index = index;
-            ExternalAddress = Roland.VirtualPartBaseAddress + Roland.VirtualPartSize * index;
-            PartSetupAddress = Roland.StoredSetupBaseAddress + Roland.StoredSetupSize * index;
         }
 
         public void LinkPlayer(Player player)
@@ -361,7 +355,7 @@ namespace Jither.Imuse
             sustain = 0;
             pitchBendRange = alloc.PitchBendRange;
             pitchBend = 0;
-            reverb = alloc.Reverb;
+            reverb = alloc.Reverb ? 1 : 0;
             program = alloc.Program;
         }
 
@@ -472,28 +466,20 @@ namespace Jither.Imuse
         public void StoredSetup(int setupNumber, byte[] setup)
         {
             // Should be done... elsewhere - not part-related
-            if (setupNumber < Roland.StoredSetupCount)
-            {
-                driver.StoredSetup(setupNumber, setup);
-            }
+            driver.StoredSetup(setupNumber, setup);
         }
 
         private void LoadStoredSetup(ImuseLoadSetup loadSetup)
         {
-            if (loadSetup.SetupNumber >= Roland.StoredSetupCount)
+            if (driver.LoadSetup(this, loadSetup.SetupNumber))
             {
-                return;
+                MayRequireSlotReassignment();
             }
-            driver.LoadSetup(this, loadSetup.SetupNumber);
-            MayRequireSlotReassignment();
         }
 
         public void SetupParam(int setupNumber, int value)
         {
-            if (setupNumber < Roland.StoredSetupCount)
-            {
-                driver.SetupParam(this, setupNumber, value);
-            }
+            driver.SetupParam(this, setupNumber, value);
         }
 
         private void MayRequireSlotReassignment()
