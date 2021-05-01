@@ -165,7 +165,7 @@ namespace Jither.Imuse
             // Starting with DOTT, there's a flag on bit 7 of the hook ID indicating that a hook shouldn't be reset when triggered.
             // Such a high ID is never encountered in earlier games, so safe to use for MI2 and FOA too.
             // (In fact, it's never actually encountered/used in any game - at least not the adventure games)
-            return hook != 0 && (hook & 0x80) != 0;
+            return hook != 0 && (hook & 0x80) == 0;
         }
 
         public void Clear()
