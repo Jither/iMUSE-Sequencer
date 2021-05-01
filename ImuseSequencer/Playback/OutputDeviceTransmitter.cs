@@ -101,7 +101,7 @@ namespace ImuseSequencer.Playback
 
         private void Play()
         {
-            // Get events for next 480 ticks
+            // Get events for next ticks
             long ticksPlayed = Engine.Play(ticksPerBatch);
 
             // Zero ticks played means the engine is done playing

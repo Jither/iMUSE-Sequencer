@@ -17,8 +17,8 @@ namespace Jither.Imuse.Messages
         {
             return data[1] switch
             {
-                0x00 => data.Length == 4 ? new ImuseV2Marker(data) : new ImuseAllocPart(data),
-                0x01 => data.Length == 11 ? new ImuseV2HookJump(data) : new ImuseDeallocPart(data),
+                0x00 => data.Length == 4 ? new ImuseV3Marker(data) : new ImuseAllocPart(data),
+                0x01 => data.Length == 11 ? new ImuseV3HookJump(data) : new ImuseDeallocPart(data),
                 0x02 => new ImuseDeallocAllParts(data),
                 0x10 => new ImuseActiveSetup(data),
                 0x11 => new ImuseStoredSetup(data),
@@ -74,7 +74,7 @@ namespace Jither.Imuse.Messages
             }
 
             // The first few bytes after that are 7 bit data - length depends on message type.
-            // Note that for v2, all (well, both) iMUSE messages only have byte data.
+            // Note that for v3, all (well, both) iMUSE messages only have byte data.
             ImuseByteData = new ArraySegment<byte>(data, dataIndex, byteDataLength);
 
             // In v1, the first byte is the channel
@@ -318,11 +318,11 @@ namespace Jither.Imuse.Messages
     }
 
     /// <summary>
-    /// iMUSE hook_jump MIDI (sysex) message for iMUSE v2 (Sam and Max). Signals to jump to a new position in the soundfile, if the given hook is set.
+    /// iMUSE hook_jump MIDI (sysex) message for iMUSE v3 (Sam and Max). Signals to jump to a new position in the soundfile, if the given hook is set.
     /// </summary>
-    public class ImuseV2HookJump : ImuseHook
+    public class ImuseV3HookJump : ImuseHook
     {
-        public override string ImuseMessageName => "hook-jump-v2";
+        public override string ImuseMessageName => "hook-jump-v3";
         protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,3}, measure: {Measure,5}, beat: {Beat,3}, tick: {Tick,3}, sustain: {Sustain}";
         protected override bool HasChannel => false;
 
@@ -334,17 +334,17 @@ namespace Jither.Imuse.Messages
         public int Tick { get; }
         public bool Sustain { get; }
 
-        public ImuseV2HookJump(byte[] data) : base(data, 8)
+        public ImuseV3HookJump(byte[] data) : base(data, 8)
         {
             Hook = ImuseByteData[0];
-            Chunk = ImuseByteData[1] - 1; // Chunk is 1-indexed rather than 0-indexed in v2. We keep it 0-indexed.
+            Chunk = ImuseByteData[1] - 1; // Chunk is 1-indexed rather than 0-indexed in v3. We keep it 0-indexed.
             Measure = ImuseByteData[2] << 7 | ImuseByteData[3]; // Measure is 1-indexed
             Beat = ImuseByteData[4];
             Tick = ImuseByteData[5] << 7 | ImuseByteData[6];
 
             if (ImuseByteData[7] > 1)
             {
-                throw new MidiMessageException($"Unexpected sustain value in v2 hook-jump: {ImuseByteData[7]:x2}");
+                throw new MidiMessageException($"Unexpected sustain value in v3 hook-jump: {ImuseByteData[7]:x2}");
             }
 
             Sustain = ImuseByteData[7] == 1;
@@ -476,18 +476,18 @@ namespace Jither.Imuse.Messages
     }
 
     /// <summary>
-    /// iMUSE marker MIDI (sysex) message for iMUSE v2 (Sam and Max). Signals to trigger iMUSE (script) commands queued for the Player.
+    /// iMUSE marker MIDI (sysex) message for iMUSE v3 (Sam and Max). Signals to trigger iMUSE (script) commands queued for the Player.
     /// </summary>
-    public class ImuseV2Marker : ImuseMessage
+    public class ImuseV3Marker : ImuseMessage
     {
-        public override string ImuseMessageName => "marker-v2";
+        public override string ImuseMessageName => "marker-v3";
         protected override string Info => $"id: {Id,3}";
 
         protected override bool HasChannel => false;
 
         public int Id { get; }
 
-        public ImuseV2Marker(byte[] data) : base(data, 1)
+        public ImuseV3Marker(byte[] data) : base(data, 1)
         {
             Id = ImuseByteData[0];
         }

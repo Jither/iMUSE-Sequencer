@@ -3,6 +3,7 @@ using Jither.Imuse.Messages;
 using Jither.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Jither.Imuse
 {
@@ -16,19 +17,15 @@ namespace Jither.Imuse
         private readonly List<Part> parts = new();
         private readonly List<Slot> slots = new();
 
-        // Probably overkill to use a LinkedList or sorted list for this, so we just use a generic List
-        // This list contains parts that need a slot but either were allocated when all slots were already taken,
-        // or had their slot stolen by a different part with higher priority. When a slot becomes available,
-        // the highest priority part will get assigned to that slot.
-        private readonly List<Part> slotlessParts = new();
-
         public PartsManager(Driver driver)
         {
             this.driver = driver;
 
             for (int i = 0; i < partCount; i++)
             {
-                parts.Add(new Part(i, driver));
+                var part = new Part(i, driver);
+                part.SlotReassignmentRequired += AssignFreeSlots;
+                parts.Add(part);
             }
 
             for (int i = 0; i < slotCount; i++)
@@ -56,7 +53,7 @@ namespace Jither.Imuse
 
             part.Alloc(alloc);
 
-            LinkPart(player, part);
+            player.LinkPart(part);
 
             if (!part.TransposeLocked)
             {
@@ -64,10 +61,6 @@ namespace Jither.Imuse
                 if (slot != null)
                 {
                     slot.AssignPart(part);
-                }
-                else
-                {
-                    LinkSlotless(part);
                 }
             }
             else
@@ -97,6 +90,7 @@ namespace Jither.Imuse
                 var part = parts[i];
                 UnlinkPart(part);
             }
+            this.AssignFreeSlots();
         }
 
         public HashSet<SustainedNote> GetSustainNotes()
@@ -154,17 +148,10 @@ namespace Jither.Imuse
             {
                 logger.Verbose($"Stealing slot {weakestSlot.Index} from part {weakestSlot.Part.Index}");
                 driver.StopAllNotes(weakestSlot);
-                LinkSlotless(weakestSlot.Part);
                 weakestSlot.AbandonPart();
             }
 
             return weakestSlot;
-        }
-
-        private void LinkPart(Player player, Part part)
-        {
-            player.LinkPart(part);
-            part.LinkPlayer(player);
         }
 
         private void UnlinkPart(Part part)
@@ -178,25 +165,55 @@ namespace Jither.Imuse
             {
                 ReleaseSlot(part.Slot);
             }
-            else if (!part.TransposeLocked)
-            {
-                UnlinkSlotless(part);
-            }
         }
 
-        private Part FindHighestPrioritySlotlessPart()
+        private void AssignFreeSlots()
         {
-            Part result = null;
-            int highestPriority = 0;
-            foreach (var part in slotlessParts)
+            logger.Verbose("Reassigning slots...");
+            // Find parts needing a slot
+            var slotlessParts = new List<Part>();
+            foreach (var part in parts)
             {
-               if (part.PriorityEffective > highestPriority)
+                if (part.NeedsSlot)
                 {
-                    highestPriority = part.PriorityEffective;
-                    result = part;
+                    slotlessParts.Add(part);
                 }
             }
-            return result;
+            
+            if (slotlessParts.Count == 0)
+            {
+                return;
+            }
+
+            // Sort relevant parts by descending priority:
+            slotlessParts.Sort((a, b) => b.PriorityEffective - a.PriorityEffective);
+
+            // Sort slots by descending priority (slots not in use have negative effective priority) 
+            // This in order to assign the most picky slots first, if possible
+            var slotCandidates = slots.OrderBy(slot => slot.PriorityEffective).ToList();
+
+            int slotIndex = 0;
+            foreach (var part in slotlessParts)
+            {
+                for (int i = slotIndex; i < slotCandidates.Count; i++)
+                {
+                    var slot = slotCandidates[i];
+                    if (slot.PriorityEffective < part.PriorityEffective)
+                    {
+                        slot.AssignPart(part);
+                        driver.UpdateSetup(part);
+                        driver.SetVolume(part);
+                        driver.SetModWheel(part);
+                        driver.SetSustain(part);
+                        driver.SetPitchOffset(part);
+
+                        // None of the slots we've tested so far will have lower priority than
+                        // later parts (sorted by descending priority), so skip them
+                        slotIndex = i + 1;
+                        break;
+                    }
+                }
+            }
         }
 
         private void ReleaseSlot(Slot slot)
@@ -204,28 +221,7 @@ namespace Jither.Imuse
             driver.StopAllNotes(slot);
             slot.AbandonPart();
 
-            var part = FindHighestPrioritySlotlessPart();
-            if (part != null)
-            {
-                slot.AssignPart(part);
-                UnlinkSlotless(part);
-                driver.UpdateSetup(part);
-                driver.SetVolume(part);
-                driver.SetPan(part);
-                driver.SetModWheel(part);
-                driver.SetSustain(part);
-                driver.SetPitchOffset(part);
-            }
-        }
-
-        private void LinkSlotless(Part part)
-        {
-            slotlessParts.Add(part);
-        }
-
-        private void UnlinkSlotless(Part part)
-        {
-            slotlessParts.Remove(part);
+            AssignFreeSlots();
         }
     }
 }

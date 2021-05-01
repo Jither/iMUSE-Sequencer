@@ -2,7 +2,7 @@
   "profiles": {
     "ImuseSequencer": {
       "commandName": "Project",
-      "commandLineArgs": "play \"\\scumm\\MIDIs\\MI2\\LECHUCK.rol\" \"test.mid\""
+      "commandLineArgs": "play \"\\scumm\\MIDIs\\MI2\\STAN.rol\" -o 1"
     }
   }
 }

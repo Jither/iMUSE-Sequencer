@@ -79,7 +79,11 @@ namespace Jither.Imuse
         /// </summary>
         public void SetPriority(int channel, int priority)
         {
-            GetByChannel(channel)?.SetPriorityOffset(priority);
+            var part = GetByChannel(channel);
+            if (part != null)
+            {
+                part.PriorityOffset = priority;
+            }
         }
 
         /// <summary>
@@ -105,7 +109,11 @@ namespace Jither.Imuse
 
         public void SetVolume(int channel, int volume)
         {
-            GetByChannel(channel)?.SetVolume(volume);
+            var part = GetByChannel(channel);
+            if (part != null)
+            {
+                part.Volume = volume;
+            }
         }
 
         /// <summary>
@@ -147,11 +155,11 @@ namespace Jither.Imuse
             {
                 if (relative)
                 {
-                    part.SetTranspose(Math.Clamp(interval + part.Transpose, -7, 7));
+                    part.Transpose = Math.Clamp(interval + part.Transpose, -7, 7);
                 }
                 else
                 {
-                    part.SetTranspose(interval);
+                    part.Transpose = interval;
                 }
             }
         }
@@ -174,7 +182,11 @@ namespace Jither.Imuse
 
         public void SetEnabled(int channel, bool enabled)
         {
-            GetByChannel(channel)?.SetEnabled(enabled);
+            var part = GetByChannel(channel);
+            if (part != null)
+            {
+                part.Enabled = enabled;
+            }
         }
 
         public void SetupParam(int channel, int setupNumber, int value)
@@ -194,12 +206,57 @@ namespace Jither.Imuse
 
         public void DoProgramChange(int channel, int program)
         {
-            GetByChannel(channel)?.DoProgramChange(program);
+            var part = GetByChannel(channel);
+            if (part != null)
+            {
+                part.Program = program;
+            }
         }
 
         private Part GetByChannel(int channel)
         {
             partsByChannel.TryGetValue(channel, out Part part);
+
+            // TODO: iMUSE v2 - auto-alloc part. Might not be here it should be called, but called from:
+            // pt_start_note
+            // pt_do_pgmch
+            // pt_do_active_dump
+            // pt_load_setup
+            // pt_do_param_adjust
+            // pt_set_priority
+            // pt_set_vol
+            // pt_set_pan
+            // pt_set_transpose
+            // pt_set_detune
+            // pt_set_part_enable
+            // pt_set_modw
+            // pt_set_sust
+            // pt_set_pbend
+            // pt_set_pbr
+            // pt_set_reverb
+
+            if (part == null)
+            {
+                // TODO: SelectPart(player.priority)
+                // part.Alloc(
+                //    chan = channel
+                //    vol = 127
+                //    priority_offset = 0
+                //    pan = 0
+                //    transpose = 0
+                //    detune = 0
+                //    modw = 0
+                //    sust = 0
+                //    pbend_range = 2
+                //    pbend = 0
+                //    transpose_locked? = 1 (is probably "transpose_unlocked")
+                //    part_enable = 1
+                //    reverb = 1
+                //    pgm = -1
+                //    slot_ptr = null
+                //    ro_load_part() - same as v1 EXCEPT doesn't send control and pgm changes (those are sent the standard MIDI way)
+            }
+
             return part;
         }
 

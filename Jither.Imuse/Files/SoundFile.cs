@@ -155,8 +155,8 @@ namespace Jither.Imuse.Files
                 case ImuseMarker marker:
                     markers.Add(new MarkerInfo(trackIndex, position, marker.Id));
                     break;
-                case ImuseV2Marker marker2:
-                    markers.Add(new MarkerInfo(trackIndex, position, marker2.Id));
+                case ImuseV3Marker marker3:
+                    markers.Add(new MarkerInfo(trackIndex, position, marker3.Id));
                     break;
             }
         }

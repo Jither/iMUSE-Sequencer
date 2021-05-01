@@ -28,7 +28,7 @@ namespace Jither.Imuse
         /// </summary>
         public int OutputChannel { get; }
 
-        public int PriorityEffective => part?.PriorityEffective ?? 0;
+        public int PriorityEffective => part?.PriorityEffective ?? -1;
 
         public int ExternalAddress { get; }
         public int SlotSetupAddress { get; }
