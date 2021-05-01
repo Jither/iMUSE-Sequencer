@@ -32,10 +32,10 @@ namespace Jither.Imuse
 
         public int Index { get; }
 
-        public Slot(int index)
+        public Slot(int index, int channel)
         {
             Index = index;
-            OutputChannel = index + 1; // Channels 2-9 (1-8 zero-indexed), percussion = 10 (9 zero-indexed)
+            OutputChannel = channel;
         }
 
         public void AssignPart(Part part)

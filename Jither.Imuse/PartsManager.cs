@@ -30,7 +30,7 @@ namespace Jither.Imuse
 
             for (int i = 0; i < slotCount; i++)
             {
-                slots.Add(new Slot(i));
+                slots.Add(new Slot(i, driver.GetChannelForSlot(i)));
             }
         }
 
@@ -201,12 +201,17 @@ namespace Jither.Imuse
                     if (slot.PriorityEffective < part.PriorityEffective)
                     {
                         slot.AssignPart(part);
-                        driver.UpdateSetup(part);
+                        
                         driver.SetVolume(part);
+                        driver.SetPan(part);
+                        driver.SetPitchOffset(part);
                         driver.SetModWheel(part);
                         driver.SetSustain(part);
-                        driver.SetPitchOffset(part);
+                        driver.SetReverb(part);
+                        driver.SetChorus(part);
 
+                        driver.DoProgramChange(part);
+                        
                         // None of the slots we've tested so far will have lower priority than
                         // later parts (sorted by descending priority), so skip them
                         slotIndex = i + 1;

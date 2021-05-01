@@ -74,9 +74,9 @@ namespace Jither.Midi.Messages
         // 0x55-0x57 undefined
         HighResolutionVelocityPrefix = 0x58,
         // 0x59-0x5a undefined
-        Effects1Depth = 0x5b,
+        Reverb = 0x5b,
         Effects2Depth = 0x5c,
-        Effects3Depth = 0x5d,
+        Chorus = 0x5d,
         Effects4Depth = 0x5e,
         Effects5Depth = 0x5f,
         DataIncrement = 0x60,

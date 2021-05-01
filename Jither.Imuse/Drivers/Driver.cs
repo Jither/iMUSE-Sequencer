@@ -2,6 +2,7 @@
 using Jither.Logging;
 using Jither.Midi.Messages;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Jither.Imuse.Drivers
 {
@@ -10,6 +11,7 @@ namespace Jither.Imuse.Drivers
         protected static readonly Logger logger = LogProvider.Get(nameof(Driver));
 
         public long CurrentTick { get; set; }
+        public abstract bool UsesStoredSetup { get; }
 
         private int ticksPerQuarterNote;
 
@@ -26,6 +28,8 @@ namespace Jither.Imuse.Drivers
             Init();
         }
 
+        public abstract int GetChannelForSlot(int slotIndex);
+
         protected abstract void Init();
         public abstract void Close();
 
@@ -35,24 +39,17 @@ namespace Jither.Imuse.Drivers
         public abstract void SetVolume(Part part);
         public abstract void SetPan(Part part);
         public abstract void SetPitchOffset(Part part);
+        public abstract void SetReverb(Part part);
+        public abstract void SetChorus(Part part);
         public abstract void SetModWheel(Part part);
         public abstract void SetSustain(Part part);
+        public abstract void DoProgramChange(Part part);
 
         public abstract void LoadPart(Part part);
-        public abstract void LoadRomSetup(Part part, int program);
         public abstract void ActiveSetup(Part part, byte[] data);
         public abstract bool StoredSetup(int program, byte[] data);
         public abstract bool LoadSetup(Part part, int number);
-        public abstract void UpdateSetup(Part part);
         public abstract bool SetupParam(Part part, int param, int value);
-
-        public abstract void StopAllNotes(Slot slot);
-
-        /// <summary>
-        /// Retrieves the currently held notes on the given slot. Note that the channel returned for each
-        /// each note the Part (input) channel, not the Slot (output) channel.
-        /// </summary>
-        public abstract void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes);
 
         protected void Delay(int milliseconds)
         {
@@ -77,6 +74,24 @@ namespace Jither.Imuse.Drivers
             TransmitEvent(new NoOpMessage(signal));
         }
 
+        protected void TransmitControl(int channel, MidiController controller, int value)
+        {
+            var message = ControlChangeMessage.Create(channel, controller, (byte)value);
+            TransmitEvent(message);
+        }
+
+        protected void TransmitProgramChange(int channel, int program)
+        {
+            var evt = new ProgramChangeMessage(channel, (byte)program);
+            TransmitEvent(evt);
+        }
+
+        protected void TransmitPitchBend(int channel, ushort value)
+        {
+            var evt = new PitchBendChangeMessage(channel, value);
+            TransmitEvent(evt);
+        }
+
         public void SetTempo(SetTempoMessage tempo)
         {
             TransmitEvent(tempo);
@@ -94,5 +109,21 @@ namespace Jither.Imuse.Drivers
             TransmitEvent(message);
         }
 
+        public void StopAllNotes(Slot slot)
+        {
+            slot.NoteTable.Clear();
+
+            TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
+            TransmitControl(slot.OutputChannel, MidiController.AllNotesOff, 0);
+        }
+
+        /// <summary>
+        /// Retrieves the currently held notes on the given slot. Note that the channel returned for each
+        /// each note the Part (input) channel, not the Slot (output) channel.
+        /// </summary>
+        public void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes)
+        {
+            notes.UnionWith(slot.NoteTable.Select(n => new SustainedNote(slot.Part.InputChannel, n)));
+        }
     }
 }

@@ -30,10 +30,12 @@ namespace Jither.Imuse
         private bool transposeLocked;
         private int modWheel;
         private int reverb;
+        private int chorus;
         private int sustain;
         private int pitchBend;
         private int pitchBendRange;
         private int program;
+        private int bank;
 
         /// <summary>
         /// The channel whose input messages this part will handle.
@@ -188,12 +190,24 @@ namespace Jither.Imuse
             }
         }
 
+        // TODO: Send chorus and reverb to driver (not used in iMUSE v1)
+        public int Chorus
+        {
+            get => chorus;
+            set
+            {
+                chorus = value;
+                driver.SetChorus(this);
+            }
+        }
+
         public int Reverb
         {
             get => reverb;
             private set
             {
                 reverb = value;
+                driver.SetReverb(this);
             }
         }
 
@@ -245,17 +259,28 @@ namespace Jither.Imuse
         /// Gets or sets the program (patch) of this part.
         /// </summary>
         /// <remarks>
-        /// Setting this property notifies the driver that program has changed.
+        /// Setting this property <b>will set <see cref="Bank"/> to 0</b> and notify the driver that program has changed.<br/>
+        /// <see cref="LoadStoredSetup(ImuseLoadSetup)"/> is used for setting bank + program.
         /// </remarks>
         public int Program
         {
             get => program;
             set
             {
-                program = value;
-                driver.LoadRomSetup(this, program);
-                MayRequireSlotReassignment();
+                // Yeah, original iMUSE v2 resets bank when setting program
+                if (program != value || bank != 0)
+                {
+                    program = value;
+                    bank = 0;
+                    driver.DoProgramChange(this);
+                    MayRequireSlotReassignment();
+                }
             }
+        }
+
+        public int Bank
+        {
+            get => bank;
         }
 
         /// <summary>
@@ -341,9 +366,9 @@ namespace Jither.Imuse
             this.slot = null;
         }
 
-        public void Alloc(ImuseAllocPart alloc)
+        public void Alloc(IPartAllocation alloc)
         {
-            InputChannel = alloc.Channel;
+            inputChannel = alloc.Channel;
             enabled = alloc.Enabled;
             priorityOffset = alloc.PriorityOffset;
             volume = alloc.Volume;
@@ -351,11 +376,13 @@ namespace Jither.Imuse
             transpose = alloc.Transpose;
             transposeLocked = alloc.TransposeLocked;
             detune = alloc.Detune;
-            modWheel = 0;
             sustain = 0;
             pitchBendRange = alloc.PitchBendRange;
             pitchBend = 0;
-            reverb = alloc.Reverb ? 1 : 0;
+            modWheel = 0;
+            chorus = 0;
+            reverb = alloc.Reverb;
+            bank = 0;
             program = alloc.Program;
         }
 
@@ -457,26 +484,45 @@ namespace Jither.Imuse
             }
         }
 
+        // Does nothing for GMID
         public void ActiveSetup(byte[] setup)
         {
             driver.ActiveSetup(this, setup);
             MayRequireSlotReassignment();
         }
 
+        // Does nothing for GMID
         public void StoredSetup(int setupNumber, byte[] setup)
         {
             // Should be done... elsewhere - not part-related
             driver.StoredSetup(setupNumber, setup);
         }
 
-        private void LoadStoredSetup(ImuseLoadSetup loadSetup)
+        /// <summary>
+        /// Loads stored setup for Roland. For GMID, sets bank + program. Bank is stored in the HI byte, program in the LO byte.
+        /// </summary>
+        /// <param name="loadSetup"></param>
+        public void LoadStoredSetup(ImuseLoadSetup loadSetup)
         {
-            if (driver.LoadSetup(this, loadSetup.SetupNumber))
+            // ROL uses this command for stored setup.
+            // GMID uses it for setting bank + program
+            if (driver.UsesStoredSetup)
             {
+                if (driver.LoadSetup(this, loadSetup.SetupNumber))
+                {
+                    MayRequireSlotReassignment();
+                }
+            }
+            else
+            {
+                program = loadSetup.SetupNumber & 0xff;
+                bank = (loadSetup.SetupNumber >> 8) & 0xff;
+                driver.DoProgramChange(this);
                 MayRequireSlotReassignment();
             }
         }
 
+        // Does nothing for GMID
         public void SetupParam(int setupNumber, int value)
         {
             driver.SetupParam(this, setupNumber, value);
@@ -485,7 +531,7 @@ namespace Jither.Imuse
         private void MayRequireSlotReassignment()
         {
             // This is called by methods that change properties that will result in TransposeLocked
-            // being set true (e.g. program change). If that means a change from being false, notify
+            // being set false (e.g. program change). If that means a change from being true, notify
             // part manager that slots need to be reassigned (because this part will need one).
             if (TransposeLocked)
             {

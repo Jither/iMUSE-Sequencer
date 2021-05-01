@@ -238,23 +238,8 @@ namespace Jither.Imuse
             if (part == null)
             {
                 // TODO: SelectPart(player.priority)
-                // part.Alloc(
-                //    chan = channel
-                //    vol = 127
-                //    priority_offset = 0
-                //    pan = 0
-                //    transpose = 0
-                //    detune = 0
-                //    modw = 0
-                //    sust = 0
-                //    pbend_range = 2
-                //    pbend = 0
-                //    transpose_locked? = 1 (is probably "transpose_unlocked")
-                //    part_enable = 1
-                //    reverb = 1
-                //    pgm = -1
-                //    slot_ptr = null
-                //    ro_load_part() - same as v1 EXCEPT doesn't send control and pgm changes (those are sent the standard MIDI way)
+                // part.Alloc(new DefaultPartAllocation(channel, reverb: 64);
+                // ro_load_part() - same as v1 EXCEPT doesn't send control and pgm changes (those are sent the standard MIDI way)
             }
 
             return part;

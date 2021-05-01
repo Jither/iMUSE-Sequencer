@@ -144,15 +144,15 @@ namespace Jither.Imuse.Messages
     /// iMUSE alloc_part MIDI (sysex) message. Signals to attempt to allocate a Part (input channel) to a free Slot on the Player.
     /// It also includes initial playback parameters for the part.
     /// </summary>
-    public class ImuseAllocPart : ImuseMessage
+    public class ImuseAllocPart : ImuseMessage, IPartAllocation
     {
         public const int transposeLockedFlag = -128;
 
         public override string ImuseMessageName => "alloc-part";
-        protected override string Info => $"enabled: {Enabled,5}, reverb: {Reverb,5}, prioffs: {PriorityOffset,3}, vol: {Volume,3}, pan: {Pan,3}, trans: {(TransposeLocked ? "lock" : Transpose),4}, detune: {Detune,3}, pbr: {PitchBendRange,3}, pgm: {Program,3}";
+        protected override string Info => $"enabled: {Enabled,5}, reverb: {Reverb}, prioffs: {PriorityOffset,3}, vol: {Volume,3}, pan: {Pan,3}, trans: {(TransposeLocked ? "lock" : Transpose),4}, detune: {Detune,3}, pbr: {PitchBendRange,3}, pgm: {Program,3}";
 
         public bool Enabled { get; }
-        public bool Reverb { get; }
+        public int Reverb { get; }
         public int PriorityOffset { get; }
         public int Volume { get; }
         public int Pan { get; }
@@ -165,7 +165,10 @@ namespace Jither.Imuse.Messages
         public ImuseAllocPart(byte[] data) : base(data, 1)
         {
             Enabled = (ImuseData[0] & 0x01) != 0;
-            Reverb = (ImuseData[0] & 0x02) != 0;
+            // Reverb in iMUSE v1 (the only one with "alloc-part" messages) is actually a bool - but that's because
+            // it's targeted at MT-32. Our Roland driver looks at the integer as a boolean (0 = false, everything else = true),
+            // while other drivers expect an integer value. For compatibiity with iMUSE v2, we treat it as int here.
+            Reverb = (ImuseData[0] & 0x02) != 0 ? 1 : 0;
             PriorityOffset = ImuseData[1];
             Volume = ImuseData[2];
             Pan = (sbyte)ImuseData[3];

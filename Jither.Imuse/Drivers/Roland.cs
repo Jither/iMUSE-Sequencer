@@ -18,7 +18,7 @@ namespace Jither.Imuse.Drivers
         private const int storedSetupStart = 24;
 
         private const int pitchBendRangeOffset = 4;
-        //private const int reverbOffset = 6;
+        private const int reverbOffset = 6;
 
         private const int rhythmChannel = 9;
         private const int partCount = 32;
@@ -70,8 +70,21 @@ namespace Jither.Imuse.Drivers
             76, 100, 7, 0,      // Cowbell
         };
 
+        public override bool UsesStoredSetup => true;
+
         public Roland(ITransmitter transmitter) : base(transmitter)
         {
+        }
+
+        public override int GetChannelForSlot(int slotIndex)
+        {
+            int result = slotIndex + 1; // Channels 2-9 (1-8 zero-indexed)
+            // Don't stomp on rhythm channel:
+            if (result >= rhythmChannel)
+            {
+                result++;
+            }
+            return result;
         }
 
         protected override void Init()
@@ -121,21 +134,9 @@ namespace Jither.Imuse.Drivers
 
         public override void Close()
         {
-            // Immediately send reset:
+            // Immediately send reset - the scheduler isn't running at this point:
             var message = new SysexMessage(GenerateSysex(resetAddress, Array.Empty<byte>()));
             TransmitImmediate(message);
-        }
-
-        private void TransmitControl(int channel, MidiController controller, int value)
-        {
-            var message = ControlChangeMessage.Create(channel, controller, (byte)value);
-            TransmitEvent(message);
-        }
-
-        private void TransmitProgramChange(int channel, int program)
-        {
-            var evt = new ProgramChangeMessage(channel, (byte)program);
-            TransmitEvent(evt);
         }
 
         private void TransmitSysex(int address, byte[] data)
@@ -226,6 +227,7 @@ namespace Jither.Imuse.Drivers
         {
             if (part.Slot != null)
             {
+                // MT-32 driver reverses polarity of pan - e.g. -10 means 10 to the *right*
                 TransmitControl(part.Slot.OutputChannel, MidiController.Pan, (63 - part.PanEffective) & 0x7f);
             }
         }
@@ -237,6 +239,22 @@ namespace Jither.Imuse.Drivers
             {
                 TransmitEvent(new PitchBendChangeMessage(part.Slot.OutputChannel, (ushort)((part.PitchOffset << 2) + 0x2000)));
             }
+        }
+
+        public override void SetReverb(Part part)
+        {
+            // Added to Roland driver in iMUSE v2
+            byte[] reverb = new byte[] { (byte)(part.Reverb != 0 ? 1 : 0) };
+            TransmitSysex(GetExternalAddress(part) + reverbOffset, reverb);
+            if (part.Slot != null)
+            {
+                TransmitSysex(GetSlotExternalAddress(part.Slot) + reverbOffset, reverb);
+            }
+        }
+
+        public override void SetChorus(Part part)
+        {
+            // Do nothing
         }
 
         public override void SetModWheel(Part part)
@@ -280,8 +298,11 @@ namespace Jither.Imuse.Drivers
             SetPitchOffset(part);
         }
 
-        public override void LoadRomSetup(Part part, int program)
+        // AKA LoadRomSetup
+        public override void DoProgramChange(Part part)
         {
+            int program = part.Program;
+
             byte[] buffer = new byte[2];
             buffer[0] = (byte)(program >> 6);
             buffer[1] = (byte)(program & 0x3f);
@@ -341,14 +362,6 @@ namespace Jither.Imuse.Drivers
             return true;
         }
 
-        public override void UpdateSetup(Part part)
-        {
-            if (part.Slot != null)
-            {
-                TransmitProgramChange(part.Slot.OutputChannel, part.Index);
-            }
-        }
-
         // AKA DoParamAdjust
         public override bool SetupParam(Part part, int param, int value)
         {
@@ -367,19 +380,6 @@ namespace Jither.Imuse.Drivers
             }
 
             return true;
-        }
-
-        public override void StopAllNotes(Slot slot)
-        {
-            slot.NoteTable.Clear();
-
-            TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
-            TransmitControl(slot.OutputChannel, MidiController.AllNotesOff, 0);
-        }
-
-        public override void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes)
-        {
-            notes.UnionWith(slot.NoteTable.Select(n => new SustainedNote(slot.Part.InputChannel, n)));
         }
 
         public override void TransmitSysex(SysexMessage message, PartsCollection parts)

@@ -139,14 +139,14 @@ namespace Jither.Midi.Messages
         {
             return controller switch
             {
-                0x78 => new AllSoundOffMessage(channel, controller, value),
-                0x79 => new ResetAllMessage(channel, controller, value),
-                0x7a => new LocalControlMessage(channel, controller, value),
-                0x7b => new AllNotesOffMessage(channel, controller, value),
-                0x7c => new OmniOffMessage(channel, controller, value),
-                0x7d => new OmniOnMessage(channel, controller, value),
-                0x7e => new PolyOffMessage(channel, controller, value),
-                0x7f => new PolyOnMessage(channel, controller, value),
+                0x78 => new AllSoundOffMessage(channel),
+                0x79 => new ResetAllMessage(channel),
+                0x7a => new LocalControlMessage(channel, value),
+                0x7b => new AllNotesOffMessage(channel),
+                0x7c => new OmniOffMessage(channel),
+                0x7d => new OmniOnMessage(channel),
+                0x7e => new PolyOffMessage(channel, value),
+                0x7f => new PolyOnMessage(channel),
                 _ => new ControlChangeMessage(channel, controller, value)
             };
         }
@@ -172,7 +172,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "all-sound-off";
 
-        public AllSoundOffMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public AllSoundOffMessage(int channel) : base(channel, 0x78, 0)
         {
         }
     }
@@ -181,7 +181,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "reset-all";
 
-        public ResetAllMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public ResetAllMessage(int channel) : base(channel, 0x79, 0)
         {
         }
     }
@@ -190,7 +190,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "local-control";
 
-        public LocalControlMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public LocalControlMessage(int channel, byte value) : base(channel, 0x7a, value)
         {
         }
     }
@@ -199,7 +199,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "all-notes-off";
 
-        public AllNotesOffMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public AllNotesOffMessage(int channel) : base(channel, 0x7b, 0)
         {
         }
     }
@@ -208,7 +208,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "omni-off";
 
-        public OmniOffMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public OmniOffMessage(int channel) : base(channel, 0x7c, 0)
         {
         }
     }
@@ -217,7 +217,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "omni-on";
 
-        public OmniOnMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public OmniOnMessage(int channel) : base(channel, 0x7d, 0)
         {
         }
     }
@@ -226,7 +226,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "poly-off";
 
-        public PolyOffMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public PolyOffMessage(int channel, byte channels) : base(channel, 0x7e, channels)
         {
         }
     }
@@ -235,7 +235,7 @@ namespace Jither.Midi.Messages
     {
         public override string TypeName => "poly-on";
 
-        public PolyOnMessage(int channel, byte controller, byte value) : base(channel, controller, value)
+        public PolyOnMessage(int channel) : base(channel, 0x7f, 0)
         {
         }
     }
