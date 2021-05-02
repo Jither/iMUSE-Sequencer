@@ -32,7 +32,7 @@ namespace Jither.Imuse
         private readonly ImuseOptions options;
 
         // Used for keeping track of number of jumps for a given hook - to allow limiting.
-        private readonly Dictionary<ImuseHookJump, int> jumpsExecuted = new();
+        private readonly Dictionary<ImuseHook, int> jumpsExecuted = new();
 
         public PlayerStatus Status { get; private set; }
         public int SoundId { get; private set; }
@@ -257,6 +257,19 @@ namespace Jither.Imuse
                         }
                     }
                     break;
+                case ImuseV3HookJump jump:
+                    jumpsExecuted.TryGetValue(jump, out int executed3Count);
+                    // We allow limiting the number of jumps performed for a given hook. This is useful for non-interactive recording.
+                    if (executed3Count < options.JumpLimit)
+                    {
+                        // TODO: This hasn't been checked, and probably isn't right (e.g. measure * 4). Just a quick test.
+                        // Also needs to handle the Sustain property on the jump
+                        if (HookBlock.HandleJump(jump.Hook, jump.Chunk, ((jump.Measure - 1) * 4) + jump.Beat, jump.Tick))
+                        {
+                            jumpsExecuted[jump] = executed3Count + 1;
+                        }
+                    }
+                    break;
                 case ImuseHookTranspose transpose:
                     HookBlock.HandleTranspose(transpose.Hook, transpose.Interval, transpose.Relative != 0);
                     break;
@@ -274,6 +287,10 @@ namespace Jither.Imuse
                     break;
 
                 case ImuseMarker marker:
+                    // TODO: Handle markers
+                    logger.Info($"marker {marker.Id}");
+                    break;
+                case ImuseV3Marker marker:
                     // TODO: Handle markers
                     logger.Info($"marker {marker.Id}");
                     break;
