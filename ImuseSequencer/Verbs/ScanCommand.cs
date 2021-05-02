@@ -4,6 +4,7 @@ using Jither.Imuse.Messages;
 using Jither.Logging;
 using Jither.Midi.Devices.Windows;
 using Jither.Midi.Files;
+using Jither.Midi.Helpers;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace ImuseSequencer.Verbs
         CtrlMessage,
         SysMessage,
         ImuseHookId,
+        UnknownImuse
     }
 
     [Verb("scan", Help = "Scans MIDI files for various MIDI properties and lists them for each file")]
@@ -102,6 +104,12 @@ namespace ImuseSequencer.Verbs
                                     events.Add($"0x{hook.Hook:x2}");
                                 }
                                 break;
+                            case PropertyType.UnknownImuse:
+                                if (evt.Message is ImuseUnknown unknown)
+                                {
+                                    events.Add(unknown.Data.ToHex());
+                                }
+                                break;
                         }
                     }
                 }
@@ -112,7 +120,18 @@ namespace ImuseSequencer.Verbs
                 }
                 else
                 {
-                    logger.Info($"{fileName}: {String.Join(", ", events)}");
+                    if (options.Type == PropertyType.UnknownImuse)
+                    {
+                        logger.Info($"{fileName}:");
+                        foreach (var evt in events)
+                        {
+                            logger.Info($"  {evt}");
+                        }
+                    }
+                    else
+                    {
+                        logger.Info($"{fileName}: {String.Join(", ", events)}");
+                    }
                 }
             }
         }

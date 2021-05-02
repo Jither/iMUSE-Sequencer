@@ -3,6 +3,7 @@ using Jither.Midi.Messages;
 using Jither.Midi.Files;
 using System;
 using Jither.Logging;
+using System.Text;
 
 namespace Jither.Imuse.Messages
 {
@@ -20,6 +21,7 @@ namespace Jither.Imuse.Messages
                 0x00 => data.Length == 4 ? new ImuseV3Marker(data) : new ImuseAllocPart(data),
                 0x01 => data.Length == 11 ? new ImuseV3HookJump(data) : new ImuseDeallocPart(data),
                 0x02 => new ImuseDeallocAllParts(data),
+                0x03 => new ImuseV3Text(data),
                 0x10 => new ImuseActiveSetup(data),
                 0x11 => new ImuseStoredSetup(data),
                 0x12 => new ImuseSetupBank(data),
@@ -134,8 +136,9 @@ namespace Jither.Imuse.Messages
     {
         protected override string Info => Data.ToHex();
         public override string ImuseMessageName => "unknown";
+        protected override bool HasChannel => false;
 
-        public ImuseUnknown(byte[] data) : base(data, 1)
+        public ImuseUnknown(byte[] data) : base(data, data.Length - 3)
         {
         }
     }
@@ -189,6 +192,23 @@ namespace Jither.Imuse.Messages
 
         public ImuseDeallocPart(byte[] data) : base(data, 1)
         {
+        }
+    }
+
+    /// <summary>
+    /// iMUSE hook_jump MIDI (sysex) message for iMUSE v3 (Sam and Max). Signals to jump to a new position in the soundfile, if the given hook is set.
+    /// </summary>
+    public class ImuseV3Text : ImuseMessage
+    {
+        public override string ImuseMessageName => "text-v3";
+        protected override string Info => $"{Text}";
+        protected override bool HasChannel => false;
+
+        public string Text { get; }
+
+        public ImuseV3Text(byte[] data) : base(data, data.Length - 3)
+        {
+            Text = Encoding.ASCII.GetString(ImuseByteData);
         }
     }
 
