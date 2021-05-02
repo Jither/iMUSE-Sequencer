@@ -27,6 +27,9 @@ namespace ImuseSequencer.Verbs
         [Option('m', "max-slots", Help = "Sets number of slots to maximum (15) rather than original iMUSE's 9 for General Midi and 8 for Roland.")]
         public bool MaxSlots { get; set; }
 
+        [Option('c', "clean-jumps", Help = "Cuts off otherwise infinitely sustained loops when performing jumps.")]
+        public bool CleanJumps { get; set; }
+
         [Option("loop-limit", Help = "Limits the number of loops performed by the sequencer. This is useful (necessary) for e.g. non-interactive recording. 0 indicates no limit for device outputs and 3 for MIDI file output.", ArgName = "limit", Default = 0)]
         public int LoopLimit { get; set; }
 
@@ -85,7 +88,7 @@ namespace ImuseSequencer.Verbs
         public PlayCommand(PlayOptions options) : base(options)
         {
             this.options = options;
-            imuseOptions = new ImuseOptions { JumpLimit = options.JumpLimit, LoopLimit = options.LoopLimit, MaxSlots = options.MaxSlots };
+            imuseOptions = new ImuseOptions { JumpLimit = options.JumpLimit, LoopLimit = options.LoopLimit, MaxSlots = options.MaxSlots, CleanJumps = options.CleanJumps };
         }
 
         public override void Execute()

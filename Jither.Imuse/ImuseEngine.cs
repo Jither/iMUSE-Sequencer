@@ -37,7 +37,7 @@ namespace Jither.Imuse
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
             parts = new PartsManager(driver, options);
-            sustainer = new Sustainer();
+            sustainer = new Sustainer(options);
             players = new PlayerManager(files, parts, sustainer, driver, options);
 
             Commands = new ImuseCommands(players);

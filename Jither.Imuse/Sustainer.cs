@@ -72,11 +72,13 @@ namespace Jither.Imuse
 
         private static readonly Logger logger = LogProvider.Get(nameof(Sustainer));
 
+        private readonly ImuseOptions options;
         private readonly List<SustainDefinition> activeSustainDefs = new();
         private readonly HashSet<SustainedNote> noteTable = new();
 
-        public Sustainer()
+        public Sustainer(ImuseOptions options)
         {
+            this.options = options;
         }
 
         /// <summary>
@@ -130,8 +132,17 @@ namespace Jither.Imuse
                 if (result.Status == SeekNoteStatus.ReachedEndOfTrack)
                 {
                     // We may reach end of track without finding note-off for all notes in noteTable.
-                    // That would cause an infinite loop.
-                    // (see e.g. STAN.rol or LECHUCK.rol). So abandon all hope:
+                    // That would cause an infinite loop, and hanging notes.
+                    // (see e.g. STAN.rol or LECHUCK.rol or exiting jump destinations in DOTT opening titles).
+                    // The hanging notes may be intentional, but we allow cutting them short:
+                    if (options.CleanJumps)
+                    {
+                        foreach (var note in noteTable)
+                        {
+                            sustainDefs.Add(new SustainDefinition(sequencer, note.Key, note.Channel, sustainTicks));
+                        }
+                    }
+                    // But in any event, we abandon all hope of finding them:
                     break;
                 }
                 

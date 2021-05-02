@@ -6,7 +6,7 @@ namespace Jither.Imuse.Drivers
     {
         private const int channelCount = 16;
 
-        // TODO: Actually use all of these (local caching for avoiding sending redundant non-changes) - also in Roland
+        // TODO: Use all of these in Roland too
         private readonly int[] currentVolume = new int[channelCount];
         private readonly int[] currentReverb = new int[channelCount];
         private readonly int[] currentPan = new int[channelCount];
@@ -129,7 +129,12 @@ namespace Jither.Imuse.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.OutputChannel, MidiController.ChannelVolume, part.VolumeEffective);
+                int channel = part.Slot.OutputChannel;
+                if (part.VolumeEffective != currentVolume[channel])
+                {
+                    currentVolume[channel] = part.VolumeEffective;
+                    TransmitControl(part.Slot.OutputChannel, MidiController.ChannelVolume, part.VolumeEffective);
+                }
             }
         }
 
@@ -137,8 +142,13 @@ namespace Jither.Imuse.Drivers
         {
             if (part.Slot != null)
             {
-                // GMIDI uses proper pan polarity
-                TransmitControl(part.Slot.OutputChannel, MidiController.Pan, (part.PanEffective - 192) & 0x7f);
+                int channel = part.Slot.OutputChannel;
+                if (part.PanEffective != currentPan[channel])
+                {
+                    currentPan[channel] = part.PanEffective;
+                    // GMIDI uses proper pan polarity
+                    TransmitControl(part.Slot.OutputChannel, MidiController.Pan, (part.PanEffective - 192) & 0x7f);
+                }
             }
         }
 
@@ -147,7 +157,12 @@ namespace Jither.Imuse.Drivers
             // PitchOffset is auto-updated by way of getter evaluation
             if (part.Slot != null)
             {
-                TransmitEvent(new PitchBendChangeMessage(part.Slot.OutputChannel, (ushort)((part.PitchOffset << 2) + 0x2000)));
+                int channel = part.Slot.OutputChannel;
+                if (part.PitchOffset != currentPitchOffset[channel])
+                {
+                    currentPitchOffset[channel] = part.PitchOffset;
+                    TransmitEvent(new PitchBendChangeMessage(part.Slot.OutputChannel, (ushort)((part.PitchOffset << 2) + 0x2000)));
+                }
             }
         }
 
@@ -181,7 +196,12 @@ namespace Jither.Imuse.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.OutputChannel, MidiController.ModWheel, part.ModWheel);
+                int channel = part.Slot.OutputChannel;
+                if (part.ModWheel != currentModWheel[channel])
+                {
+                    currentModWheel[channel] = part.ModWheel;
+                    TransmitControl(part.Slot.OutputChannel, MidiController.ModWheel, part.ModWheel);
+                }
             }
         }
 
@@ -189,7 +209,12 @@ namespace Jither.Imuse.Drivers
         {
             if (part.Slot != null)
             {
-                TransmitControl(part.Slot.OutputChannel, MidiController.Sustain, part.Sustain);
+                int channel = part.Slot.OutputChannel;
+                if (part.Sustain != currentSustain[channel])
+                {
+                    currentSustain[channel] = part.Sustain;
+                    TransmitControl(part.Slot.OutputChannel, MidiController.Sustain, part.Sustain);
+                }
             }
         }
 
