@@ -53,8 +53,8 @@ namespace Jither.Imuse
 
         private class SeekNoteResult
         {
-            public static readonly SeekNoteResult ReachedEndOfTrack = new SeekNoteResult(SeekNoteStatus.ReachedEndOfTrack, 0, 0, 0);
-            public static readonly SeekNoteResult NoteNotFound = new SeekNoteResult(SeekNoteStatus.NoteNotFound, 0, 0, 0);
+            public static readonly SeekNoteResult ReachedEndOfTrack = new(SeekNoteStatus.ReachedEndOfTrack, 0, 0, 0);
+            public static readonly SeekNoteResult NoteNotFound = new(SeekNoteStatus.NoteNotFound, 0, 0, 0);
 
             public SeekNoteStatus Status { get; }
             public int Channel { get; }

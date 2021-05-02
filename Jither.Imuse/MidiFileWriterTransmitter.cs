@@ -2,10 +2,6 @@
 using Jither.Midi.Files;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Jither.Imuse.Messages;
 
 namespace Jither.Imuse

@@ -48,7 +48,7 @@ namespace ImuseSequencer.Verbs
         public override void Execute()
         {
             var files = Directory.EnumerateFiles(options.Path, "*.*", new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true });
-            HashSet<string> events = new HashSet<string>();
+            HashSet<string> events = new();
             foreach (var path in files)
             {
                 string fileName = Path.GetRelativePath(options.Path, path);

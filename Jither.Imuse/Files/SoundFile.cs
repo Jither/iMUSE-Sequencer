@@ -3,10 +3,8 @@ using Jither.Logging;
 using Jither.Midi.Files;
 using Jither.Midi.Messages;
 using Jither.Utilities;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Jither.Imuse.Files
@@ -36,7 +34,7 @@ namespace Jither.Imuse.Files
 
     public class HookInfo
     {
-        private readonly List<Position> positions = new List<Position>();
+        private readonly List<Position> positions = new();
 
         public HookType Type { get; }
         public int Id { get; }
@@ -163,7 +161,7 @@ namespace Jither.Imuse.Files
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             if (setLoops.Count > 0)
             {
                 builder.AppendLine("Loops:");

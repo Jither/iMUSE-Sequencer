@@ -5,7 +5,6 @@ using Jither.Logging;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Jither.Imuse
 {

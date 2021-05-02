@@ -22,12 +22,6 @@ namespace Jither.Imuse.Drivers
             this.transmitter = transmitter;
         }
 
-        public void Init(int ticksPerQuarterNote)
-        {
-            this.ticksPerQuarterNote = ticksPerQuarterNote;
-            Init();
-        }
-
         public abstract int GetChannelForSlot(int slotIndex);
 
         protected abstract void Init();
@@ -50,6 +44,12 @@ namespace Jither.Imuse.Drivers
         public abstract bool StoredSetup(int program, byte[] data);
         public abstract bool LoadSetup(Part part, int number);
         public abstract bool SetupParam(Part part, int param, int value);
+
+        public void Init(int ticksPerQuarterNote)
+        {
+            this.ticksPerQuarterNote = ticksPerQuarterNote;
+            Init();
+        }
 
         protected void Delay(int milliseconds)
         {

@@ -16,5 +16,11 @@
         public int PitchBendRange => 2;
         public int Reverb { get; } // 1 for ROL, 64 for GMID
         public int Program => -1;
+
+        public DefaultPartAllocation(int channel, int reverb)
+        {
+            Channel = channel;
+            Reverb = reverb;
+        }
     }
 }
