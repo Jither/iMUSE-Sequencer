@@ -198,14 +198,8 @@ namespace Jither.Imuse
             // Sort relevant parts by descending priority:
             slotlessParts = slotlessParts.OrderByDescending(p => p.PriorityEffective);
 
-            // Sort slots by descending priority, but unused slots first.
-            // This way, slots will be assigned in this order:
-            // * First, unused slots (this isn't entirely optimal: A high priority part may get an unused slot in spite of qualifying for a low priority slot -
-            //   while a lower priority part may not get the low priority slot. However, this is what original iMUSE does).
-            // * Then, slots whose parts have lower priority than a slotless part.
-            var slotCandidates = slots.OrderBy(slot => slot.IsInUse)
-                .ThenByDescending(slot => slot.PriorityEffective)
-                .ToList();
+            // Sort slots by ascending priority, unused slots first (effective priority for unused slots is -1)
+            var slotCandidates = slots.OrderBy(slot => slot.PriorityEffective).ToList();
 
             int slotIndex = 0;
             foreach (var part in slotlessParts)
@@ -217,11 +211,11 @@ namespace Jither.Imuse
                     {
                         if (slot.IsInUse)
                         {
-                            logger.Verbose($"Stealing slot {slot.Index} from part {slot.Part.Index} (pri: {slot.PriorityEffective}) for {part.Index} (pri: {part.PriorityEffective})");
+                            logger.Info($"Stealing slot {slot.Index} from part {slot.Part.Index} (pri: {slot.PriorityEffective}) for part {part.Index} (pri: {part.PriorityEffective})");
                         }
                         else
                         {
-                            logger.Verbose($"Assigning unused slot {slot.Index} to part {part.Index} (pri: {part.PriorityEffective})");
+                            logger.Info($"Assigning unused slot {slot.Index} to part {part.Index} (pri: {part.PriorityEffective})");
                         }
                         slot.AssignPart(part);
                         
