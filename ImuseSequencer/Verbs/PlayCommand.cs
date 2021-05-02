@@ -6,6 +6,7 @@ using ImuseSequencer.Playback;
 using System.IO;
 using Jither.Imuse;
 using Jither.Imuse.Files;
+using System.Linq;
 
 namespace ImuseSequencer.Verbs
 {
@@ -226,7 +227,10 @@ namespace ImuseSequencer.Verbs
                 logger.Info($"{c}: {hook}");
                 index++;
             }
-            logger.Info("z: clear-loop");
+            if (interactivityInfo.SetLoops.Any())
+            {
+                logger.Info("z: clear-loop");
+            }
             logger.Info("q: quit");
             logger.Info("");
         }
