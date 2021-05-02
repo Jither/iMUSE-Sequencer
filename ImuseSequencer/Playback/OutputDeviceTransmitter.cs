@@ -83,7 +83,7 @@ namespace ImuseSequencer.Playback
             };
             scheduler.TempoChanged += tempo =>
             {
-                logger.Verbose($"tempo = {scheduler.BeatsPerMinute:0.00}");
+                logger.Debug($"tempo = {scheduler.BeatsPerMinute:0.00}");
             };
         }
 

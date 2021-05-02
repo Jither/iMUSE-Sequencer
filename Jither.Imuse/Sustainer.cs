@@ -97,7 +97,7 @@ namespace Jither.Imuse
                     // Velocity for note-offs doesn't matter. Driver will replace it.
                     var message = new NoteOffMessage(sustainDef.Channel, (byte)sustainDef.Note, 0);
                     logger.Verbose($"Stopping sustained note {message}");
-                    sustainDef.Sequencer.Parts.HandleEvent(message);
+                    sustainDef.Sequencer.Parts.HandleChannelMessage(message);
                     activeSustainDefs.RemoveAt(i);
                 }
             }

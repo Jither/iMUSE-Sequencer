@@ -12,6 +12,8 @@ namespace Jither.Imuse.Drivers
 
         public long CurrentTick { get; set; }
         public abstract bool UsesStoredSetup { get; }
+        public abstract int DefaultReverb { get; }
+        public abstract int DefaultSlotCount { get; }
 
         private int ticksPerQuarterNote;
 
@@ -40,7 +42,7 @@ namespace Jither.Imuse.Drivers
         public abstract void DoProgramChange(Part part);
 
         public abstract void LoadPart(Part part);
-        public abstract void ActiveSetup(Part part, byte[] data);
+        public abstract bool ActiveSetup(Part part, byte[] data);
         public abstract bool StoredSetup(int program, byte[] data);
         public abstract bool LoadSetup(Part part, int number);
         public abstract bool SetupParam(Part part, int param, int value);

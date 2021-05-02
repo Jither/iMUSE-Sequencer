@@ -4,5 +4,6 @@
     {
         public int JumpLimit { get; set; }
         public int LoopLimit { get; set; }
+        public bool MaxSlots { get; set; }
     }
 }

@@ -190,7 +190,6 @@ namespace Jither.Imuse
             }
         }
 
-        // TODO: Send chorus and reverb to driver (not used in iMUSE v1)
         public int Chorus
         {
             get => chorus;
@@ -251,6 +250,11 @@ namespace Jither.Imuse
             get => pitchBendRange;
             private set
             {
+                if (value > 12)
+                {
+                    // iMUSE sends no error here
+                    return;
+                }
                 pitchBendRange = value;
             }
         }
@@ -303,7 +307,7 @@ namespace Jither.Imuse
         /// <summary>
         /// Effective priority for this part, based on player's priority and the part's priority offset. Limited to a number between 0 and 255.
         /// </summary>
-        public int PriorityEffective => Math.Clamp(player?.Priority ?? 0 + PriorityOffset, 0, 255);
+        public int PriorityEffective => Math.Clamp((player?.Priority ?? 0) + PriorityOffset, 0, 255);
 
         /// <summary>
         /// Effective volume for this part, based on player's volume and the part's volume.
@@ -386,7 +390,7 @@ namespace Jither.Imuse
             program = alloc.Program;
         }
 
-        public void HandleEvent(ChannelMessage message)
+        public void HandleChannelMessage(ChannelMessage message)
         {
             switch (message)
             {
@@ -418,6 +422,23 @@ namespace Jither.Imuse
                         case MidiController.Sustain:
                             Sustain = controlChange.Value;
                             break;
+
+                        // iMUSE v2
+                        case MidiController.GeneralPurpose1:
+                            PitchBendRange = controlChange.Value;
+                            break;
+                        case MidiController.GeneralPurpose2:
+                            Detune = controlChange.Value;
+                            break;
+                        case MidiController.GeneralPurpose3:
+                            PriorityOffset = controlChange.Value;
+                            break;
+                        case MidiController.Reverb:
+                            Reverb = controlChange.Value;
+                            break;
+                        case MidiController.Chorus:
+                            Chorus = controlChange.Value;
+                            break;
                     }
                     break;
                 case ProgramChangeMessage programChange:
@@ -432,15 +453,12 @@ namespace Jither.Imuse
             }
         }
 
-        public void HandleEvent(ImuseMessage message)
+        public void HandleImuseMessage(ImuseMessage message)
         {
             switch (message)
             {
                 case ImuseActiveSetup activeSetup:
                     ActiveSetup(activeSetup.Setup);
-                    break;
-                case ImuseStoredSetup storedSetup:
-                    StoredSetup(storedSetup.SetupNumber, storedSetup.Setup);
                     break;
                 case ImuseSetupBank:
                     // Not used by Roland
@@ -451,12 +469,9 @@ namespace Jither.Imuse
                 case ImuseSetupParam setupParam:
                     SetupParam(setupParam.Number, setupParam.Value);
                     break;
-                case ImuseMarker:
-                    break;
                 case ImuseLoadSetup loadSetup:
                     LoadStoredSetup(loadSetup);
                     break;
-
             }
         }
 
@@ -487,15 +502,10 @@ namespace Jither.Imuse
         // Does nothing for GMID
         public void ActiveSetup(byte[] setup)
         {
-            driver.ActiveSetup(this, setup);
-            MayRequireSlotReassignment();
-        }
-
-        // Does nothing for GMID
-        public void StoredSetup(int setupNumber, byte[] setup)
-        {
-            // Should be done... elsewhere - not part-related
-            driver.StoredSetup(setupNumber, setup);
+            if (driver.ActiveSetup(this, setup))
+            {
+                MayRequireSlotReassignment();
+            }
         }
 
         /// <summary>

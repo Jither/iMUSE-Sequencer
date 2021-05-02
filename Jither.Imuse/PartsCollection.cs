@@ -1,6 +1,6 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Messages;
-using Jither.Midi.Helpers;
+using Jither.Logging;
 using Jither.Midi.Messages;
 using System;
 using System.Collections;
@@ -8,25 +8,13 @@ using System.Collections.Generic;
 
 namespace Jither.Imuse
 {
-    public struct SustainedNote
-    {
-        public int Channel { get; }
-        public int Key { get; }
-
-        public SustainedNote(int channel, int key)
-        {
-            Channel = channel;
-            Key = key;
-        }
-
-        public override string ToString()
-        {
-            return $"Channel {Channel}, Key {MidiHelper.NoteNumberToName(Key)} ({Key})";
-        }
-    }
 
     public class PartsCollection : IReadOnlyList<Part>
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(PartsCollection));
+
+        private readonly Player player;
+        private readonly PartsManager manager;
         private readonly Driver driver;
         private readonly List<Part> parts = new();
         private readonly Dictionary<int, Part> partsByChannel = new();
@@ -35,19 +23,21 @@ namespace Jither.Imuse
 
         public Part this[int index] => parts[index];
 
-        public PartsCollection(Driver driver)
+        public PartsCollection(PartsManager manager, Player player, Driver driver)
         {
+            this.player = player;
+            this.manager = manager;
             this.driver = driver;
         }
 
-        public void HandleEvent(ChannelMessage message)
+        public void HandleChannelMessage(ChannelMessage message)
         {
-            GetByChannel(message.Channel)?.HandleEvent(message);
+            GetByChannel(message.Channel)?.HandleChannelMessage(message);
         }
 
-        public void HandleEvent(ImuseMessage message)
+        public void HandleImuseMessage(ImuseMessage message)
         {
-            GetByChannel(message.Channel)?.HandleEvent(message);
+            GetByChannel(message.Channel)?.HandleImuseMessage(message);
         }
 
         public void StopAllNotes()
@@ -199,11 +189,6 @@ namespace Jither.Imuse
             GetByChannel(channel)?.ActiveSetup(setup);
         }
 
-        public void StoredSetup(int channel, int setupNumber, byte[] setup)
-        {
-            GetByChannel(channel)?.StoredSetup(setupNumber, setup);
-        }
-
         public void DoProgramChange(int channel, int program)
         {
             var part = GetByChannel(channel);
@@ -217,29 +202,29 @@ namespace Jither.Imuse
         {
             partsByChannel.TryGetValue(channel, out Part part);
 
-            // TODO: iMUSE v2 - auto-alloc part. Might not be here it should be called, but called from:
-            // pt_start_note
-            // pt_do_pgmch
-            // pt_do_active_dump
-            // pt_load_setup
-            // pt_do_param_adjust
-            // pt_set_priority
-            // pt_set_vol
-            // pt_set_pan
-            // pt_set_transpose
-            // pt_set_detune
-            // pt_set_part_enable
-            // pt_set_modw
-            // pt_set_sust
-            // pt_set_pbend
-            // pt_set_pbr
-            // pt_set_reverb
-
+            // iMUSE v2 auto-allocates when channel is requested by MIDI
+            // TODO: Are the some cases it doesn't? And should this only be done for v2?
+            // In original iMUSE v2, auto-allocation happens from:
+            // pt_start_note        HandleChannelMessage (via note-on)
+            // pt_do_pgmch          HandleChannelMessage (via program change)
+            // pt_do_active_dump    ActiveSetup
+            // pt_load_setup        HandleImuseMessage
+            // pt_do_param_adjust   SetupParam
+            // pt_set_priority      SetPriority
+            // pt_set_vol           SetVolume
+            // pt_set_pan           HandleChannelMessage (via ctrl change)
+            // pt_set_transpose     SetTranspose
+            // pt_set_detune        HandleChannelMessage (via ctrl change)
+            // pt_set_part_enable   SetEnabled
+            // pt_set_modw          HandleChannelMessage (via ctrl change)
+            // pt_set_sust          HandleChannelMessage (via ctrl change)
+            // pt_set_pbend         HandleChannelMessage (via pbend message)
+            // pt_set_pbr           HandleChannelMessage (via ctrl change)
+            // pt_set_reverb        HandleChannelMessage (via ctrl change)
             if (part == null)
             {
-                // TODO: SelectPart(player.priority)
-                // part.Alloc(new DefaultPartAllocation(channel, reverb: 64);
-                // ro_load_part() - same as v1 EXCEPT doesn't send control and pgm changes (those are sent the standard MIDI way)
+                logger.Verbose($"Auto-allocating part for channel {channel}");
+                part = manager.AllocPart(player, new DefaultPartAllocation(channel, driver.DefaultReverb));
             }
 
             return part;

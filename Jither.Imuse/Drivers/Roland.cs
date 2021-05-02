@@ -69,6 +69,10 @@ namespace Jither.Imuse.Drivers
 
         public override bool UsesStoredSetup => true;
 
+        public override int DefaultReverb => 1;
+
+        public override int DefaultSlotCount => 8;
+
         public Roland(ITransmitter transmitter) : base(transmitter)
         {
         }
@@ -312,7 +316,7 @@ namespace Jither.Imuse.Drivers
         }
 
         // AKA DoActiveDump
-        public override void ActiveSetup(Part part, byte[] data)
+        public override bool ActiveSetup(Part part, byte[] data)
         {
             byte[] buffer = new byte[2];
             buffer[0] = MemoryBank;
@@ -325,6 +329,7 @@ namespace Jither.Imuse.Drivers
             {
                 TransmitProgramChange(part.Slot.OutputChannel, part.Index);
             }
+            return true;
         }
 
         // AKA DoStoredDump

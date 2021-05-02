@@ -52,7 +52,7 @@ namespace Jither.Imuse
             this.driver = driver;
             this.parts = parts;
             this.options = options;
-            linkedParts = new PartsCollection(driver);
+            linkedParts = parts.GetCollection(this);
             Status = PlayerStatus.Off;
             HookBlock = new HookBlock(this);
             sequencer = new Sequencer(index, this, sustainer);
@@ -89,7 +89,7 @@ namespace Jither.Imuse
 
             Status = PlayerStatus.On;
             SoundId = id;
-            Priority = file.ImuseHeader?.Priority ?? 0;
+            Priority = file.ImuseHeader?.Priority ?? 128; // iMUSE v2 has no iMUSE header, but assigns priority 128
             Volume = file.ImuseHeader?.Volume ?? 127;
             Pan = file.ImuseHeader?.Pan ?? 0;
             Transpose = file.ImuseHeader?.Transpose ?? 0;
@@ -213,7 +213,7 @@ namespace Jither.Imuse
         {
             if (message is ChannelMessage channelMessage)
             {
-                linkedParts.HandleEvent(channelMessage);
+                linkedParts.HandleChannelMessage(channelMessage);
             }
             else if (message is ImuseMessage imuse)
             {
@@ -287,8 +287,13 @@ namespace Jither.Imuse
                 case ImuseClearLoop:
                     sequencer.ClearLoop();
                     break;
+
+                case ImuseStoredSetup setup:
+                    driver.StoredSetup(setup.SetupNumber, setup.Setup);
+                    break;
+
                 default:
-                    linkedParts.HandleEvent(message);
+                    linkedParts.HandleImuseMessage(message);
                     break;
             }
         }

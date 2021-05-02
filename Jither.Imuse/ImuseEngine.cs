@@ -36,7 +36,7 @@ namespace Jither.Imuse
 
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
-            parts = new PartsManager(driver);
+            parts = new PartsManager(driver, options);
             sustainer = new Sustainer();
             players = new PlayerManager(files, parts, sustainer, driver, options);
 
@@ -124,6 +124,7 @@ namespace Jither.Imuse
             return target switch
             {
                 SoundTarget.Roland => new Roland(transmitter),
+                SoundTarget.GeneralMidi => new GeneralMidi(transmitter),
                 _ => throw new ImuseException($"Driver for {target} target is not implemented yet."),
             };
         }

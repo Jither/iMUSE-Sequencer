@@ -21,6 +21,11 @@ namespace Jither.Imuse.Drivers
 
         public override bool UsesStoredSetup => false;
 
+        public override int DefaultReverb => 64;
+
+        // Yes, iMUSE v2 limits General MIDI to 9 slots...
+        public override int DefaultSlotCount => 9;
+
         public GeneralMidi(ITransmitter transmitter) : base(transmitter)
         {
         }
@@ -57,7 +62,7 @@ namespace Jither.Imuse.Drivers
                 TransmitPitchBend(i, 8192);
                 TransmitControl(i, MidiController.ModWheel, 0);
                 TransmitControl(i, MidiController.Sustain, 0);
-                TransmitControl(i, MidiController.Reverb, 0);
+                TransmitControl(i, MidiController.Reverb, 64);
                 TransmitControl(i, MidiController.Chorus, 0);
                 TransmitControl(i, MidiController.BankSelect, 0);
                 TransmitEvent(new AllNotesOffMessage(i));
@@ -212,9 +217,10 @@ namespace Jither.Imuse.Drivers
         }
 
         // AKA DoActiveDump
-        public override void ActiveSetup(Part part, byte[] data)
+        public override bool ActiveSetup(Part part, byte[] data)
         {
             // Do nothing
+            return false;
         }
 
         // AKA DoStoredDump

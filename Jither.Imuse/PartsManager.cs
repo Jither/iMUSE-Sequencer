@@ -11,13 +11,12 @@ namespace Jither.Imuse
     {
         private static readonly Logger logger = LogProvider.Get(nameof(PartsManager));
         private const int partCount = 32;
-        private const int slotCount = 8;
 
         private readonly Driver driver;
         private readonly List<Part> parts = new();
         private readonly List<Slot> slots = new();
 
-        public PartsManager(Driver driver)
+        public PartsManager(Driver driver, ImuseOptions options)
         {
             this.driver = driver;
 
@@ -27,6 +26,8 @@ namespace Jither.Imuse
                 part.SlotReassignmentRequired += AssignFreeSlots;
                 parts.Add(part);
             }
+
+            int slotCount = options.MaxSlots ? 15 : driver.DefaultSlotCount;
 
             for (int i = 0; i < slotCount; i++)
             {
@@ -42,14 +43,14 @@ namespace Jither.Imuse
             }
         }
 
-        public void AllocPart(Player player, ImuseAllocPart alloc)
+        public Part AllocPart(Player player, IPartAllocation alloc)
         {
             var priority = Math.Clamp(player.Priority + alloc.PriorityOffset, 0, 255);
             var part = SelectPart(priority);
             if (part == null)
             {
                 logger.Warning($"No available part for {alloc}");
-                return;
+                return null;
             }
 
             part.Alloc(alloc);
@@ -70,6 +71,8 @@ namespace Jither.Imuse
             }
 
             driver.LoadPart(part);
+
+            return part;
         }
 
         public void DeallocPart(int channel)
@@ -92,6 +95,11 @@ namespace Jither.Imuse
                 UnlinkPart(part);
             }
             this.AssignFreeSlots();
+        }
+
+        public PartsCollection GetCollection(Player player)
+        {
+            return new PartsCollection(this, player, driver);
         }
 
         public HashSet<SustainedNote> GetSustainNotes()
@@ -131,6 +139,7 @@ namespace Jither.Imuse
         private Slot SelectSlot(int priority)
         {
             Slot weakestSlot = null;
+            int lowestPriority = priority;
             foreach (var slot in slots)
             {
                 if (!slot.IsInUse)
@@ -138,18 +147,23 @@ namespace Jither.Imuse
                     return slot;
                 }
 
-                if (slot.PriorityEffective <= priority)
+                if (slot.PriorityEffective <= lowestPriority)
                 {
-                    priority = slot.PriorityEffective;
+                    lowestPriority = slot.PriorityEffective;
                     weakestSlot = slot;
                 }
             }
 
             if (weakestSlot != null)
             {
-                logger.Verbose($"Stealing slot {weakestSlot.Index} from part {weakestSlot.Part.Index}");
+                logger.Verbose($"Stealing slot {weakestSlot.Index} from part {weakestSlot.Part.Index} with priority {lowestPriority} - have a part with priority {priority}");
                 driver.StopAllNotes(weakestSlot);
                 weakestSlot.AbandonPart();
+            }
+
+            if (weakestSlot == null)
+            {
+                logger.Verbose($"No slot for part. Priority: {priority}");
             }
 
             return weakestSlot;
@@ -170,7 +184,6 @@ namespace Jither.Imuse
 
         private void AssignFreeSlots()
         {
-            logger.Verbose("Reassigning slots...");
             // TODO: Rid this method of LINQ
             // Find parts needing a slot
             var slotlessParts = parts.Where(p => p.NeedsSlot);
@@ -179,6 +192,8 @@ namespace Jither.Imuse
             {
                 return;
             }
+
+            logger.Verbose($"{slotlessParts.Count()} parts in need of a slot");
 
             // Sort relevant parts by descending priority:
             slotlessParts = slotlessParts.OrderByDescending(p => p.PriorityEffective);
@@ -200,6 +215,14 @@ namespace Jither.Imuse
                     var slot = slotCandidates[i];
                     if (slot.PriorityEffective < part.PriorityEffective)
                     {
+                        if (slot.IsInUse)
+                        {
+                            logger.Verbose($"Stealing slot {slot.Index} from part {slot.Part.Index} (pri: {slot.PriorityEffective}) for {part.Index} (pri: {part.PriorityEffective})");
+                        }
+                        else
+                        {
+                            logger.Verbose($"Assigning unused slot {slot.Index} to part {part.Index} (pri: {part.PriorityEffective})");
+                        }
                         slot.AssignPart(part);
                         
                         driver.SetVolume(part);
@@ -212,9 +235,6 @@ namespace Jither.Imuse
 
                         driver.DoProgramChange(part);
                         
-                        // None of the slots we've tested so far will have lower priority than
-                        // later parts (sorted by descending priority), so skip them
-                        slotIndex = i + 1;
                         break;
                     }
                 }
