@@ -1,36 +1,43 @@
 ﻿using Jither.Imuse;
+using Jither.Imuse.Messages;
 using Jither.Logging;
 using Jither.Midi.Devices;
 using Jither.Midi.Devices.Windows;
 using Jither.Midi.Messages;
-using Jither.Midi.Sequencing;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
-    // TODO: Get Windows MIDI Stream stuff working - right now, this is completely non-functional
     public class OutputStreamTransmitter : ITransmitter
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputStreamTransmitter));
         private readonly WindowsOutputStream stream;
 
         private bool disposed;
+        private bool done;
+        private int ticksPerBatch;
 
         public ImuseEngine Engine { get; set; }
 
-        public OutputStreamTransmitter(int deviceId)
+        public OutputStreamTransmitter(int deviceId, int ticksPerBatch)
         {
+            this.ticksPerBatch = ticksPerBatch;
             try
             {
                 stream = new WindowsOutputStream(deviceId);
+                stream.NoOpOccurred += Stream_NoOpOccurred;
             }
             catch (MidiDeviceException ex)
             {
                 throw new ImuseSequencerException($"Failed to connect to output: {ex.Message}");
+            }
+        }
+
+        private void Stream_NoOpOccurred(int obj)
+        {
+            if (!done)
+            {
+                Play();
             }
         }
 
@@ -41,16 +48,45 @@ namespace ImuseSequencer.Playback
 
         public void Transmit(MidiEvent evt)
         {
-            stream.Write(evt);
+            if (evt.Message is NoOpMessage noop)
+            {
+                stream.WriteNoOp(evt.AbsoluteTicks, 0x69);
+                stream.Flush();
+            }
+            else
+            {
+                stream.Write(evt);
+            }
+        }
+
+        private void Play()
+        {
+            // Get events for next ticks
+            long ticksPlayed = Engine.Play(ticksPerBatch);
+
+            // Zero ticks played means the engine is done playing
+            if (ticksPlayed == 0)
+            {
+                done = true;
+            }
         }
 
         public void TransmitImmediate(MidiMessage message)
         {
+            // TODO: Might want direct calls to midiOut instead
             stream.Write(new MidiEvent(-1, message));
         }
 
         public void Start()
         {
+            if (Engine == null)
+            {
+                throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
+            }
+
+            // Engine.Init must be called before starting the stream - it sets PPQN on the stream, which much be done while the stream is stopped.
+            Engine.Init();
+
             stream.Flush();
             stream.Start();
         }
@@ -63,7 +99,7 @@ namespace ImuseSequencer.Playback
             }
             disposed = true;
 
-            stream.Dispose();
+            stream?.Dispose();
 
             GC.SuppressFinalize(this);
         }

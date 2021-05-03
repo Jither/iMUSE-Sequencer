@@ -168,7 +168,7 @@ namespace ImuseSequencer.Verbs
 
             return transmitterType switch
             {
-                "s" => new OutputStreamTransmitter(deviceId),
+                "s" => new OutputStreamTransmitter(deviceId, options.Latency),
                 _ => new OutputDeviceTransmitter(deviceId, options.Latency),
             };
         }

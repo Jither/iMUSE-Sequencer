@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -77,6 +77,7 @@ namespace Jither.Midi.Devices.Windows
         public int support;
     }
 
+
     /// <summary>
     /// <see href="https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-midihdr" />
     /// </summary>
@@ -91,14 +92,21 @@ namespace Jither.Midi.Devices.Windows
         public IntPtr lpNext;
         public IntPtr reserved;
         public int dwOffset;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        public IntPtr[] dwReserved;
+        // Less work when marshalling than declaring as array:
+        public IntPtr dwReserved1;
+        public IntPtr dwReserved2;
+        public IntPtr dwReserved3;
+        public IntPtr dwReserved4;
+        public IntPtr dwReserved5;
+        public IntPtr dwReserved6;
+        public IntPtr dwReserved7;
+        public IntPtr dwReserved8;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Property
     {
-        public int sizeOfProperty;
+        public int cbStruct;
         public int property;
     }
 
@@ -161,6 +169,7 @@ namespace Jither.Midi.Devices.Windows
     internal static class WinApi
     {
         public static readonly int SizeOfMidiHeader = Marshal.SizeOf<MidiHeader>();
+        public static readonly int SizeOfProperty = Marshal.SizeOf<Property>();
         public static readonly int SizeOfMidiEvent = 12;
 
         public delegate void MidiOutProc(IntPtr hnd, int msg, IntPtr instance, IntPtr param1, IntPtr param2);
@@ -191,7 +200,7 @@ namespace Jither.Midi.Devices.Windows
         public static extern int midiOutLongMsg(IntPtr handle, IntPtr headerPtr, int sizeOfMidiHeader);
 
         [DllImport("winmm.dll")]
-        public static extern int midiStreamOpen(ref IntPtr handle, ref int deviceID, int reserved, MidiOutProc proc, IntPtr instance, uint flag);
+        public static extern int midiStreamOpen(out IntPtr handle, ref int deviceID, int reserved, MidiOutProc proc, IntPtr instance, uint flag);
         [DllImport("winmm.dll")]
         public static extern int midiStreamClose(IntPtr handle);
         [DllImport("winmm.dll")]

@@ -1,6 +1,7 @@
 ﻿using Jither.Logging;
 using Jither.Midi.Helpers;
 using Jither.Midi.Messages;
+using Jither.Reflection;
 using Jither.Tasks;
 using System;
 using System.Collections.Generic;
@@ -13,8 +14,10 @@ using System.Threading.Tasks;
 
 namespace Jither.Midi.Devices.Windows
 {
+    // TODO: Proper threading!!!
     public class WindowsOutputStream : IDisposable
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(WindowsOutputStream));
         private readonly WinApi.MidiOutProc midiOutCallback;
         private IntPtr handle;
         private readonly object lockMidi = new();
@@ -33,13 +36,13 @@ namespace Jither.Midi.Devices.Windows
         {
             // We need to manually create the delegate to avoid it being garbage collected
             midiOutCallback = new WinApi.MidiOutProc(HandleMessage);
-            int result = WinApi.midiStreamOpen(ref handle, ref deviceId, 1, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
+            int result = WinApi.midiStreamOpen(out handle, ref deviceId, 1, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
 
             EnsureSuccess(result);
 
             writer = new WindowsMidiStreamWriter(eventsStream);
 
-            // TODO: Actually start context
+            Task.Run(context.Start);
         }
 
         ~WindowsOutputStream()
@@ -96,8 +99,6 @@ namespace Jither.Midi.Devices.Windows
             {
                 return;
             }
-
-            //if (message is SysexMessage) return;
 
             writer.WriteHeader(ticks, streamId);
             message.Write(writer);
@@ -188,22 +189,17 @@ namespace Jither.Midi.Devices.Windows
 
         private void HandleNoOp(object state)
         {
-            IntPtr headerPtr = (IntPtr)state;
-            MidiHeader header = Marshal.PtrToStructure<MidiHeader>(headerPtr);
-
-            byte[] midiEvent = new byte[WinApi.SizeOfMidiEvent];
-
-            Marshal.Copy(header.lpData, midiEvent, header.dwOffset, midiEvent.Length);
-
-            // If this is a NoOp event.
-            if ((midiEvent[eventTypeIndex] & WinApiConstants.MEVT_NOP) == WinApiConstants.MEVT_NOP)
+            try
             {
-                // Clear the event type byte.
-                midiEvent[eventTypeIndex] = 0;
-
-                int code = BitConverter.ToInt32(midiEvent, eventCodeOffset);
-
-                NoOpOccurred?.Invoke(code);
+                // TODO: Should invoke on the thread that created this Stream.
+                // TODO: Right now, we're not actually checking the bits of the NoOp.
+                // dwOffset in the header seems useless (it's always 0 or 1(???), in spite of the buffer being large).
+                NoOpOccurred?.Invoke(0);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+                throw;
             }
         }
 
@@ -229,15 +225,13 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-
-
         public int Division
         {
             get
             {
                 var d = new Property
                 {
-                    sizeOfProperty = Marshal.SizeOf<Property>()
+                    cbStruct = WinApi.SizeOfProperty
                 };
 
                 lock (lockMidi)
@@ -257,7 +251,7 @@ namespace Jither.Midi.Devices.Windows
 
                 var d = new Property
                 {
-                    sizeOfProperty = Marshal.SizeOf(typeof(Property)),
+                    cbStruct = WinApi.SizeOfProperty,
                     property = value
                 };
 
@@ -275,7 +269,7 @@ namespace Jither.Midi.Devices.Windows
             {
                 var t = new Property
                 {
-                    sizeOfProperty = Marshal.SizeOf(typeof(Property))
+                    cbStruct = WinApi.SizeOfProperty
                 };
 
                 lock (lockMidi)
@@ -296,7 +290,7 @@ namespace Jither.Midi.Devices.Windows
 
                 var t = new Property
                 {
-                    sizeOfProperty = Marshal.SizeOf(typeof(Property)),
+                    cbStruct = WinApi.SizeOfProperty,
                     property = value
                 };
 

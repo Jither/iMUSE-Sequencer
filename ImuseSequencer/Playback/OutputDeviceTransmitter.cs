@@ -38,7 +38,6 @@ namespace ImuseSequencer.Playback
                 throw new ImuseSequencerException($"Failed to connect to output: {ex.Message}");
             }
 
-            // TODO: Preparation for interactive mode. Collect events before sending them to MidiScheduler to reduce amount of locks.
             events = new List<MidiEvent>();
         }
 

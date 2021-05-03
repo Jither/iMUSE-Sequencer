@@ -69,7 +69,7 @@ namespace Jither.Midi.Devices.Windows
 
         public void WriteShortMessage(byte status, ushort value)
         {
-            WriteShortMessage(status, (byte)((value >> 7) & 0x7f), (byte)(value & 0x7f));
+            WriteShortMessage(status, (byte)(value & 0x7f), (byte)((value >> 7) & 0x7f));
         }
 
         public void WriteSysex(byte status, byte[] data)
@@ -80,7 +80,7 @@ namespace Jither.Midi.Devices.Windows
             stream.WriteByte(status);
             stream.Write(data, 0, data.Length);
 
-            int padding = 4 - (fullLength % 4);
+            int padding = (4 - (fullLength % 4)) % 4;
             for (int i = 0; i < padding; i++)
             {
                 stream.WriteByte(0);
