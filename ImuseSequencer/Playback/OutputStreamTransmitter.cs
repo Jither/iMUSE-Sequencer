@@ -5,6 +5,7 @@ using Jither.Midi.Devices;
 using Jither.Midi.Devices.Windows;
 using Jither.Midi.Messages;
 using System;
+using System.Threading.Tasks;
 
 namespace ImuseSequencer.Playback
 {
@@ -12,10 +13,10 @@ namespace ImuseSequencer.Playback
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputStreamTransmitter));
         private readonly WindowsOutputStream stream;
+        private readonly int ticksPerBatch;
 
         private bool disposed;
         private bool done;
-        private int ticksPerBatch;
 
         public ImuseEngine Engine { get; set; }
 
@@ -48,7 +49,7 @@ namespace ImuseSequencer.Playback
 
         public void Transmit(MidiEvent evt)
         {
-            if (evt.Message is NoOpMessage noop)
+            if (evt.Message is NoOpMessage)
             {
                 stream.WriteNoOp(evt.AbsoluteTicks, 0x69);
                 stream.Flush();
@@ -83,6 +84,8 @@ namespace ImuseSequencer.Playback
             {
                 throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
             }
+
+            Task.Run(stream.Run);
 
             // Engine.Init must be called before starting the stream - it sets PPQN on the stream, which much be done while the stream is stopped.
             Engine.Init();

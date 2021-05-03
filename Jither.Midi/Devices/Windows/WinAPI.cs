@@ -81,8 +81,11 @@ namespace Jither.Midi.Devices.Windows
     /// <summary>
     /// <see href="https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-midihdr" />
     /// </summary>
+    /// <remarks>
+    /// This is a class (reference type) - better semantics, since we're mutating it in WindowsBufferPool.
+    /// </remarks>
     [StructLayout(LayoutKind.Sequential)]
-    internal struct MidiHeader
+    internal class MidiHeader
     {
         public IntPtr lpData;
         public int dwBufferLength;

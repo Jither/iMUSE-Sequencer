@@ -204,7 +204,7 @@ namespace ImuseSequencer.Verbs
             }
         }
 
-        private readonly Dictionary<char, HookInfo> hooksByKey = new Dictionary<char, HookInfo>();
+        private readonly Dictionary<char, HookInfo> hooksByKey = new();
         private readonly string hookChars = "1234567890abcdefghijklmnoprstuvwxy";
 
         private void BuildCommands(ImuseEngine engine)

@@ -16,7 +16,7 @@ namespace ImuseSequencer.Playback
     public class OutputDeviceTransmitter : ITransmitter
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputDeviceTransmitter));
-        private readonly OutputDevice output;
+        private readonly WindowsOutputDevice output;
         private MidiScheduler<MidiEvent> scheduler;
         private readonly List<MidiEvent> events;
 
@@ -92,6 +92,8 @@ namespace ImuseSequencer.Playback
             {
                 throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
             }
+
+            Task.Run(output.Run);
 
             Engine.Init();
             Send();

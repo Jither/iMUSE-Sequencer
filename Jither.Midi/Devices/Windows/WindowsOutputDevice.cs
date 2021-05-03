@@ -1,19 +1,24 @@
-﻿using Jither.Midi.Messages;
+﻿using Jither.Logging;
+using Jither.Midi.Messages;
 using Jither.Tasks;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace Jither.Midi.Devices.Windows
 {
     public class WindowsOutputDevice : OutputDevice
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(WindowsOutputStream));
+
         private IntPtr handle;
-        private readonly MessagingSynchronizationContext context = new();
+        private readonly Channel<Message> messageChannel = Channel.CreateUnbounded<Message>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
         private readonly object lockMidi = new();
-        private int sysexBufferCount = 0;
         private readonly WinApi.MidiOutProc midiOutCallback;
+        private readonly WindowsBufferPool bufferPool = new();
 
         public WindowsOutputDevice(int deviceId) : base(deviceId)
         {
@@ -21,14 +26,20 @@ namespace Jither.Midi.Devices.Windows
             midiOutCallback = new WinApi.MidiOutProc(HandleMessage);
             int result = WinApi.midiOutOpen(out handle, deviceId, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
             EnsureSuccess(result);
-
-            // TODO: Actually start context
-            //context.Start();
         }
 
         ~WindowsOutputDevice()
         {
             Dispose(false);
+        }
+
+        public async Task Run()
+        {
+            await foreach (Message item in messageChannel.Reader.ReadAllAsync())
+            {
+                item.Callback(item.State);
+            }
+            logger.Debug("OutputDevice finished");
         }
 
         public override void SendRaw(int message)
@@ -71,32 +82,29 @@ namespace Jither.Midi.Devices.Windows
         {
             lock (lockMidi)
             {
-                IntPtr sysexPointer = WindowsBufferBuilder.Build(message);
+                var headerPointer = bufferPool.Build(message);
 
                 try
                 {
-                    int result = WinApi.midiOutPrepareHeader(handle, sysexPointer, WinApi.SizeOfMidiHeader);
+                    int result = WinApi.midiOutPrepareHeader(handle, headerPointer, WinApi.SizeOfMidiHeader);
                     EnsureSuccess(result);
-
-                    sysexBufferCount++;
 
                     try
                     {
-                        result = WinApi.midiOutLongMsg(handle, sysexPointer, WinApi.SizeOfMidiHeader);
+                        result = WinApi.midiOutLongMsg(handle, headerPointer, WinApi.SizeOfMidiHeader);
                         EnsureSuccess(result);
                     }
                     catch (WindowsMidiDeviceException)
                     {
                         // We already got an exception which is more important, so throw out errors during cleanup
-                        _ = WinApi.midiOutUnprepareHeader(handle, sysexPointer, WinApi.SizeOfMidiHeader);
-                        sysexBufferCount--;
+                        _ = WinApi.midiOutUnprepareHeader(handle, headerPointer, WinApi.SizeOfMidiHeader);
                         throw;
                     }
 
                 }
                 catch (WindowsMidiDeviceException)
                 {
-                    WindowsBufferBuilder.Destroy(sysexPointer);
+                    bufferPool.Release(headerPointer);
                     throw;
                 }
             }
@@ -111,7 +119,7 @@ namespace Jither.Midi.Devices.Windows
                 case WinApiConstants.MOM_CLOSE:
                     break;
                 case WinApiConstants.MOM_DONE:
-                    context.Post(ReleaseBuffer, param1);
+                    messageChannel.Writer.TryWrite(new Message(ReleaseBuffer, param1));
                     break;
             }
         }
@@ -128,13 +136,7 @@ namespace Jither.Midi.Devices.Windows
                 EnsureSuccess(result);
 
                 // Release the buffer resources.
-                WindowsBufferBuilder.Destroy(sysexPointer);
-
-                sysexBufferCount--;
-
-                Monitor.Pulse(lockMidi);
-
-                Debug.Assert(sysexBufferCount >= 0);
+                bufferPool.Release(sysexPointer);
             }
         }
 
@@ -162,16 +164,17 @@ namespace Jither.Midi.Devices.Windows
                         {
                             // e.g. Munt does not support resetting
                         }
-                        int result = WinApi.midiOutClose(handle);
-                        EnsureSuccess(result);
-                        // TODO: Reinstate this, when context is synchronizing
-                        /*
-                        while (sysexBufferCount > 0)
+
+                        while (bufferPool.UnreleasedBufferCount > 0)
                         {
                             Monitor.Wait(lockMidi);
                         }
-                        */
+                        messageChannel.Writer.TryComplete();
+
+                        int result = WinApi.midiOutClose(handle);
+                        EnsureSuccess(result);
                     }
+                    bufferPool.Dispose();
                 }
                 else
                 {
@@ -180,7 +183,6 @@ namespace Jither.Midi.Devices.Windows
                     _ = WinApi.midiOutClose(handle);
                 }
                 handle = IntPtr.Zero;
-                //context.Stop();
             }
             finally
             {

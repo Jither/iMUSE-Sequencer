@@ -58,6 +58,8 @@ namespace Jither.Imuse.Drivers
                 currentChorus[i] = 0;
 
                 TransmitControl(i, MidiController.ChannelVolume, 127);
+                // Yes, iMUSE (at least v2) sets pan to 63 during initialization - then changes it to 64 when part is allocated.
+                // May want to just set to 64 here, and reduce the controller changes a bit.
                 TransmitControl(i, MidiController.Pan, 63);
                 TransmitPitchBend(i, 8192);
                 TransmitControl(i, MidiController.ModWheel, 0);
@@ -70,14 +72,6 @@ namespace Jither.Imuse.Drivers
 
             rhythmProgram = 0;
             TransmitProgramChange(rhythmChannel, rhythmProgram);
-        }
-
-        private void Reset()
-        {
-            for (int i = 0; i < channelCount; i++)
-            {
-                TransmitEvent(new AllNotesOffMessage(i));
-            }
         }
 
         public override void Close()

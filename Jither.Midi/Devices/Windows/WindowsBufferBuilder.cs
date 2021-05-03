@@ -6,6 +6,9 @@ using Jither.Midi.Helpers;
 
 namespace Jither.Midi.Devices.Windows
 {
+    // TODO: Turn this into a Buffer Pool - global heap allocations are *expensive* -
+    // and both MidiHeaders and their lpData can be reused when WinAPI notifies that they
+    // can be released.
     internal static class WindowsBufferBuilder
     {
         public static IntPtr Build(SysexMessage message)
