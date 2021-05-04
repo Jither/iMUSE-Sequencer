@@ -206,6 +206,13 @@ namespace Jither.Imuse
             linkedParts.StopAllSustains();
         }
 
+        public void StopAllNotesForJump()
+        {
+            // TODO: This is for iMUSE v3, but original iMUSE doesn't actually care about linked parts - it will reset all channels.
+            // Is this better/OK?
+            linkedParts.StopAllNotesForJump();
+        }
+
         /// <summary>
         /// Handles events from sequencer.
         /// </summary>
@@ -264,7 +271,7 @@ namespace Jither.Imuse
                     {
                         // TODO: This hasn't been checked, and probably isn't right (e.g. measure * 4). Just a quick test.
                         // Also needs to handle the Sustain property on the jump
-                        if (HookBlock.HandleJump(jump.Hook, jump.Chunk, ((jump.Measure - 1) * 4) + jump.Beat, jump.Tick))
+                        if (HookBlock.HandleJump(jump.Hook, jump.Chunk, ((jump.Measure - 1) * 4) + jump.Beat, jump.Tick, jump.Sustain))
                         {
                             jumpsExecuted[jump] = executed3Count + 1;
                         }

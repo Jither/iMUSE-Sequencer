@@ -2,7 +2,7 @@
   "profiles": {
     "ImuseSequencer": {
       "commandName": "Project",
-      "commandLineArgs": "play -o s:3 \"\\scumm\\MIDIs\\SNM\\HQ Exteriors.MIDI\" --latency 3"
+      "commandLineArgs": "play -o s:3 \"\\scumm\\MIDIs\\SNM\\HQ HALL.MIDI\""
     }
   }
 }

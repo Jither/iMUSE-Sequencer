@@ -57,7 +57,11 @@ namespace Jither.Imuse
             }
         }
 
-        public bool HandleJump(int messageHook, int trackIndex, int beat, int tickInBeat)
+        /// <summary>
+        /// Handles jump hook. By default, sustains notes across the jump (iMUSE v1-2).
+        /// iMUSE v3 has a flag for determining whether to sustain notes.
+        /// </summary>
+        public bool HandleJump(int messageHook, int trackIndex, int beat, int tickInBeat, bool sustain = true)
         {
             if (messageHook == 0 || messageHook == Jump)
             {
@@ -65,8 +69,8 @@ namespace Jither.Imuse
                 {
                     Jump = 0;
                 }
-                logger.Info($"hook {messageHook}: jump to track {trackIndex} @ {beat}.{tickInBeat:000}");
-                player.Sequencer.Jump(trackIndex, beat, tickInBeat, $"hook {messageHook}");
+                logger.Info($"hook {messageHook}: jump to track {trackIndex} @ {beat}.{tickInBeat:000}{(sustain ? "" : " (no sustain)")}");
+                player.Sequencer.Jump(trackIndex, beat, tickInBeat, $"hook {messageHook}", sustain);
                 
                 return true;
             }

@@ -215,7 +215,7 @@ namespace Jither.Imuse
             return trackEnded;
         }
 
-        public bool Jump(int newTrackIndex, int newBeat, int newTickInBeat, string reason)
+        public bool Jump(int newTrackIndex, int newBeat, int newTickInBeat, string reason, bool sustain = true)
         {
             if (status == SequencerStatus.Off)
             {
@@ -274,15 +274,22 @@ namespace Jither.Imuse
                 newNextEventTick = GetNextEventTick(newTrackIndex, newNextEventIndex);
             }
 
-            logger.Debug($"Jumping to track {newTrackIndex}, beat {newBeat}, tick {newTickInBeat}");
-
             // Now we've found the destination position - stop (MIDI controller) sustain:
+            // TODO: In iMUSE v3, this also resets modwheel and pitchbend - is that OK for iMUSE v1-2 too?
             player.StopAllSustains();
 
-            // ... handle sustained notes:
-            var oldTrackPos = new SequencerPointer(CurrentTrack, nextEventIndex);
-            var newTrackPos = new SequencerPointer(file.Tracks[newTrackIndex], newNextEventIndex);
-            sustainer.AnalyzeSustain(this, oldTrackPos, newTrackPos, newNextEventTick - destTick);
+            if (sustain)
+            {
+                // ... handle sustained notes:
+                var oldTrackPos = new SequencerPointer(CurrentTrack, nextEventIndex);
+                var newTrackPos = new SequencerPointer(file.Tracks[newTrackIndex], newNextEventIndex);
+                sustainer.AnalyzeSustain(this, oldTrackPos, newTrackPos, newNextEventTick - destTick);
+            }
+            else
+            {
+                // ... or (v3) cut off notes immediately (and reset controllers)
+                player.StopAllNotesForJump();
+            }
 
             // ... and transfer state to the sequencer:
             currentBeat = newBeat;

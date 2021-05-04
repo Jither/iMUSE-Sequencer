@@ -47,7 +47,7 @@ namespace Jither.Imuse.Drivers
             {
                 TransmitControl(i, MidiController.RpnLSB, 0);
                 TransmitControl(i, MidiController.RpnMSB, 0);
-                TransmitControl(i, MidiController.DataEntry, 0);
+                TransmitControl(i, MidiController.DataEntry, 16);
 
                 currentVolume[i] = 127;
                 currentReverb[i] = 64;
@@ -155,7 +155,7 @@ namespace Jither.Imuse.Drivers
                 if (part.PitchOffset != currentPitchOffset[channel])
                 {
                     currentPitchOffset[channel] = part.PitchOffset;
-                    TransmitEvent(new PitchBendChangeMessage(part.Slot.OutputChannel, (ushort)((part.PitchOffset << 2) + 0x2000)));
+                    TransmitEvent(new PitchBendChangeMessage(channel, (ushort)((part.PitchOffset << 2) + 0x2000)));
                 }
             }
         }

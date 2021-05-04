@@ -56,6 +56,14 @@ namespace Jither.Imuse
             }
         }
 
+        public void StopAllNotesForJump()
+        {
+            foreach (var part in parts)
+            {
+                part.StopAllNotesForJump();
+            }
+        }
+
         public void GetSustainNotes(HashSet<SustainedNote> notes)
         {
             foreach (var part in parts)

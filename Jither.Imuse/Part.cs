@@ -255,6 +255,7 @@ namespace Jither.Imuse
                     // iMUSE sends no error here
                     return;
                 }
+                PitchBend = 0;
                 pitchBendRange = value;
             }
         }
@@ -480,6 +481,16 @@ namespace Jither.Imuse
             if (slot != null)
             {
                 driver.StopAllNotes(slot);
+            }
+        }
+
+        public void StopAllNotesForJump()
+        {
+            if (slot != null)
+            {
+                driver.StopAllNotes(slot, stopSustain: false);
+                ModWheel = 0;
+                PitchBend = 0;
             }
         }
 

@@ -111,11 +111,14 @@ namespace Jither.Imuse.Drivers
             TransmitEvent(message);
         }
 
-        public void StopAllNotes(Slot slot)
+        public void StopAllNotes(Slot slot, bool stopSustain = true)
         {
             slot.NoteTable.Clear();
 
-            TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
+            if (stopSustain)
+            {
+                TransmitControl(slot.OutputChannel, MidiController.Sustain, 0);
+            }
             TransmitControl(slot.OutputChannel, MidiController.AllNotesOff, 0);
         }
 
