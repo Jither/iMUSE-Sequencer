@@ -142,21 +142,22 @@ namespace Jither.Midi.Devices.Windows
 
         public void Flush()
         {
+            var data = eventsStream.ToArray();
+            if (data.Length == 0)
+            {
+                return;
+            }
+
+            eventsStream.SetLength(0);
+
             lock (lockMidi)
             {
                 if (closing)
                 {
                     return;
                 }
-                eventsStream.Flush();
-                var data = eventsStream.ToArray();
-                if (data.Length == 0)
-                {
-                    return;
-                }
-                var headerPointer = bufferPool.Build(data);
 
-                eventsStream.SetLength(0);
+                var headerPointer = bufferPool.Build(data);
 
                 int result = WinApi.midiOutPrepareHeader(handle, headerPointer, WinApi.SizeOfMidiHeader);
 
@@ -228,10 +229,10 @@ namespace Jither.Midi.Devices.Windows
 
         private void ReleaseBuffer(object state)
         {
+            IntPtr bufferPointer = (IntPtr)state;
+
             lock (lockMidi)
             {
-                IntPtr bufferPointer = (IntPtr)state;
-
                 try
                 {
                     // Unprepare the buffer.
@@ -245,6 +246,8 @@ namespace Jither.Midi.Devices.Windows
                 {
                     logger.Error(ex.Message);
                 }
+                // Signal to Dispose (if that's what called us) that the buffer is now released
+                Monitor.Pulse(lockMidi);
             }
         }
 
@@ -354,6 +357,7 @@ namespace Jither.Midi.Devices.Windows
                     // Wait for remaining buffers to be released:
                     while (bufferPool.UnreleasedBufferCount > 0)
                     {
+                        logger.Debug($"Waiting for buffer releases... {bufferPool.UnreleasedBufferCount}");
                         Monitor.Wait(lockMidi);
                     }
                     messageChannel.Writer.TryComplete();

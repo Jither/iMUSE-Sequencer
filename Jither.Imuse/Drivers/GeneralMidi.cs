@@ -32,19 +32,15 @@ namespace Jither.Imuse.Drivers
 
         public override int GetChannelForSlot(int slotIndex)
         {
-            int result = slotIndex;
             // Don't stomp on rhythm channel:
-            if (result >= rhythmChannel)
-            {
-                result++;
-            }
-            return result;
+            return slotIndex >= rhythmChannel ? slotIndex + 1 : slotIndex;
         }
 
         protected override void Init()
         {
             for (int i = 0; i < channelCount; i++)
             {
+                // Set pitch bend range:
                 TransmitControl(i, MidiController.RpnLSB, 0);
                 TransmitControl(i, MidiController.RpnMSB, 0);
                 TransmitControl(i, MidiController.DataEntry, 16);
@@ -97,6 +93,7 @@ namespace Jither.Imuse.Drivers
                     rhythmVolume = part.VolumeEffective;
                     TransmitControl(rhythmChannel, MidiController.ChannelVolume, rhythmVolume);
                 }
+                // For the rhythm channel part, *bank* indicates the program (if it's ever used)
                 if (rhythmProgram != part.Bank)
                 {
                     rhythmProgram = part.Bank;

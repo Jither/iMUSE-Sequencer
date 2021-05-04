@@ -75,8 +75,6 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-
-
         public const int LargeSize = 64000;
         public const int SmallSize = 512;
 
