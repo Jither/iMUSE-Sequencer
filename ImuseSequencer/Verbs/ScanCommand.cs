@@ -2,15 +2,12 @@
 using Jither.Imuse.Files;
 using Jither.Imuse.Messages;
 using Jither.Logging;
-using Jither.Midi.Devices.Windows;
 using Jither.Midi.Files;
 using Jither.Midi.Helpers;
 using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace ImuseSequencer.Verbs
 {
@@ -20,7 +17,7 @@ namespace ImuseSequencer.Verbs
         CtrlMessage,
         SysMessage,
         ImuseHookId,
-        UnknownImuse
+        ImuseUnknown
     }
 
     [Verb("scan", Help = "Scans MIDI files for various MIDI properties and lists them for each file")]
@@ -67,52 +64,8 @@ namespace ImuseSequencer.Verbs
                     }
                     continue;
                 }
-                foreach (var track in soundFile.Midi.Tracks)
-                {
-                    foreach (var evt in track.Events)
-                    {
-                        switch (options.Type)
-                        {
-                            case PropertyType.ImuseMessage:
-                                if (evt.Message is ImuseMessage imuse)
-                                {
-                                    events.Add(imuse.ImuseMessageName);
-                                }
-                                break;
-                            case PropertyType.CtrlMessage:
-                                if (evt.Message is ControlChangeMessage ctrl)
-                                {
-                                    events.Add(ctrl.Controller.ToString());
-                                }
-                                break;
-                            case PropertyType.SysMessage:
-                                if (evt.Message is not ChannelMessage)
-                                {
-                                    if (evt.Message is MetaMessage meta)
-                                    {
-                                        events.Add(meta.TypeName);
-                                    }
-                                    else
-                                    {
-                                        events.Add(evt.Message.Name);
-                                    }
-                                }
-                                break;
-                            case PropertyType.ImuseHookId:
-                                if (evt.Message is ImuseHook hook)
-                                {
-                                    events.Add($"0x{hook.Hook:x2}");
-                                }
-                                break;
-                            case PropertyType.UnknownImuse:
-                                if (evt.Message is ImuseUnknown unknown)
-                                {
-                                    events.Add(unknown.Data.ToHex());
-                                }
-                                break;
-                        }
-                    }
-                }
+
+                EnumerateEvents(soundFile, events);
 
                 if (events.Count == 0)
                 {
@@ -120,7 +73,7 @@ namespace ImuseSequencer.Verbs
                 }
                 else
                 {
-                    if (options.Type == PropertyType.UnknownImuse)
+                    if (options.Type == PropertyType.ImuseUnknown)
                     {
                         logger.Info($"{fileName}:");
                         foreach (var evt in events)
@@ -131,6 +84,56 @@ namespace ImuseSequencer.Verbs
                     else
                     {
                         logger.Info($"{fileName}: {String.Join(", ", events)}");
+                    }
+                }
+            }
+        }
+
+        private void EnumerateEvents(SoundFile soundFile, HashSet<string> events)
+        {
+            foreach (var track in soundFile.Midi.Tracks)
+            {
+                foreach (var evt in track.Events)
+                {
+                    switch (options.Type)
+                    {
+                        case PropertyType.ImuseMessage:
+                            if (evt.Message is ImuseMessage imuse)
+                            {
+                                events.Add(imuse.ImuseMessageName);
+                            }
+                            break;
+                        case PropertyType.CtrlMessage:
+                            if (evt.Message is ControlChangeMessage ctrl)
+                            {
+                                events.Add(MidiHelper.GetControllerName(ctrl.Controller));
+                            }
+                            break;
+                        case PropertyType.SysMessage:
+                            if (evt.Message is not ChannelMessage)
+                            {
+                                if (evt.Message is MetaMessage meta)
+                                {
+                                    events.Add(meta.TypeName);
+                                }
+                                else
+                                {
+                                    events.Add(evt.Message.Name);
+                                }
+                            }
+                            break;
+                        case PropertyType.ImuseHookId:
+                            if (evt.Message is ImuseHook hook)
+                            {
+                                events.Add($"0x{hook.Hook:x2}");
+                            }
+                            break;
+                        case PropertyType.ImuseUnknown:
+                            if (evt.Message is ImuseUnknown unknown)
+                            {
+                                events.Add(unknown.Data.ToHex());
+                            }
+                            break;
                     }
                 }
             }

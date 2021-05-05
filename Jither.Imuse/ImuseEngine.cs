@@ -23,6 +23,7 @@ namespace Jither.Imuse
 
         private bool disposed;
 
+        public ImuseQueue Queue { get; }
         public ImuseCommands Commands { get; }
 
         public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options)
@@ -36,9 +37,11 @@ namespace Jither.Imuse
 
             logger.Info($"Target device: {target.GetFriendlyName()}");
 
+            Queue = new ImuseQueue(this);
+
             parts = new PartsManager(driver, options);
             sustainer = new Sustainer(options);
-            players = new PlayerManager(files, parts, sustainer, driver, options);
+            players = new PlayerManager(files, parts, sustainer, driver, Queue, options);
 
             Commands = new ImuseCommands(players);
         }

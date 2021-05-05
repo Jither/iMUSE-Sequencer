@@ -22,6 +22,7 @@ namespace Jither.Imuse
         private static readonly Logger logger = LogProvider.Get(nameof(Player));
         private readonly int index;
         private readonly Driver driver;
+        private readonly ImuseQueue queue;
         private readonly PartsManager parts;
         private readonly Sequencer sequencer;
         private SoundFile file;
@@ -46,11 +47,12 @@ namespace Jither.Imuse
         internal PartsCollection Parts => linkedParts;
         internal Sequencer Sequencer => sequencer;
 
-        public Player(int index, Driver driver, PartsManager parts, Sustainer sustainer, ImuseOptions options)
+        public Player(int index, Driver driver, PartsManager parts, Sustainer sustainer, ImuseQueue queue, ImuseOptions options)
         {
             this.index = index;
             this.driver = driver;
             this.parts = parts;
+            this.queue = queue;
             this.options = options;
             linkedParts = parts.GetCollection(this);
             Status = PlayerStatus.Off;
@@ -85,6 +87,7 @@ namespace Jither.Imuse
         /// <returns><c>true</c> if playback successfully started. Otherwise <c>false</c>.</returns>
         public void Start(int id, SoundFile file)
         {
+            logger.Debug($"Starting sound {id} on player {index}");
             this.file = file;
 
             Status = PlayerStatus.On;
@@ -294,12 +297,11 @@ namespace Jither.Imuse
                     break;
 
                 case ImuseMarker marker:
-                    // TODO: Handle markers
-                    logger.Info($"marker {marker.Id}");
+                    queue.ProcessMarker(this, marker.Id);
                     break;
                 case ImuseV3Marker marker:
                     // TODO: Handle markers
-                    logger.Info($"marker {marker.Id}");
+                    queue.ProcessMarker(this, marker.Id);
                     break;
 
                 // Loops

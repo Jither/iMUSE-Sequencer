@@ -536,6 +536,7 @@ namespace Jither.Imuse
             }
             else
             {
+                // We could let the driver do this, but that would require public Program and Bank
                 program = loadSetup.SetupNumber & 0xff;
                 bank = (loadSetup.SetupNumber >> 8) & 0xff;
                 driver.DoProgramChange(this);

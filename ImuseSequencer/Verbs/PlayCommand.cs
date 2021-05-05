@@ -94,6 +94,8 @@ namespace ImuseSequencer.Verbs
 
         public override void Execute()
         {
+            //Test();
+            //return;
             SoundFile soundFile;
             try
             {
@@ -172,6 +174,7 @@ namespace ImuseSequencer.Verbs
                 _ => new OutputDeviceTransmitter(deviceId, options.Latency),
             };
         }
+
         private void PlayToDevice(SoundFile soundFile, SoundTarget target)
         {
             logger.Info($"Playing <c#88cc55>{options.InputPath}</c>...");
@@ -186,6 +189,47 @@ namespace ImuseSequencer.Verbs
                         SetupCancelHandler(engine, transmitter);
 
                         engine.RegisterSound(0, soundFile);
+
+                        engine.StartSound(0);
+                        BuildCommands(engine);
+
+                        transmitter.Start();
+
+                        GameLoop(engine);
+
+                        TearDownCancelHandler();
+                    }
+                }
+            }
+            catch (ImuseException ex)
+            {
+                throw new ImuseSequencerException(ex.Message, ex);
+            }
+        }
+
+        private void Test()
+        {
+            var target = SoundTarget.Roland;
+            var soundFiles = new List<SoundFile>();
+            soundFiles.Add(new SoundFile(@"\scumm\midis\mi2\wood.rol"));
+            soundFiles.Add(new SoundFile(@"\scumm\midis\mi2\woodbar.rol"));
+
+            //logger.Info($"Playing <c#88cc55>{options.InputPath}</c>...");
+
+            try
+            {
+                using (var transmitter = CreateTransmitter())
+                {
+                    using (var engine = new ImuseEngine(transmitter, target, imuseOptions))
+                    {
+                        // Clean up, even with Ctrl+C
+                        SetupCancelHandler(engine, transmitter);
+
+                        int i = 0;
+                        foreach (var file in soundFiles)
+                        {
+                            engine.RegisterSound(i++, file);
+                        }
 
                         engine.StartSound(0);
                         BuildCommands(engine);
@@ -237,6 +281,7 @@ namespace ImuseSequencer.Verbs
 
         private void GameLoop(ImuseEngine engine)
         {
+            var random = new Random();
             while (true)
             {
                 var keyInfo = Console.ReadKey(intercept: true);
@@ -248,6 +293,20 @@ namespace ImuseSequencer.Verbs
 
                     case ConsoleKey.Q:
                         return;
+
+                    // TODO: Testing, 1 2 3...
+                    case ConsoleKey.T:
+                        logger.Info("Enqueuing triggers entering bar");
+                        engine.Queue.Enqueue(new QueueItem(0, 0, new List<QueueCommand> { new JumpCommand(0, random.Next(1, 5), 4, 400) }));
+                        engine.Queue.Enqueue(new QueueItem(0, 1, new List<QueueCommand> { new StopSoundCommand(1), new StartSoundCommand(1) }));
+                        break;
+
+                    // TODO: Testing, 1 2 3...
+                    case ConsoleKey.Y:
+                        logger.Info("Enqueuing triggers exiting bar");
+                        engine.Queue.Enqueue(new QueueItem(1, 0, new List<QueueCommand> { new SetHookCommand(1, HookType.Jump, 1) }));
+                        engine.Queue.Enqueue(new QueueItem(1, 1, new List<QueueCommand> { new StopSoundCommand(0), new StartSoundCommand(0), new SetHookCommand(0, HookType.Jump, random.Next(1, 7)) }));
+                        break;
 
                     default:
                         if (hooksByKey.TryGetValue(keyInfo.KeyChar, out var hookInfo))

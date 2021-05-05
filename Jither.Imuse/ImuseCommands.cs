@@ -16,6 +16,16 @@ namespace Jither.Imuse
             this.players = players;
         }
 
+        public void StartSound(int soundId)
+        {
+            players.StartSound(soundId);
+        }
+
+        public void StopSound(int soundId)
+        {
+            players.StopSound(soundId);
+        }
+
         public void ClearLoop(int soundId)
         {
             GetPlayer(soundId)?.Sequencer.ClearLoop();
@@ -36,7 +46,7 @@ namespace Jither.Imuse
             return GetPlayer(soundId)?.GetInteractivityInfo();
         }
 
-        private Player GetPlayer(int soundId)
+        public Player GetPlayer(int soundId)
         {
             return players.GetPlayerBySound(soundId);
         }
