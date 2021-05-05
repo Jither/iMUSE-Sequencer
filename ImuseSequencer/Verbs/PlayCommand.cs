@@ -94,6 +94,7 @@ namespace ImuseSequencer.Verbs
 
         public override void Execute()
         {
+            // TODO: Remove this test crap
             //Test();
             //return;
             SoundFile soundFile;

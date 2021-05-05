@@ -37,6 +37,12 @@ namespace Jither.Imuse
         private int program;
         private int bank;
 
+
+        /// <summary>
+        /// Gets the player the part is currently assigned to (if any).
+        /// </summary>
+        public Player Player => player;
+
         /// <summary>
         /// The channel whose input messages this part will handle.
         /// </summary>
@@ -565,6 +571,11 @@ namespace Jither.Imuse
         private void NotifySlotReassignmentRequired()
         {
             SlotReassignmentRequired?.Invoke();
+        }
+
+        public override string ToString()
+        {
+            return IsInUse ? $"part {Player.Index}:{Index}" : $"part {Index}";
         }
     }
 }

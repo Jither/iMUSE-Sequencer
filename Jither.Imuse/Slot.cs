@@ -53,5 +53,10 @@ namespace Jither.Imuse
             part.UnlinkSlot();
             part = null;
         }
+
+        public override string ToString()
+        {
+            return $"slot {Index} (ch {OutputChannel})";
+        }
     }
 }

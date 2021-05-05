@@ -44,6 +44,7 @@ namespace Jither.Imuse
         public int Detune { get; private set; }
         public int EffectiveVolume => ((Volume + 1) * 127) >> 7; // TODO: "127" is actually system master volume
 
+        public int Index => index;
         internal PartsCollection Parts => linkedParts;
         internal Sequencer Sequencer => sequencer;
 

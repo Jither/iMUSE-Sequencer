@@ -59,11 +59,7 @@ namespace Jither.Imuse
 
             if (!part.TransposeLocked)
             {
-                var slot = SelectSlot(part.PriorityEffective);
-                if (slot != null)
-                {
-                    slot.AssignPart(part);
-                }
+                AssignFreeSlots();
             }
             else
             {
@@ -72,18 +68,25 @@ namespace Jither.Imuse
 
             driver.LoadPart(part);
 
+            logger.Verbose($"Allocated {part}");
             return part;
         }
 
         public void DeallocPart(int channel)
         {
+            bool deallocated = false;
             for (int i = parts.Count - 1; i >= 0; i--)
             {
                 var part = parts[i];
                 if (part.InputChannel == channel)
                 {
                     UnlinkPart(part);
+                    deallocated = true;
                 }
+            }
+            if (deallocated)
+            {
+                this.AssignFreeSlots();
             }
         }
 
@@ -133,9 +136,11 @@ namespace Jither.Imuse
             {
                 UnlinkPart(weakestPart);
             }
+            logger.Info($"Stealing part {weakestPart}");
             return weakestPart;
         }
 
+        // TODO: Remove this - no longer in use - but only when ensuring AssignFreeSlots is optimal
         private Slot SelectSlot(int priority)
         {
             Slot weakestSlot = null;
@@ -156,7 +161,7 @@ namespace Jither.Imuse
 
             if (weakestSlot != null)
             {
-                logger.Verbose($"Stealing slot {weakestSlot.Index} from part {weakestSlot.Part.Index} with priority {lowestPriority} - have a part with priority {priority}");
+                logger.Verbose($"Stealing {weakestSlot} from {weakestSlot.Part} with priority {lowestPriority} - have a part with priority {priority}");
                 driver.StopAllNotes(weakestSlot);
                 weakestSlot.AbandonPart();
             }
@@ -193,7 +198,7 @@ namespace Jither.Imuse
                 return;
             }
 
-            logger.Verbose($"{slotlessParts.Count()} parts in need of a slot");
+            logger.Verbose($"{slotlessParts.Count()} parts in need of a slot: {String.Join(", ", slotlessParts)}");
 
             // Sort relevant parts by descending priority:
             slotlessParts = slotlessParts.OrderByDescending(p => p.PriorityEffective);
@@ -211,11 +216,11 @@ namespace Jither.Imuse
                     {
                         if (slot.IsInUse)
                         {
-                            logger.Info($"Stealing slot {slot.Index} from part {slot.Part.Index} (pri: {slot.PriorityEffective}) for part {part.Index} (pri: {part.PriorityEffective})");
+                            logger.Verbose($"Stealing {slot} from {slot.Part} (pri: {slot.PriorityEffective}) for {part} (pri: {part.PriorityEffective})");
                         }
                         else
                         {
-                            logger.Info($"Assigning unused slot {slot.Index} to part {part.Index} (pri: {part.PriorityEffective})");
+                            logger.Verbose($"Assigning unused {slot} to {part} (pri: {part.PriorityEffective})");
                         }
                         slot.AssignPart(part);
                         
@@ -231,6 +236,10 @@ namespace Jither.Imuse
                         
                         break;
                     }
+                }
+                if (part.Slot == null)
+                {
+                    logger.Verbose($"No available slot for {part}");
                 }
             }
         }
