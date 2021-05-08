@@ -211,9 +211,11 @@ namespace ImuseSequencer.Verbs
         private void Test()
         {
             var target = SoundTarget.Roland;
-            var soundFiles = new List<SoundFile>();
-            soundFiles.Add(new SoundFile(@"\scumm\midis\mi2\wood.rol"));
-            soundFiles.Add(new SoundFile(@"\scumm\midis\mi2\woodbar.rol"));
+            var soundFiles = new List<SoundFile>
+            {
+                new SoundFile(@"\scumm\midis\mi2\wood.rol"),
+                new SoundFile(@"\scumm\midis\mi2\woodbar.rol")
+            };
 
             //logger.Info($"Playing <c#88cc55>{options.InputPath}</c>...");
 

@@ -9,9 +9,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Midi", "Jither.Midi\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Common", "..\Jither.Common\Jither.Common\Jither.Common.csproj", "{0CD48F03-8B17-4207-9D1E-389D948AF0A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jither.Imuse", "Jither.Imuse\Jither.Imuse.csproj", "{6558525F-10DF-4EFA-9D61-7C1A1C549A5D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Imuse", "Jither.Imuse\Jither.Imuse.csproj", "{6558525F-10DF-4EFA-9D61-7C1A1C549A5D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jither.Midi.Tests", "Jither.Midi.Tests\Jither.Midi.Tests.csproj", "{E4A1C747-2733-4ED8-A230-5B2178E0AA61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Midi.Tests", "Jither.Midi.Tests\Jither.Midi.Tests.csproj", "{E4A1C747-2733-4ED8-A230-5B2178E0AA61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jither.Imuse.Tests", "Jither.Imuse.Tests\Jither.Imuse.Tests.csproj", "{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptingSandbox", "ScriptingSandbox\ScriptingSandbox.csproj", "{678F73C6-D13E-4F8D-8BB8-42D7789F5976}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +43,14 @@ Global
 		{E4A1C747-2733-4ED8-A230-5B2178E0AA61}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4A1C747-2733-4ED8-A230-5B2178E0AA61}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4A1C747-2733-4ED8-A230-5B2178E0AA61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

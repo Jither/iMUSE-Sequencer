@@ -435,6 +435,7 @@ namespace Jither.Imuse
                             PitchBendRange = controlChange.Value;
                             break;
                         case MidiController.GeneralPurpose2:
+                            // TODO: Find out what v3 uses GP2 for (it's not detune like v2)
                             Detune = controlChange.Value;
                             break;
                         case MidiController.GeneralPurpose3:

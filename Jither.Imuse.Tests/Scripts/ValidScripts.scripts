@@ -1,0 +1,53 @@
+﻿# Sounds
+sounds {
+	"lechuck"	lechuck-theme
+	"other"		other-theme
+}
+
+# Defines
+define lechuck = 1
+define amount-of-wood-a-woodchuck-would-chuck-if-a-woodchuck-could-chuck-wood = 0
+
+# Simple trigger
+trigger during woodtick-theme
+{
+	start-music lechuck
+}
+
+# Comments
+; This is a comment to begin with
+define lechuck = 0 ; That's LeChuck defined
+
+# Original example
+define woodtick-theme       = 0
+define bar-theme            = 1
+define cartographers-theme  = 2
+define laundry-theme        = 3
+define inn-theme            = 4
+define woodshop-theme       = 5
+
+sounds
+{
+    'wood'      woodtick-theme
+    'woodbar'   bar-theme
+    'woodcart'  cartographers-theme
+    'woodlaun'  laundry-theme
+    'woodinn'   inn-theme
+    'woodshop'  woodshop-theme
+}
+
+trigger during woodtick-theme
+{
+    name is 'Enter Bar'
+    shortcut is a
+    
+    enqueue woodtick-theme marker 0
+    {
+        jump-to woodtick-theme track random(1,5) beat 4 tick 400
+    }
+    enqueue woodtick-theme marker 1
+    {
+        stop-music bar-theme
+        start-music bar-theme
+    }
+}

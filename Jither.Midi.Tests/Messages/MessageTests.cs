@@ -67,9 +67,9 @@ namespace Jither.Midi.Messages
         [InlineData(MidiController.PolyOff)]
         public void ChannelModeMessages_write_correctly_to_file(MidiController controller)
         {
-            var message = ControlChangeMessage.Create(8, controller, 127);
+            var message = ControlChangeMessage.Create(8, controller, 0);
             message.Write(writer);
-            stream.ToArray().Should().Equal(new byte[] { 0xb8, (byte)controller, 127 });
+            stream.ToArray().Should().Equal(new byte[] { 0xb8, (byte)controller, 0 });
         }
 
         [Fact]
