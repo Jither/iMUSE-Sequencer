@@ -6,7 +6,7 @@
 
         DefineDeclaration,
         SoundsDeclaration,
-        TriggerDeclaration,
+        ActionDeclaration,
 
         SoundDeclarator,
 

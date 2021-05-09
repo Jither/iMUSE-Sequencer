@@ -10,7 +10,7 @@ namespace Jither.Imuse.Scripting
         // Declarations
         public const string Define = "define";
         public const string Sounds = "sounds";
-        public const string Trigger = "trigger";
+        public const string Action = "action";
         public const string During = "during";
 
         public const string Break = "break";
@@ -38,7 +38,7 @@ namespace Jither.Imuse.Scripting
         {
             Define,
             Sounds,
-            Trigger,
+            Action,
             During,
 
             Break,

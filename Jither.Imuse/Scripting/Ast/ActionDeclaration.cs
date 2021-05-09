@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace Jither.Imuse.Scripting.Ast
 {
-    public class TriggerDeclaration : Declaration
+    public class ActionDeclaration : Declaration
     {
-        public override NodeType Type => NodeType.TriggerDeclaration;
+        public override NodeType Type => NodeType.ActionDeclaration;
         public Expression During { get; }
         public Identifier Id { get; }
         public Statement Body { get; }
 
-        public TriggerDeclaration(Identifier id, Expression during, Statement body)
+        public ActionDeclaration(Identifier id, Expression during, Statement body)
         {
             Id = id;
             During = during;
@@ -33,6 +33,6 @@ namespace Jither.Imuse.Scripting.Ast
             }
         }
 
-        public override void Accept(IAstVisitor visitor) => visitor.VisitTriggerDeclaration(this);
+        public override void Accept(IAstVisitor visitor) => visitor.VisitActionDeclaration(this);
     }
 }

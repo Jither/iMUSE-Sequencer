@@ -9,7 +9,7 @@ define lechuck = 1
 define amount-of-wood-a-woodchuck-would-chuck-if-a-woodchuck-could-chuck-wood = 0
 
 # Simple trigger
-trigger during woodtick-theme
+action during woodtick-theme
 {
 	start-music lechuck
 }
@@ -36,7 +36,7 @@ sounds
     'woodshop'  woodshop-theme
 }
 
-trigger during woodtick-theme
+action during woodtick-theme
 {
     name is 'Enter Bar'
     shortcut is a

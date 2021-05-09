@@ -58,9 +58,9 @@ namespace Jither.Imuse.Scripting
         }
 
         [Fact]
-        public void Assigns_correct_node_locations_trigger()
+        public void Assigns_correct_node_locations_action()
         {
-            string source = @"trigger my-trigger during woodtick-theme {
+            string source = @"action my-action during woodtick-theme {
 }".NormalizeNewLines();
             var parser = new ImuseScriptParser(source);
             var script = parser.Parse();
@@ -74,8 +74,8 @@ namespace Jither.Imuse.Scripting
 
             Assert.Collection(nodes,
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
-                decl => ScriptAssert.NodeMatches(source, source, NodeType.TriggerDeclaration, decl),
-                decl => ScriptAssert.NodeMatches(source, "my-trigger", NodeType.Identifier, decl),
+                decl => ScriptAssert.NodeMatches(source, source, NodeType.ActionDeclaration, decl),
+                decl => ScriptAssert.NodeMatches(source, "my-action", NodeType.Identifier, decl),
                 decl => ScriptAssert.NodeMatches(source, "woodtick-theme", NodeType.Identifier, decl),
                 decl => ScriptAssert.NodeMatches(source, "{\n}", NodeType.BlockStatement, decl)
             );
@@ -84,7 +84,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Assigns_correct_node_locations_multiline_call()
         {
-            string source = @"trigger {
+            string source = @"action {
     start-music \
         woodtick-theme
 }".NormalizeNewLines();
@@ -100,7 +100,7 @@ namespace Jither.Imuse.Scripting
 
             Assert.Collection(nodes,
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
-                decl => ScriptAssert.NodeMatches(source, source, NodeType.TriggerDeclaration, decl),
+                decl => ScriptAssert.NodeMatches(source, source, NodeType.ActionDeclaration, decl),
                 decl => ScriptAssert.NodeMatches(source, "{\n    start-music \\\n        woodtick-theme\n}", NodeType.BlockStatement, decl),
                 decl => ScriptAssert.NodeMatches(source, "start-music \\\n        woodtick-theme", NodeType.CallStatement, decl),
                 decl => ScriptAssert.NodeMatches(source, "start-music", NodeType.Identifier, decl),

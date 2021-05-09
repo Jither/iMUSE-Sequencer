@@ -17,7 +17,7 @@ namespace Jither.Imuse.Scripting
 
         void VisitDefineDeclaration(DefineDeclaration decl);
         void VisitSoundsDeclaration(SoundsDeclaration decl);
-        void VisitTriggerDeclaration(TriggerDeclaration decl);
+        void VisitActionDeclaration(ActionDeclaration decl);
         void VisitSoundDeclarator(SoundDeclarator sound);
 
         void VisitBlockStatement(BlockStatement stmt);

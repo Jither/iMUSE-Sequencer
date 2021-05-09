@@ -123,9 +123,9 @@ namespace Jither.Imuse.Scripting
             indentLevel--;
         }
 
-        public void VisitTriggerDeclaration(TriggerDeclaration decl)
+        public void VisitActionDeclaration(ActionDeclaration decl)
         {
-            Output("trigger");
+            Output("action");
             indentLevel++;
             
             decl.Id?.Accept(this);

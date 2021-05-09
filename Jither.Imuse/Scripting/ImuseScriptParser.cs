@@ -42,9 +42,9 @@ namespace Jither.Imuse.Scripting
             {
                 return lookahead.Value switch
                 {
-                    "define" => ParseDefineDeclaration(),
-                    "sounds" => ParseSoundsDeclaration(),
-                    "trigger" => ParseTriggerDeclaration(),
+                    Keywords.Define => ParseDefineDeclaration(),
+                    Keywords.Sounds => ParseSoundsDeclaration(),
+                    Keywords.Action => ParseActionDeclaration(),
                     _ => ThrowUnexpectedToken<Declaration>(lookahead),
                 };
             }
@@ -85,10 +85,10 @@ namespace Jither.Imuse.Scripting
             return Finalize(new SoundsDeclaration(sounds));
         }
 
-        private TriggerDeclaration ParseTriggerDeclaration()
+        private ActionDeclaration ParseActionDeclaration()
         {
             StartNode();
-            ExpectKeyword(Keywords.Trigger);
+            ExpectKeyword(Keywords.Action);
 
             Expression during = null;
             Identifier id = null;
@@ -104,13 +104,13 @@ namespace Jither.Imuse.Scripting
                         during = ParseExpression();
                         break;
                     default:
-                        return ThrowUnexpectedToken<TriggerDeclaration>(lookahead);
+                        return ThrowUnexpectedToken<ActionDeclaration>(lookahead);
                 }
             }
 
             var body = ParseStatement();
 
-            return Finalize(new TriggerDeclaration(id, during, body));
+            return Finalize(new ActionDeclaration(id, during, body));
         }
 
         private BlockStatement ParseBlockStatement()
