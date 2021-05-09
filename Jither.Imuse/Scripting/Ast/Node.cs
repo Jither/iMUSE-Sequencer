@@ -5,7 +5,7 @@ namespace Jither.Imuse.Scripting.Ast
 {
     public abstract class Node
     {
-        public Range Range { get; private set; }
+        public SourceRange Range { get; private set; }
 
         // For ensuring integrity of nodes
         internal bool finalized;
@@ -16,9 +16,9 @@ namespace Jither.Imuse.Scripting.Ast
         {
         }
 
-        public void Finalize(Location start, Location end)
+        public void Finalize(SourceLocation start, SourceLocation end)
         {
-            Range = new Range(start, end);
+            Range = new SourceRange(start, end);
             finalized = true;
         }
 

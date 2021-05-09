@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Jither.Imuse.Scripting.Ast;
+using System;
 
 namespace Jither.Imuse.Scripting
 {
     public class ParserException : Exception
     {
-        public Range Range { get; }
+        public SourceRange Range { get; }
 
         public override string Message => $"{base.Message} at {Range.Start}";
 
-        public ParserException(string message, Range range) : base(message)
+        public ParserException(string message, SourceRange range) : base(message)
         {
             Range = range;
         }
@@ -16,7 +17,7 @@ namespace Jither.Imuse.Scripting
 
     public class ScannerException : ParserException
     {
-        public ScannerException(string message, Location start) : base(message, new Range(start, start))
+        public ScannerException(string message, SourceLocation start) : base(message, new SourceRange(start, start))
         {
         }
     }
@@ -30,7 +31,7 @@ namespace Jither.Imuse.Scripting
 
     public class InvalidTokenException : ParserException
     {
-        public InvalidTokenException(string message, Range range) : base(message, range)
+        public InvalidTokenException(string message, SourceRange range) : base(message, range)
         {
         }
     }

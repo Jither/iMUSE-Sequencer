@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jither.Imuse.Scripting.Ast;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -128,12 +129,12 @@ namespace Jither.Imuse.Scripting
 
         private void ThrowUnexpectedToken(char c)
         {
-            throw new ScannerException($"Unexpected token '{c}'", new Location(lineNumber, column: _index - lineStartIndex + 1, _index));
+            throw new ScannerException($"Unexpected token '{c}'", new SourceLocation(lineNumber, column: _index - lineStartIndex + 1, _index));
         }
 
         private void ThrowUnterminatedString()
         {
-            throw new ScannerException("Unterminated string", new Location(lineNumber, column: _index - lineStartIndex + 1, _index));
+            throw new ScannerException("Unterminated string", new SourceLocation(lineNumber, column: _index - lineStartIndex + 1, _index));
         }
 
         private static bool IsKeyword(string id)
@@ -267,9 +268,9 @@ namespace Jither.Imuse.Scripting
         private Token Token(TokenType type, string value, int startIndex)
         {
             // Currently, all our tokens are on a single line, so we can use current lineNumber for both start and end positions
-            var start = new Location(lineNumber, startIndex - lineStartIndex, startIndex);
-            var end = new Location(lineNumber, _index - lineStartIndex, _index);
-            return new Token(type, value, new Range(start, end));
+            var start = new SourceLocation(lineNumber, startIndex - lineStartIndex, startIndex);
+            var end = new SourceLocation(lineNumber, _index - lineStartIndex, _index);
+            return new Token(type, value, new SourceRange(start, end));
         }
 
         private Token ScanIdentifier()

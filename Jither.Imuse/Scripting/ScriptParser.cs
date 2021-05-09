@@ -6,11 +6,11 @@ using System.Runtime.CompilerServices;
 
 namespace Jither.Imuse.Scripting
 {
-    public class ImuseScriptParser
+    public class ScriptParser
     {
         // Next token:
         private Token lookahead;
-        private readonly Stack<Location> startLocations = new();
+        private readonly Stack<SourceLocation> startLocations = new();
         // Current token (null when parsing starts) - used for finalizing nodes:
         private Token currentEndToken;
 
@@ -18,7 +18,7 @@ namespace Jither.Imuse.Scripting
 
         private readonly Scanner scanner;
 
-        public ImuseScriptParser(string source)
+        public ScriptParser(string source)
         {
             scanner = new Scanner(source);
             NextToken();
@@ -113,24 +113,6 @@ namespace Jither.Imuse.Scripting
             return Finalize(new ActionDeclaration(id, during, body));
         }
 
-        private BlockStatement ParseBlockStatement()
-        {
-            StartNode();
-
-            Expect("{");
-
-            var statements = new List<Statement>();
-            while (!Matches("}"))
-            {
-                var statement = ParseStatement();
-                statements.Add(statement);
-            }
-
-            Expect("}");
-
-            return Finalize(new BlockStatement(statements));
-        }
-
         private Statement ParseStatement()
         {
             switch (lookahead.Type)
@@ -168,8 +150,26 @@ namespace Jither.Imuse.Scripting
                         _ => ThrowUnexpectedToken<Statement>(lookahead, expected: "statement")
                     };
                 default:
-                    return null;
+                    return ThrowUnexpectedToken<Statement>(lookahead, expected: "statement");
             }
+        }
+
+        private BlockStatement ParseBlockStatement()
+        {
+            StartNode();
+
+            Expect("{");
+
+            var statements = new List<Statement>();
+            while (!Matches("}"))
+            {
+                var statement = ParseStatement();
+                statements.Add(statement);
+            }
+
+            Expect("}");
+
+            return Finalize(new BlockStatement(statements));
         }
 
         private BreakStatement ParseBreakStatement()
@@ -648,12 +648,12 @@ namespace Jither.Imuse.Scripting
             return ParseLiteral();
         }
 
-        private void StartNode(Location startLocation = null)
+        private void StartNode(SourceLocation startLocation = null)
         {
             startLocations.Push(startLocation ?? lookahead.Range.Start);
         }
 
-        private T Finalize<T>(T node, Location endLocation = null) where T : Node
+        private T Finalize<T>(T node, SourceLocation endLocation = null) where T : Node
         {
             node.Finalize(startLocations.Pop(), endLocation ?? currentEndToken.Range.End);
             return node;
@@ -690,7 +690,7 @@ namespace Jither.Imuse.Scripting
         }
 
         [DoesNotReturn]
-        private void ThrowError(string message, Location start = null, Location end = null)
+        private void ThrowError(string message, SourceLocation start = null, SourceLocation end = null)
         {
             if (start == null)
             {
@@ -701,11 +701,11 @@ namespace Jither.Imuse.Scripting
             {
                 end = start;
             }
-            throw new InvalidTokenException(message, new Range(start, end));
+            throw new InvalidTokenException(message, new SourceRange(start, end));
         }
 
         [DoesNotReturn]
-        private T ThrowError<T>(string message, Location location = null) where T : Node
+        private T ThrowError<T>(string message, SourceLocation location = null) where T : Node
         {
             ThrowError(message, location);
             return null;

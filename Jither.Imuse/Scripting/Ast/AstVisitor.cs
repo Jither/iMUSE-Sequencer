@@ -3,35 +3,35 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Jither.Imuse.Scripting
+namespace Jither.Imuse.Scripting.Ast
 {
     public interface IAstVisitor
     {
-        void VisitScript(Script script);
+        void VisitScript(Script node);
 
-        void VisitIdentifier(Identifier identifier);
-        void VisitLiteral(Literal literal);
-        void VisitBinaryExpression(BinaryExpression expr);
-        void VisitUnaryExpression(UnaryExpression expr);
+        void VisitIdentifier(Identifier node);
+        void VisitLiteral(Literal node);
+        void VisitBinaryExpression(BinaryExpression node);
+        void VisitUnaryExpression(UnaryExpression node);
         void VisitUpdateExpression(UpdateExpression expr);
 
-        void VisitDefineDeclaration(DefineDeclaration decl);
-        void VisitSoundsDeclaration(SoundsDeclaration decl);
-        void VisitActionDeclaration(ActionDeclaration decl);
-        void VisitSoundDeclarator(SoundDeclarator sound);
+        void VisitDefineDeclaration(DefineDeclaration node);
+        void VisitSoundsDeclaration(SoundsDeclaration node);
+        void VisitActionDeclaration(ActionDeclaration node);
+        void VisitSoundDeclarator(SoundDeclarator node);
 
-        void VisitBlockStatement(BlockStatement stmt);
-        void VisitBreakStatement(BreakStatement stmt);
-        void VisitIfStatement(IfStatement stmt);
-        void VisitDoStatement(DoStatement stmt);
-        void VisitWhileStatement(WhileStatement stmt);
-        void VisitForStatement(ForStatement stmt);
-        void VisitCaseStatement(CaseStatement stmt);
-        void VisitCaseDefinition(CaseDefinition def);
-        void VisitFunctionCallExpression(FunctionCallExpression expr);
-        void VisitAssignmentStatement(AssignmentStatement stmt);
-        void VisitEnqueueStatement(EnqueueStatement stmt);
-        void VisitCallStatement(CallStatement stmt);
+        void VisitBlockStatement(BlockStatement node);
+        void VisitBreakStatement(BreakStatement node);
+        void VisitIfStatement(IfStatement node);
+        void VisitDoStatement(DoStatement node);
+        void VisitWhileStatement(WhileStatement node);
+        void VisitForStatement(ForStatement node);
+        void VisitCaseStatement(CaseStatement node);
+        void VisitCaseDefinition(CaseDefinition node);
+        void VisitFunctionCallExpression(FunctionCallExpression node);
+        void VisitAssignmentStatement(AssignmentStatement node);
+        void VisitEnqueueStatement(EnqueueStatement node);
+        void VisitCallStatement(CallStatement node);
     }
 
     /// <summary>
@@ -41,11 +41,11 @@ namespace Jither.Imuse.Scripting
     /// This is useful when each node type has its own specific processing. Because the IAstVisitor interface enforces at compile-time
     /// that each and every node type has a Visit method, this ensures that e.g. new node types in the language aren't missed.
     /// </remarks>
-    public class AstVisitorTraverser
+    public class AstTraverser
     {
         private readonly IAstVisitor visitor;
 
-        public AstVisitorTraverser(IAstVisitor visitor)
+        public AstTraverser(IAstVisitor visitor)
         {
             this.visitor = visitor;
         }
@@ -75,36 +75,51 @@ namespace Jither.Imuse.Scripting
     /// This is useful when processing doesn't care about node type (e.g. counting nodes, looking at positions etc.) - and doesn't
     /// care for implementing methods for every single type.
     /// </remarks>
-    public class AstTraverser
+    public abstract class SimpleAstVisitor : IAstVisitor
     {
-        private readonly Action<Node> callback;
+        private readonly AstTraverser traverser;
 
-        public AstTraverser(Action<Node> callback)
+        protected SimpleAstVisitor()
         {
-            this.callback = callback;
+            traverser = new AstTraverser(this);
         }
 
         public void Traverse(Node root)
         {
-            Stack<Node> pending = new();
-            pending.Push(root);
-
-            while (pending.Count > 0)
-            {
-                var node = pending.Pop();
-                callback(node);
-
-                foreach (var child in node.Children.Reverse())
-                {
-                    pending.Push(child);
-                }
-            }
+            traverser.Traverse(root);
         }
+
+        protected abstract void Visit(Node node);
+
+        public void VisitActionDeclaration(ActionDeclaration node) => Visit(node);
+        public void VisitAssignmentStatement(AssignmentStatement node) => Visit(node);
+        public void VisitBinaryExpression(BinaryExpression node) => Visit(node);
+
+        public void VisitBlockStatement(BlockStatement node) => Visit(node);
+        public void VisitBreakStatement(BreakStatement node) => Visit(node);
+        public void VisitCallStatement(CallStatement node) => Visit(node);
+        public void VisitCaseDefinition(CaseDefinition node) => Visit(node);
+        public void VisitCaseStatement(CaseStatement node) => Visit(node);
+        public void VisitDefineDeclaration(DefineDeclaration node) => Visit(node);
+        public void VisitDoStatement(DoStatement node) => Visit(node);
+        public void VisitEnqueueStatement(EnqueueStatement node) => Visit(node);
+        public void VisitForStatement(ForStatement node) => Visit(node);
+        public void VisitFunctionCallExpression(FunctionCallExpression node) => Visit(node);
+        public void VisitIdentifier(Identifier node) => Visit(node);
+        public void VisitIfStatement(IfStatement node) => Visit(node);
+        public void VisitLiteral(Literal node) => Visit(node);
+        public void VisitScript(Script node) => Visit(node);
+        public void VisitSoundDeclarator(SoundDeclarator node) => Visit(node);
+        public void VisitSoundsDeclaration(SoundsDeclaration node) => Visit(node);
+        public void VisitUnaryExpression(UnaryExpression node) => Visit(node);
+        public void VisitUpdateExpression(UpdateExpression node) => Visit(node);
+        public void VisitWhileStatement(WhileStatement node) => Visit(node);
     }
 
     /// <summary>
     /// Allows traversal of Abstract Syntax Tree, depth first, calling a callback function when entering and leaving each node.
     /// </summary>
+    // TODO: Make this a visitor (Like SimpleAstVisitor)
     public class AstEnterLeaveTraverser
     {
         private enum TraversalStage

@@ -1,12 +1,12 @@
-﻿namespace Jither.Imuse.Scripting
+﻿namespace Jither.Imuse.Scripting.Ast
 {
-    public class Location
+    public class SourceLocation
     {
         public int Line { get; }
         public int Column { get; }
         public int Index { get; }
 
-        public Location(int line, int column, int index)
+        public SourceLocation(int line, int column, int index)
         {
             Line = line;
             Column = column;
@@ -19,12 +19,12 @@
         }
     }
 
-    public class Range
+    public class SourceRange
     {
-        public Location Start { get; }
-        public Location End { get; }
+        public SourceLocation Start { get; }
+        public SourceLocation End { get; }
 
-        public Range(Location start, Location end)
+        public SourceRange(SourceLocation start, SourceLocation end)
         {
             Start = start;
             End = end;

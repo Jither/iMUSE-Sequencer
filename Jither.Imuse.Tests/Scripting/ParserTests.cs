@@ -4,23 +4,29 @@ using Xunit;
 
 namespace Jither.Imuse.Scripting
 {
+    public class FlatAstVisitor : SimpleAstVisitor
+    {
+        public List<Node> Nodes { get; } = new List<Node>();
+
+        protected override void Visit(Node node)
+        {
+            Nodes.Add(node);
+        }
+    }
+
     public class ParserTests
     {
         [Fact]
         public void Assigns_correct_node_locations_define()
         {
             string source = "define amount-of-wood-a-woodchuck-would-chuck-if-a-woodchuck-could-chuck-wood = 0";
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var script = parser.Parse();
 
-            var nodes = new List<Node>();
-            var traverser = new AstTraverser(node =>
-            {
-                nodes.Add(node);
-            });
-            traverser.Traverse(script);
+            var visitor = new FlatAstVisitor();
+            visitor.Traverse(script);
 
-            Assert.Collection(nodes,
+            Assert.Collection(visitor.Nodes,
                 decl => ScriptAssert.NodeMatches(source, "define amount-of-wood-a-woodchuck-would-chuck-if-a-woodchuck-could-chuck-wood = 0", NodeType.Script, decl),
                 decl => ScriptAssert.NodeMatches(source, "define amount-of-wood-a-woodchuck-would-chuck-if-a-woodchuck-could-chuck-wood = 0", NodeType.DefineDeclaration, decl),
                 decl => ScriptAssert.NodeMatches(source, "amount-of-wood-a-woodchuck-would-chuck-if-a-woodchuck-could-chuck-wood", NodeType.Identifier, decl),
@@ -35,17 +41,13 @@ namespace Jither.Imuse.Scripting
     'lechuck' lechuck
     'woodchuck' woodchuck
 }";
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var script = parser.Parse();
 
-            var nodes = new List<Node>();
-            var traverser = new AstTraverser(node =>
-            {
-                nodes.Add(node);
-            });
-            traverser.Traverse(script);
+            var visitor = new FlatAstVisitor();
+            visitor.Traverse(script);
 
-            Assert.Collection(nodes,
+            Assert.Collection(visitor.Nodes,
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.SoundsDeclaration, decl),
                 decl => ScriptAssert.NodeMatches(source, "'lechuck' lechuck", NodeType.SoundDeclarator, decl),
@@ -62,17 +64,13 @@ namespace Jither.Imuse.Scripting
         {
             string source = @"action my-action during woodtick-theme {
 }".NormalizeNewLines();
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var script = parser.Parse();
 
-            var nodes = new List<Node>();
-            var traverser = new AstTraverser(node =>
-            {
-                nodes.Add(node);
-            });
-            traverser.Traverse(script);
+            var visitor = new FlatAstVisitor();
+            visitor.Traverse(script);
 
-            Assert.Collection(nodes,
+            Assert.Collection(visitor.Nodes,
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.ActionDeclaration, decl),
                 decl => ScriptAssert.NodeMatches(source, "my-action", NodeType.Identifier, decl),
@@ -88,17 +86,13 @@ namespace Jither.Imuse.Scripting
     start-music \
         woodtick-theme
 }".NormalizeNewLines();
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var script = parser.Parse();
 
-            var nodes = new List<Node>();
-            var traverser = new AstTraverser(node =>
-            {
-                nodes.Add(node);
-            });
-            traverser.Traverse(script);
+            var visitor = new FlatAstVisitor();
+            visitor.Traverse(script);
 
-            Assert.Collection(nodes,
+            Assert.Collection(visitor.Nodes,
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.ActionDeclaration, decl),
                 decl => ScriptAssert.NodeMatches(source, "{\n    start-music \\\n        woodtick-theme\n}", NodeType.BlockStatement, decl),

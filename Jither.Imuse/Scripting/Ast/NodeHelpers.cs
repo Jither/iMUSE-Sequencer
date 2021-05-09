@@ -1,7 +1,7 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using System;
 
-namespace Jither.Imuse.Scripting
+namespace Jither.Imuse.Scripting.Ast
 {
     public static class AstExtensions
     {

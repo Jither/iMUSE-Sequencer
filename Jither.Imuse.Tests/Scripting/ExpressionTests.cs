@@ -30,7 +30,7 @@ namespace Jither.Imuse.Scripting
         [InlineData("a is-not b", BinaryOperator.NotEqual, "a", "b")]
         public void Parses_simple_binary_expressions(string source, BinaryOperator expectedOperator, string expectedLeftName, string expectedRightName)
         {
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var expr = parser.ParseExpression();
 
             var binExpr = Assert.IsType<BinaryExpression>(expr);
@@ -45,7 +45,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_simple_precedence()
         {
-            var parser = new ImuseScriptParser("a + b * c - d");
+            var parser = new ScriptParser("a + b * c - d");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr,
@@ -68,7 +68,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_parenthesis_precedence()
         {
-            var parser = new ImuseScriptParser("a + b * (c - d)");
+            var parser = new ScriptParser("a + b * (c - d)");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr,
@@ -91,7 +91,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_nested_parenthesis_precedence()
         {
-            var parser = new ImuseScriptParser("a + b * (c / (d - e))");
+            var parser = new ScriptParser("a + b * (c / (d - e))");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr,
@@ -118,7 +118,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_simple_unary()
         {
-            var parser = new ImuseScriptParser("-a");
+            var parser = new ScriptParser("-a");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr, new TestUnary(UnaryOperator.Minus, new TestIdentifier("a")));
@@ -127,7 +127,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_simple_unary2()
         {
-            var parser = new ImuseScriptParser("not b");
+            var parser = new ScriptParser("not b");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr, new TestUnary(UnaryOperator.Not, new TestIdentifier("b")));
@@ -136,7 +136,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_simple_update_prefix()
         {
-            var parser = new ImuseScriptParser("--b");
+            var parser = new ScriptParser("--b");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr, new TestUpdate(UpdateOperator.Decrement, new TestIdentifier("b")));
@@ -145,7 +145,7 @@ namespace Jither.Imuse.Scripting
         [Fact]
         public void Handles_simple_update_prefix2()
         {
-            var parser = new ImuseScriptParser("++b");
+            var parser = new ScriptParser("++b");
             var expr = parser.ParseExpression();
 
             ScriptAssert.Nodes(expr, new TestUpdate(UpdateOperator.Increment, new TestIdentifier("b")));
@@ -158,7 +158,7 @@ namespace Jither.Imuse.Scripting
         [InlineData("2147483647", 2147483647)]
         public void Parses_integer_literals(string source, int expected)
         {
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var expr = parser.ParseExpression();
 
             var literal = Assert.IsType<Literal>(expr);
@@ -173,7 +173,7 @@ namespace Jither.Imuse.Scripting
         [InlineData("214.7483647", 214.7483647d)]
         public void Parses_number_literals(string source, double expected)
         {
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var expr = parser.ParseExpression();
 
             var literal = Assert.IsType<Literal>(expr);
@@ -186,7 +186,7 @@ namespace Jither.Imuse.Scripting
         [InlineData(@"'The Secret of\nMonkey Island'", "The Secret of\nMonkey Island")]
         public void Parses_string_literals(string source, string expected)
         {
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var expr = parser.ParseExpression();
 
             var literal = Assert.IsType<Literal>(expr);
@@ -199,7 +199,7 @@ namespace Jither.Imuse.Scripting
         [InlineData("false", false)]
         public void Parses_boolean_literals(string source, bool expected)
         {
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var expr = parser.ParseExpression();
 
             var literal = Assert.IsType<Literal>(expr);

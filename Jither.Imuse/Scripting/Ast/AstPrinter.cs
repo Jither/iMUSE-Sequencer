@@ -1,7 +1,7 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using System.Text;
 
-namespace Jither.Imuse.Scripting
+namespace Jither.Imuse.Scripting.Ast
 {
     public class AstPrinter : IAstVisitor
     {
@@ -128,7 +128,7 @@ namespace Jither.Imuse.Scripting
             Output("action");
             indentLevel++;
             
-            decl.Id?.Accept(this);
+            decl.Name?.Accept(this);
             decl.During?.Accept(this);
             Output("body:");
             decl.Body.Accept(this);

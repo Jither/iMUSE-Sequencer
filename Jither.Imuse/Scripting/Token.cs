@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jither.Imuse.Scripting.Ast;
+using System;
 using System.Globalization;
 
 namespace Jither.Imuse.Scripting
@@ -8,12 +9,12 @@ namespace Jither.Imuse.Scripting
         public TokenType Type { get; }
         public string Value { get; }
 
-        public Range Range { get; }
+        public SourceRange Range { get; }
 
         public int IntegerValue;
         public double NumericValue;
 
-        public Token(TokenType type, string value, Range range)
+        public Token(TokenType type, string value, SourceRange range)
         {
             Type = type;
             Value = value;

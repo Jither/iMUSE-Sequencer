@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting;
+using Jither.Imuse.Scripting.Ast;
 using System;
 
 namespace ScriptingSandbox
@@ -60,7 +61,7 @@ action during woodtick-theme
 
             string source = exampleScript;
 
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             try
             {
                 var script = parser.Parse();
@@ -78,7 +79,7 @@ action during woodtick-theme
             }
         }
 
-        static void OutputSourceWithPosition(string source, Jither.Imuse.Scripting.Range range)
+        static void OutputSourceWithPosition(string source, SourceRange range)
         {
             ConsoleColor defaultColor = Console.ForegroundColor;
             Console.Write(source[..range.Start.Index]);

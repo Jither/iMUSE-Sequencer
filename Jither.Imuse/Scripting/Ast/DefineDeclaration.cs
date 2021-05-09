@@ -7,6 +7,7 @@ namespace Jither.Imuse.Scripting.Ast
     {
         public override NodeType Type => NodeType.DefineDeclaration;
         public Identifier Identifier { get; }
+        // TODO: Consider expression for define value
         public Literal Value { get; }
 
         public DefineDeclaration(Identifier identifier, Literal value)

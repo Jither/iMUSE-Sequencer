@@ -7,12 +7,12 @@ namespace Jither.Imuse.Scripting.Ast
     {
         public override NodeType Type => NodeType.ActionDeclaration;
         public Expression During { get; }
-        public Identifier Id { get; }
+        public Identifier Name { get; }
         public Statement Body { get; }
 
-        public ActionDeclaration(Identifier id, Expression during, Statement body)
+        public ActionDeclaration(Identifier name, Expression during, Statement body)
         {
-            Id = id;
+            Name = name;
             During = during;
             Body = body;
         }
@@ -21,9 +21,9 @@ namespace Jither.Imuse.Scripting.Ast
         {
             get
             {
-                if (Id != null)
+                if (Name != null)
                 {
-                    yield return Id;
+                    yield return Name;
                 }
                 if (During != null)
                 {

@@ -23,7 +23,10 @@ namespace Jither.Imuse.Scripting.Ast
             get
             {
                 yield return Body;
-                yield return Test;
+                if (Test != null)
+                {
+                    yield return Test;
+                }
             }
         }
         public override void Accept(IAstVisitor visitor) => visitor.VisitDoStatement(this);

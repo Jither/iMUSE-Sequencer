@@ -8,7 +8,7 @@ namespace Jither.Imuse.Scripting
         [ScriptData("Scripts/ValidScripts.scripts")]
         public void Parses_valid_scripts(string section, string source)
         {
-            var parser = new ImuseScriptParser(source);
+            var parser = new ScriptParser(source);
             var script = parser.Parse();
             Assert.NotNull(script);
         }
