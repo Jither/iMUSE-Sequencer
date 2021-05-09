@@ -55,7 +55,7 @@ trigger during woodtick-theme
                 "define inn-theme = 4 define woodshop-theme = 5 sounds { 'wood' woodtick-theme 'woodbar' bar-theme 'woodcart' cartographers-theme 'woodlaun' laundry-theme " +
                 "'woodinn' inn-theme 'woodshop' woodshop-theme } trigger during woodtick-theme { name is 'Enter Bar' shortcut is a enqueue woodtick-theme marker 0 { " +
                 "if largo is pissed-off { start-music pissed-off-largo-theme } else { x = a + b * c / (d - e * b) jump-to woodtick-theme track random(1,5) beat 4 tick 400 " +
-                "}} enqueue woodtick-theme marker 1 { stop-music bar-theme " + "start-music bar-theme } }";
+                "}} enqueue woodtick-theme marker 1 { stop-music bar-theme start-music bar-theme } }";
 
             string source = exampleScript;
 

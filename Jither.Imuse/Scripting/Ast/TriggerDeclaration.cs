@@ -8,9 +8,9 @@ namespace Jither.Imuse.Scripting.Ast
         public override NodeType Type => NodeType.TriggerDeclaration;
         public Expression During { get; }
         public Identifier Id { get; }
-        public List<Statement> Body { get; }
+        public Statement Body { get; }
 
-        public TriggerDeclaration(Identifier id, Expression during, List<Statement> body)
+        public TriggerDeclaration(Identifier id, Expression during, Statement body)
         {
             Id = id;
             During = during;
@@ -29,10 +29,7 @@ namespace Jither.Imuse.Scripting.Ast
                 {
                     yield return During;
                 }
-                foreach (var stmt in Body)
-                {
-                    yield return stmt;
-                }
+                yield return Body;
             }
         }
 

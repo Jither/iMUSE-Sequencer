@@ -20,8 +20,14 @@ namespace Jither.Imuse.Scripting
         void VisitTriggerDeclaration(TriggerDeclaration decl);
         void VisitSoundDeclarator(SoundDeclarator sound);
 
+        void VisitBlockStatement(BlockStatement stmt);
+        void VisitBreakStatement(BreakStatement stmt);
         void VisitIfStatement(IfStatement stmt);
+        void VisitDoStatement(DoStatement stmt);
+        void VisitWhileStatement(WhileStatement stmt);
         void VisitForStatement(ForStatement stmt);
+        void VisitCaseStatement(CaseStatement stmt);
+        void VisitCaseDefinition(CaseDefinition def);
         void VisitFunctionCallExpression(FunctionCallExpression expr);
         void VisitAssignmentStatement(AssignmentStatement stmt);
         void VisitEnqueueStatement(EnqueueStatement stmt);

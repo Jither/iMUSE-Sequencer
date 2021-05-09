@@ -61,7 +61,7 @@ namespace Jither.Imuse.Scripting
         public void Assigns_correct_node_locations_trigger()
         {
             string source = @"trigger my-trigger during woodtick-theme {
-}";
+}".NormalizeNewLines();
             var parser = new ImuseScriptParser(source);
             var script = parser.Parse();
 
@@ -76,7 +76,8 @@ namespace Jither.Imuse.Scripting
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.TriggerDeclaration, decl),
                 decl => ScriptAssert.NodeMatches(source, "my-trigger", NodeType.Identifier, decl),
-                decl => ScriptAssert.NodeMatches(source, "woodtick-theme", NodeType.Identifier, decl)
+                decl => ScriptAssert.NodeMatches(source, "woodtick-theme", NodeType.Identifier, decl),
+                decl => ScriptAssert.NodeMatches(source, "{\n}", NodeType.BlockStatement, decl)
             );
         }
 
@@ -100,6 +101,7 @@ namespace Jither.Imuse.Scripting
             Assert.Collection(nodes,
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
                 decl => ScriptAssert.NodeMatches(source, source, NodeType.TriggerDeclaration, decl),
+                decl => ScriptAssert.NodeMatches(source, "{\n    start-music \\\n        woodtick-theme\n}", NodeType.BlockStatement, decl),
                 decl => ScriptAssert.NodeMatches(source, "start-music \\\n        woodtick-theme", NodeType.CallStatement, decl),
                 decl => ScriptAssert.NodeMatches(source, "start-music", NodeType.Identifier, decl),
                 decl => ScriptAssert.NodeMatches(source, "woodtick-theme", NodeType.Identifier, decl)

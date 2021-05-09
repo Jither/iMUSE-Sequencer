@@ -6,6 +6,7 @@
         Add,
         Subtract,
         Multiply,
-        Divide
+        Divide,
+        Modulo
     }
 }

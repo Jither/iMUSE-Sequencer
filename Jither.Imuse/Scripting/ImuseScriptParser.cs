@@ -14,6 +14,8 @@ namespace Jither.Imuse.Scripting
         // Current token (null when parsing starts) - used for finalizing nodes:
         private Token currentEndToken;
 
+        private int CurrentLine => lookahead.Range.Start.Line;
+
         private readonly Scanner scanner;
 
         public ImuseScriptParser(string source)
@@ -36,7 +38,7 @@ namespace Jither.Imuse.Scripting
 
         private Declaration ParseDeclaration()
         {
-            if (lookahead.Type == TokenType.Keyword)
+            if (Matches(TokenType.Keyword))
             {
                 return lookahead.Value switch
                 {
@@ -55,15 +57,7 @@ namespace Jither.Imuse.Scripting
 
             ExpectKeyword(Keywords.Define);
 
-            Identifier identifier;
-            switch (lookahead.Type)
-            {
-                case TokenType.Identifier:
-                    identifier = ParseIdentifier();
-                    break;
-                default:
-                    return ThrowUnexpectedToken<DefineDeclaration>(lookahead);
-            }
+            var identifier = ParseIdentifier();
 
             Expect("=");
 
@@ -114,13 +108,15 @@ namespace Jither.Imuse.Scripting
                 }
             }
 
-            var body = ParseStatements();
+            var body = ParseStatement();
 
             return Finalize(new TriggerDeclaration(id, during, body));
         }
 
-        private List<Statement> ParseStatements()
+        private BlockStatement ParseBlockStatement()
         {
+            StartNode();
+
             Expect("{");
 
             var statements = new List<Statement>();
@@ -132,7 +128,7 @@ namespace Jither.Imuse.Scripting
 
             Expect("}");
 
-            return statements;
+            return Finalize(new BlockStatement(statements));
         }
 
         private Statement ParseStatement()
@@ -143,55 +139,166 @@ namespace Jither.Imuse.Scripting
                     StartNode();
                     var left = ParseIdentifier();
 
-                    // Assignment (x = 1)
-                    if (TryParseAssignment(left, out var assignment))
+                    // Assignment (id = 1)
+                    if (Matches("=", "+=", "-=", "*=", "/=", "%=") || MatchesKeyword("is"))
                     {
-                        return assignment;
+                        return ParseAssignment(left);
                     }
 
-                    // Call (command-name argument argument...)
+                    // Call (id arg1 arg2...)
                     return ParseCallStatement(left);
 
                 case TokenType.Keyword:
                     return lookahead.Value switch
                     {
-                        Keywords.If => ParseIfStatement(),
+                        // Note: SCUMM doesn't actually have a break statement (not to be confused with break-here)
+                        Keywords.Break => ParseBreakStatement(),
+                        Keywords.Case => ParseCaseStatement(),
+                        Keywords.Do => ParseDoStatement(),
+                        Keywords.While => ParseWhileStatement(),
                         Keywords.Enqueue => ParseEnqueueStatement(),
                         Keywords.For => ParseForStatement(),
+                        Keywords.If => ParseIfStatement(),
                         _ => ThrowUnexpectedToken<Statement>(lookahead, expected: "statement"),
+                    };
+                case TokenType.Punctuation:
+                    return lookahead.Value switch
+                    {
+                        "{" => ParseBlockStatement(),
+                        _ => ThrowUnexpectedToken<Statement>(lookahead, expected: "statement")
                     };
                 default:
                     return null;
             }
         }
 
-        private bool TryParseAssignment(Identifier left, out AssignmentStatement assignment)
+        private BreakStatement ParseBreakStatement()
         {
-            var op = ParseAssignmentOperator();
+            StartNode();
+            ExpectKeyword(Keywords.Break);
+
+            return Finalize(new BreakStatement());
+        }
+
+        private DoStatement ParseDoStatement()
+        {
+            StartNode();
+            ExpectKeyword(Keywords.Do);
+
+            // Requires a block statement in SCUMM
+            var body = ParseBlockStatement();
+
+            Expression test = null;
+            if (MatchesKeyword(Keywords.Until))
+            {
+                // SCUMM requires parentheses here - should we?
+                test = ParseExpression();
+            }
+
+            return Finalize(new DoStatement(body, test));
+        }
+
+        private WhileStatement ParseWhileStatement()
+        {
+            StartNode();
+            ExpectKeyword(Keywords.While);
+
+            // SCUMM requires parentheses here - should we?
+            var test = ParseExpression();
+
+            // Requires a block statement in SCUMM
+            var body = ParseBlockStatement();
+
+            return Finalize(new WhileStatement(test, body));
+        }
+
+        private CaseStatement ParseCaseStatement()
+        {
+            StartNode();
+            ExpectKeyword(Keywords.Case);
+
+            var discriminant = ParseExpression();
+
+            Expect("{");
+
+            var cases = new List<CaseDefinition>();
+            Statement consequent;
+
+            while (!Matches("}"))
+            {
+                if (!Matches(TokenType.Keyword))
+                {
+                    return ThrowUnexpectedToken<CaseStatement>(lookahead, expected: $"{Keywords.Of}, {Keywords.Default} or {Keywords.Otherwise}");
+                }
+                var keyword = NextToken();
+                switch (keyword.Value)
+                {
+                    case Keywords.Of:
+                        StartNode();
+                        var test = ParseLiteral();
+                        // I think cases make more sense requiring a block statement (and they do in SCUMM)
+                        // - since there's no break, a single-statement case without braces may confuse
+                        consequent = ParseBlockStatement();
+                        cases.Add(Finalize(new CaseDefinition(test, consequent)));
+                        break;
+
+                    case Keywords.Default:
+                    case Keywords.Otherwise:
+                        StartNode();
+                        consequent = ParseBlockStatement();
+                        cases.Add(Finalize(new CaseDefinition(null, consequent)));
+                        break;
+                }
+            }
+
+            Expect("}");
+
+            return Finalize(new CaseStatement(discriminant, cases));
+        }
+
+        private AssignmentStatement ParseAssignment(Identifier left)
+        {
+            AssignmentOperator? op = lookahead.Type switch
+            {
+                TokenType.Punctuation => lookahead.Value switch
+                {
+                    "=" => AssignmentOperator.Equals,
+                    "+=" => AssignmentOperator.Add,
+                    "-=" => AssignmentOperator.Subtract,
+                    "*=" => AssignmentOperator.Multiply,
+                    "/=" => AssignmentOperator.Divide,
+                    "%=" => AssignmentOperator.Modulo,
+                    _ => null
+                },
+                TokenType.Keyword => lookahead.Value == Keywords.Is ? AssignmentOperator.Equals : null,
+                _ => null
+            };
             if (op == null)
             {
-                assignment = null;
-                return false;
+                return ThrowUnexpectedToken<AssignmentStatement>(lookahead, expected: "assignment");
             }
+
             NextToken();
 
             var right = ParseExpression();
 
-            assignment = Finalize(new AssignmentStatement(left, right, op.Value));
-            return true;
+            return Finalize(new AssignmentStatement(left, right, op.Value));
         }
 
         private IfStatement ParseIfStatement()
         {
             StartNode();
             ExpectKeyword("if");
+
+            // SCUMM requires parentheses here - should we?
             var condition = ParseExpression();
-            var consequent = ParseStatements();
-            List<Statement> alternate = null;
+
+            var consequent = ParseStatement();
+            Statement alternate = null;
             if (MatchesKeyword(Keywords.Else))
             {
                 NextToken();
-                alternate = ParseStatements();
+                alternate = ParseStatement();
             }
             return Finalize(new IfStatement(condition, consequent, alternate));
         }
@@ -214,16 +321,17 @@ namespace Jither.Imuse.Scripting
                 increment = token.Value == "++";
             }
 
-            var body = ParseStatements();
+            // For loop requires a block statement in SCUMM
+            var body = ParseBlockStatement();
 
             return Finalize(new ForStatement(iterator, from, to, increment, body));
         }
 
         private CallStatement ParseCallStatement(Identifier name)
         {
-            int line = name.Range.Start.Line;
+            int line = CurrentLine;
             var arguments = new List<Expression>();
-            while (lookahead.Range.Start.Line == line && !Matches("}"))
+            while (CurrentLine == line && !Matches("}"))
             {
                 if (Matches("\\"))
                 {
@@ -253,40 +361,9 @@ namespace Jither.Imuse.Scripting
             }
             var markerId = ParseExpression();
 
-            var body = ParseStatements();
+            var body = ParseStatement();
 
             return Finalize(new EnqueueStatement(soundId, markerId, body));
-        }
-
-        private AssignmentOperator? ParseAssignmentOperator()
-        {
-            switch (lookahead.Type)
-            {
-                case TokenType.Punctuation:
-                    switch (lookahead.Value)
-                    {
-                        case "=":
-                            return AssignmentOperator.Equals;
-                        case "+=":
-                            return AssignmentOperator.Add;
-                        case "-=":
-                            return AssignmentOperator.Subtract;
-                        case "*=":
-                            return AssignmentOperator.Multiply;
-                        case "/=":
-                            return AssignmentOperator.Divide;
-                    }
-                    break;
-                case TokenType.Keyword:
-                    switch (lookahead.Value)
-                    {
-                        case "is":
-                            return AssignmentOperator.Equals;
-                    }
-                    break;
-            }
-
-            return null;
         }
 
         private SoundDeclarator ParseSoundDeclarator()
@@ -467,10 +544,8 @@ namespace Jither.Imuse.Scripting
                 };
                 return Finalize(new UnaryExpression(expr, op));
             }
-            else
-            {
-                return ParseUpdateExpression();
-            }
+
+            return ParseUpdateExpression();
         }
 
         private Expression ParseUpdateExpression()
@@ -514,10 +589,12 @@ namespace Jither.Imuse.Scripting
         private Identifier ParseIdentifier()
         {
             StartNode();
-            if (lookahead.Type != TokenType.Identifier)
+
+            if (!Matches(TokenType.Identifier))
             {
                 return ThrowUnexpectedToken<Identifier>(lookahead, expected: "identifier");
             }
+
             return Finalize(new Identifier(NextToken().Value));
         }
 
@@ -564,7 +641,7 @@ namespace Jither.Imuse.Scripting
 
         private Literal ParseStringLiteral(string purpose)
         {
-            if (lookahead.Type != TokenType.StringLiteral)
+            if (!Matches(TokenType.StringLiteral))
             {
                 return ThrowUnexpectedToken<Literal>(lookahead, expected: purpose);
             }
@@ -652,34 +729,26 @@ namespace Jither.Imuse.Scripting
             return lookahead.Type == TokenType.Keyword && Array.IndexOf(values, lookahead.Value) >= 0;
         }
 
-        private void Expect(params string[] expected)
+        private bool Matches(TokenType type)
+        {
+            return lookahead.Type == type;
+        }
+
+        private void Expect(string expectedPunctuation)
         {
             var token = NextToken();
-            if (token.Type != TokenType.Punctuation || Array.IndexOf(expected, token.Value) < 0)
+            if (token.Type != TokenType.Punctuation || expectedPunctuation != token.Value)
             {
-                ThrowUnexpectedToken(token, expected: FriendlyList(expected));
+                ThrowUnexpectedToken(token, expected: expectedPunctuation);
             }
         }
 
-        private string FriendlyList(string[] values)
-        {
-            if (values.Length > 2)
-            {
-                return string.Join(", ", values[0..^1]) + " or " + values[^1];
-            }
-            if (values.Length > 1)
-            {
-                return values[0] + " or " + values[1];
-            }
-            return values[0];
-        }
-
-        private void ExpectKeyword(string name)
+        private void ExpectKeyword(string expectedName)
         {
             var token = NextToken();
-            if (token.Type != TokenType.Keyword || token.Value != name)
+            if (token.Type != TokenType.Keyword || token.Value != expectedName)
             {
-                ThrowUnexpectedToken(token, expected: name);
+                ThrowUnexpectedToken(token, expected: expectedName);
             }
         }
     }

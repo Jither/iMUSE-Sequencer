@@ -10,9 +10,9 @@ namespace Jither.Imuse.Scripting.Ast
         public Expression From { get; }
         public Expression To { get; }
         public bool Increment { get; }
-        public List<Statement> Body { get; }
+        public Statement Body { get; }
 
-        public ForStatement(Identifier iterator, Expression from, Expression to, bool increment, List<Statement> body)
+        public ForStatement(Identifier iterator, Expression from, Expression to, bool increment, Statement body)
         {
             Iterator = iterator;
             From = from;
@@ -28,10 +28,7 @@ namespace Jither.Imuse.Scripting.Ast
                 yield return Iterator;
                 yield return From;
                 yield return To;
-                foreach (var stmt in Body)
-                {
-                    yield return stmt;
-                }
+                yield return Body;
             }
         }
         public override void Accept(IAstVisitor visitor) => visitor.VisitForStatement(this);

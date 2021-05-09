@@ -10,8 +10,14 @@
 
         SoundDeclarator,
 
+        BlockStatement,
+        BreakStatement,
         IfStatement,
+        DoStatement,
+        WhileStatement,
         ForStatement,
+        CaseStatement,
+        CaseDefinition,
         CallStatement,
         EnqueueStatement,
         AssignmentStatement,

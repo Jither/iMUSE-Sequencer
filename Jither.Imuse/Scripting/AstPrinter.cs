@@ -65,12 +65,11 @@ namespace Jither.Imuse.Scripting
         {
             Output("enqueue");
             indentLevel++;
+
             stmt.SoundId.Accept(this);
             stmt.MarkerId.Accept(this);
-            foreach (var child in stmt.Body)
-            {
-                child.Accept(this);
-            }
+            stmt.Body.Accept(this);
+
             indentLevel--;
         }
 
@@ -128,15 +127,13 @@ namespace Jither.Imuse.Scripting
         {
             Output("trigger");
             indentLevel++;
+            
             decl.Id?.Accept(this);
             decl.During?.Accept(this);
             Output("body:");
-            indentLevel++;
-            foreach (var stmt in decl.Body)
-            {
-                stmt.Accept(this);
-            }
-            indentLevel -= 2;
+            decl.Body.Accept(this);
+            
+            indentLevel--;
         }
 
         public void VisitUnaryExpression(UnaryExpression expr)
@@ -159,24 +156,15 @@ namespace Jither.Imuse.Scripting
         {
             Output("if");
             indentLevel++;
-            stmt.Condition.Accept(this);
+            stmt.Test.Accept(this);
 
             Output("consequent:");
-            indentLevel++;
-            foreach (var child in stmt.Consequent)
-            {
-                child.Accept(this);
-            }
-            indentLevel--;
+            stmt.Consequent.Accept(this);
+
             if (stmt.Alternate != null)
             {
                 Output("alternate:");
-                indentLevel++;
-                foreach (var child in stmt.Alternate)
-                {
-                    child.Accept(this);
-                }
-                indentLevel--;
+                stmt.Alternate.Accept(this);
             }
             indentLevel--;
         }
@@ -185,16 +173,85 @@ namespace Jither.Imuse.Scripting
         {
             Output($"for {(stmt.Increment ? "++" : "--")}");
             indentLevel++;
+
             stmt.Iterator.Accept(this);
             stmt.From.Accept(this);
             stmt.To.Accept(this);
             Output("body:");
+            stmt.Body.Accept(this);
+
+            indentLevel--;
+        }
+
+        public void VisitCaseStatement(CaseStatement stmt)
+        {
+            Output("case");
+            indentLevel++;
+            stmt.Discriminant.Accept(this);
+            Output("cases:");
+            indentLevel++;
+            foreach (var child in stmt.Cases)
+            {
+                child.Accept(this);
+            }
+            indentLevel -= 2;
+        }
+
+        public void VisitCaseDefinition(CaseDefinition def)
+        {
+            Output("of");
+            indentLevel++;
+            if (def.Test == null)
+            {
+                Output("default:");
+            }
+            else
+            {
+                def.Test.Accept(this);
+            }
+            def.Consequent.Accept(this);
+            indentLevel--;
+        }
+
+        public void VisitDoStatement(DoStatement stmt)
+        {
+            Output("do");
+
+            stmt.Body.Accept(this);
+
+            if (stmt.Test != null)
+            {
+                Output("until");
+                indentLevel++;
+                stmt.Test.Accept(this);
+                indentLevel--;
+            }
+        }
+
+        public void VisitBlockStatement(BlockStatement stmt)
+        {
+            Output("{");
             indentLevel++;
             foreach (var child in stmt.Body)
             {
                 child.Accept(this);
             }
-            indentLevel -= 2;
+            indentLevel--;
+            Output("}");
+        }
+
+        public void VisitWhileStatement(WhileStatement stmt)
+        {
+            Output("while");
+            indentLevel++;
+            stmt.Test.Accept(this);
+            stmt.Body.Accept(this);
+            indentLevel--;
+        }
+
+        public void VisitBreakStatement(BreakStatement stmt)
+        {
+            Output("break");
         }
     }
 }

@@ -13,8 +13,13 @@ namespace Jither.Imuse.Scripting
         public const string Trigger = "trigger";
         public const string During = "during";
 
+        public const string Break = "break";
         public const string Case = "case";
+        public const string Of = "of";
+        public const string Default = "default";
+        public const string Otherwise = "otherwise";
         public const string Do = "do";
+        public const string Until = "until";
         public const string For = "for";
         public const string To = "to";
         public const string If = "if";
@@ -36,8 +41,13 @@ namespace Jither.Imuse.Scripting
             Trigger,
             During,
 
+            Break,
             Case,
+            Of,
+            Default,
+            Otherwise,
             Do,
+            Until,
             For,
             To,
             If,
@@ -88,6 +98,7 @@ namespace Jither.Imuse.Scripting
             "-=",
             "*=",
             "/=",
+            "%=",
             "++",
             "--",
         };

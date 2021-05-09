@@ -6,13 +6,13 @@ namespace Jither.Imuse.Scripting.Ast
     public class IfStatement : Statement
     {
         public override NodeType Type => NodeType.IfStatement;
-        public Expression Condition { get; }
-        public List<Statement> Consequent { get; }
-        public List<Statement> Alternate { get; }
+        public Expression Test { get; }
+        public Statement Consequent { get; }
+        public Statement Alternate { get; }
 
-        public IfStatement(Expression condition, List<Statement> consequent, List<Statement> alternate)
+        public IfStatement(Expression test, Statement consequent, Statement alternate)
         {
-            Condition = condition;
+            Test = test;
             Consequent = consequent;
             Alternate = alternate;
         }
@@ -21,17 +21,11 @@ namespace Jither.Imuse.Scripting.Ast
         {
             get
             {
-                yield return Condition;
-                foreach (var stmt in Consequent)
-                {
-                    yield return stmt;
-                }
+                yield return Test;
+                yield return Consequent;
                 if (Alternate != null)
                 {
-                    foreach (var stmt in Alternate)
-                    {
-                        yield return stmt;
-                    }
+                    yield return Alternate;
                 }
             }
         }

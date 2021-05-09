@@ -8,9 +8,9 @@ namespace Jither.Imuse.Scripting.Ast
         public override NodeType Type => NodeType.EnqueueStatement;
         public Expression SoundId { get; }
         public Expression MarkerId { get; }
-        public List<Statement> Body { get; }
+        public Statement Body { get; }
 
-        public EnqueueStatement(Expression soundId, Expression markerId, List<Statement> body)
+        public EnqueueStatement(Expression soundId, Expression markerId, Statement body)
         {
             SoundId = soundId;
             MarkerId = markerId;
@@ -23,10 +23,7 @@ namespace Jither.Imuse.Scripting.Ast
             {
                 yield return SoundId;
                 yield return MarkerId;
-                foreach (var stmt in Body)
-                {
-                    yield return stmt;
-                }
+                yield return Body;
             }
         }
         public override void Accept(IAstVisitor visitor) => visitor.VisitEnqueueStatement(this);
