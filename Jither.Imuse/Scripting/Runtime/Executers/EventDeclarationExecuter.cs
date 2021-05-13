@@ -12,13 +12,13 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
     {
         private readonly EventDeclaratorExecuter evt;
         private readonly ActionDeclarationExecuter actionDeclaration;
-        private readonly string actionName;
+        private readonly Identifier actionName;
 
         public EventDeclarationExecuter(EventDeclaration declaration) : base(declaration)
         {
             if (declaration.ActionName != null)
             {
-                actionName = declaration.ActionName.Name;
+                actionName = declaration.ActionName;
             }
             else if (declaration.ActionDeclaration != null)
             {
@@ -30,7 +30,39 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
 
         public override ExecutionResult Execute(ExecutionContext context)
         {
-            throw new NotImplementedException();
+            ImuseAction action;
+            if (actionName != null)
+            {
+                action = context.CurrentScope.GetSymbol(actionName, actionName.Name).Value.AsAction(actionName);
+            }
+            else if (actionDeclaration != null)
+            {
+                action = actionDeclaration.GetValue(context).AsAction(actionDeclaration);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Executer found neither action name nor action declaration for event...");
+            }
+
+            switch (evt)
+            {
+                case StartEventDeclaratorExecuter start:
+                    start.Execute(context);
+                    context.Events.RegisterEvent(new StartEvent(action));
+                    break;
+                case TimeEventDeclaratorExecuter timed:
+                    var time = timed.GetValue(context).AsTime(timed);
+                    context.Events.RegisterEvent(new TimedEvent(time, action));
+                    break;
+                case KeyPressEventDeclaratorExecuter keyPress:
+                    var key = keyPress.GetValue(context).AsString(keyPress);
+                    context.Events.RegisterEvent(new KeyPressEvent(key, action));
+                    break;
+                default:
+                    throw new NotImplementedException($"Event registration for {evt} not implemented in executer");
+            }
+
+            return ExecutionResult.Void;
         }
     }
 

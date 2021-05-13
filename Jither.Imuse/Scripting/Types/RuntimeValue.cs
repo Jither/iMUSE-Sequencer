@@ -1,44 +1,12 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime;
 using Jither.Imuse.Scripting.Runtime.Executers;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Jither.Imuse.Scripting.Types
 {
-    public enum RuntimeType
-    {
-        None,
-        Boolean,
-        String,
-        Integer,
-
-        Action,
-        Command,
-        Time,
-
-        Null
-    }
-
-    public class ImuseCommand
-    {
-        public string Name { get; }
-
-        public ImuseCommand(string name)
-        {
-            Name = name;
-        }
-
-        public RuntimeValue Execute(List<RuntimeValue> arguments)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public abstract class RuntimeValue
     {
         public static readonly NullValue Null = new();
@@ -92,7 +60,7 @@ namespace Jither.Imuse.Scripting.Types
             return AsBoolean(executer.Node);
         }
 
-        public ImuseCommand AsCommand(Node node)
+        public Command AsCommand(Node node)
         {
             if (Type != RuntimeType.Command)
             {
@@ -101,7 +69,7 @@ namespace Jither.Imuse.Scripting.Types
             return ((CommandValue)this).Value;
         }
 
-        public ImuseCommand AsCommand(Executer executer)
+        public Command AsCommand(Executer executer)
         {
             return AsCommand(executer.Node);
         }
@@ -119,114 +87,19 @@ namespace Jither.Imuse.Scripting.Types
             }
             return ((TimeValue)this).Value;
         }
-    }
 
-    public class BooleanValue : RuntimeValue
-    {
-        public static readonly BooleanValue True = new(true);
-        public static readonly BooleanValue False = new(false);
-        public bool Value { get; }
-
-        private BooleanValue(bool value) : base(RuntimeType.Boolean)
+        public ImuseAction AsAction(Executer executer)
         {
-            Value = value;
+            return AsAction(executer.Node);
         }
 
-        public override string ToString()
+        public ImuseAction AsAction(Node node)
         {
-            return Value ? "true" : "false";
-        }
-    }
-
-    public class NullValue : RuntimeValue
-    {
-        internal NullValue() : base(RuntimeType.Null)
-        {
-
-        }
-
-        public override string ToString()
-        {
-            return "null";
-        }
-    }
-
-    public class StringValue : RuntimeValue
-    {
-        public string Value { get; }
-
-        public StringValue(string value) : base(RuntimeType.String)
-        {
-            Value = value;
-        }
-
-        public override string ToString()
-        {
-            return Value;
-        }
-    }
-
-    public class IntegerValue : RuntimeValue
-    {
-        public int Value { get; }
-
-        public IntegerValue(int value) : base(RuntimeType.Integer)
-        {
-            Value = value;
-        }
-
-        public override string ToString()
-        {
-            return Value.ToString(CultureInfo.InvariantCulture);
-        }
-    }
-
-    public class TimeValue : RuntimeValue
-    {
-        public Time Value { get; }
-
-        public TimeValue(Time value) : base(RuntimeType.Time)
-        {
-            Value = value;
-        }
-
-        public override string ToString()
-        {
-            return Value.ToString();
-        }
-    }
-
-    public class ActionValue : RuntimeValue
-    {
-        public string Name { get; }
-        public int? During { get; }
-        public StatementExecuter BodyExecuter { get; }
-
-        public ActionValue(string name, int? during, StatementExecuter bodyExecuter) : base(RuntimeType.Action)
-        {
-            Name = name;
-            During = during;
-            BodyExecuter = bodyExecuter;
-        }
-
-        public override string ToString()
-        {
-            return $"action:{Name ?? "<anonymous>"}";
-        }
-    }
-
-    public class CommandValue : RuntimeValue
-    {
-        public ImuseCommand Value { get; }
-
-        public CommandValue(ImuseCommand value) : base(RuntimeType.Command)
-        {
-            Value = value;
-        }
-
-        public override string ToString()
-        {
-            return $"command:{Value.Name}";
+            if (Type != RuntimeType.Action)
+            {
+                ErrorHelper.ThrowTypeError(node, $"Expected action but got {Type}");
+            }
+            return ((ActionValue)this).Value;
         }
     }
 }

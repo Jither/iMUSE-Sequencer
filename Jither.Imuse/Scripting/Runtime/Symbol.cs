@@ -24,5 +24,14 @@ namespace Jither.Imuse.Scripting.Runtime
             }
             Value = value;
         }
+
+        public override string ToString()
+        {
+            if (IsConstant)
+            {
+                return $"const {Name,-30}: {Value}";
+            }
+            return $"      {Name,-30}: {Value}";
+        }
     }
 }

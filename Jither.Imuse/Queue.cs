@@ -9,7 +9,7 @@ namespace Jither.Imuse
 {
     public abstract class QueueCommand
     {
-        public abstract void Execute(ImuseCommands commands);
+        public abstract void Execute(CommandManager commands);
     }
 
     public class JumpCommand : QueueCommand
@@ -27,7 +27,7 @@ namespace Jither.Imuse
             Tick = tick;
         }
 
-        public override void Execute(ImuseCommands commands)
+        public override void Execute(CommandManager commands)
         {
             var player = commands.GetPlayer(SoundId);
             player.Sequencer.Jump(Track, Beat, Tick, "marker");
@@ -43,7 +43,7 @@ namespace Jither.Imuse
             SoundId = soundId;
         }
 
-        public override void Execute(ImuseCommands commands)
+        public override void Execute(CommandManager commands)
         {
             commands.StartSound(SoundId);
         }
@@ -58,7 +58,7 @@ namespace Jither.Imuse
             SoundId = soundId;
         }
 
-        public override void Execute(ImuseCommands commands)
+        public override void Execute(CommandManager commands)
         {
             commands.StopSound(SoundId);
         }
@@ -79,7 +79,7 @@ namespace Jither.Imuse
             Channel = channel;
         }
 
-        public override void Execute(ImuseCommands commands)
+        public override void Execute(CommandManager commands)
         {
             commands.SetHook(SoundId, Type, HookId, Channel);
         }

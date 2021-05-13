@@ -1,16 +1,22 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Types;
+using Jither.Logging;
 using System.Collections.Generic;
 
 namespace Jither.Imuse.Scripting.Runtime
 {
     public class Scope
     {
+        private static readonly Logger logger = LogProvider.Get(nameof(Scope));
+
         private readonly Dictionary<string, Symbol> symbols = new();
         private readonly Scope parent;
 
-        public Scope(Scope parent)
+        public string Name { get; }
+
+        public Scope(string name, Scope parent)
         {
+            Name = name;
             this.parent = parent;
         }
 
@@ -58,6 +64,15 @@ namespace Jither.Imuse.Scripting.Runtime
                 return result;
             }
             return null;
+        }
+
+        public void Dump()
+        {
+            logger.Info($"Scope: {Name}");
+            foreach (var symbol in symbols)
+            {
+                logger.Info($"  {symbol.Value}");
+            }
         }
     }
 }

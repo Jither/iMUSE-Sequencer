@@ -20,7 +20,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         public override ExecutionResult Execute(ExecutionContext context)
         {
             int? duringValue = during?.GetValue(context).AsInteger(this);
-            var result = new ActionValue(name, duringValue, body);
+            var result = new ActionValue(new ImuseAction(name, duringValue, body));
             if (name != null)
             {
                 context.CurrentScope.AddOrUpdateSymbol(this.Node, name, result);

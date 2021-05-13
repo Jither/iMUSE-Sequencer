@@ -24,7 +24,8 @@ namespace Jither.Imuse
         private bool disposed;
 
         public ImuseQueue Queue { get; }
-        public ImuseCommands Commands { get; }
+        public CommandManager Commands { get; }
+        public EventManager Events { get; }
 
         public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options = null)
         {
@@ -45,7 +46,8 @@ namespace Jither.Imuse
             sustainer = new Sustainer(options);
             players = new PlayerManager(files, parts, sustainer, driver, Queue, options);
 
-            Commands = new ImuseCommands(players);
+            Commands = new CommandManager(players);
+            Events = new EventManager();
         }
 
         public void RegisterSound(int id, SoundFile file)
