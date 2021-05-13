@@ -74,6 +74,7 @@ namespace Jither.Imuse.Scripting
     public class Scanner
     {
         private const CommentsStyle commentsStyle = CommentsStyle.Lisp;
+        private const bool supportFloatingPoint = false;
 
         private readonly string source;
         private readonly int length;
@@ -366,7 +367,7 @@ namespace Jither.Imuse.Scripting
                 c = CurrentChar;
             }
 
-            if (c == '.')
+            if (c == '.' && supportFloatingPoint)
             {
                 Advance();
                 builder.Append(c);

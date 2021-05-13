@@ -2,9 +2,9 @@
 {
     public class ImuseOptions
     {
-        public int JumpLimit { get; set; }
-        public int LoopLimit { get; set; }
-        public bool MaxSlots { get; set; }
-        public bool CleanJumps { get; set; }
+        public int JumpLimit { get; set; } = int.MaxValue;
+        public int LoopLimit { get; set; } = int.MaxValue;
+        public bool MaxSlots { get; set; } = false;
+        public bool CleanJumps { get; set; } = false;
     }
 }

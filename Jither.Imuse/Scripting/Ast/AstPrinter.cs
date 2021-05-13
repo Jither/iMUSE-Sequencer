@@ -21,7 +21,7 @@ namespace Jither.Imuse.Scripting.Ast
             builder.AppendLine(str);
         }
 
-        public void VisitAssignmentStatement(AssignmentStatement stmt)
+        public void VisitAssignmentStatement(AssignmentExpression stmt)
         {
             Output(stmt.Operator.OperatorString());
 
@@ -40,15 +40,11 @@ namespace Jither.Imuse.Scripting.Ast
             indentLevel--;
         }
 
-        public void VisitCallStatement(CallStatement stmt)
+        public void VisitExpressionStatement(ExpressionStatement stmt)
         {
-            Output("call");
+            Output("expr");
             indentLevel++;
-            stmt.Name.Accept(this);
-            foreach (var arg in stmt.Arguments)
-            {
-                arg.Accept(this);
-            }
+            stmt.Expression.Accept(this);
             indentLevel--;
         }
 
@@ -73,7 +69,7 @@ namespace Jither.Imuse.Scripting.Ast
             indentLevel--;
         }
 
-        public void VisitFunctionCallExpression(FunctionCallExpression expr)
+        public void VisitCallExpression(CallExpression expr)
         {
             Output("function-call");
             indentLevel++;

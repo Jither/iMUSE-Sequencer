@@ -17,6 +17,7 @@ namespace ImuseSequencer
             {
                 var parser = new CommandParser()
                     .WithVerb<PlayOptions>(o => new PlayCommand(o).Execute())
+                    .WithVerb<RunOptions>(o => new RunCommand(o).Execute())
                     .WithVerb<DumpOptions>(o => new DumpCommand(o).Execute())
                     .WithVerb<ListOutputsOptions>(o => new ListOutputsCommand(o).Execute())
                     .WithVerb<ScanOptions>(o => new ScanCommand(o).Execute())

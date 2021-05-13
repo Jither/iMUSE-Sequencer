@@ -3,9 +3,18 @@ using System;
 
 namespace Jither.Imuse.Scripting
 {
-    public class ParserException : Exception
+    public abstract class ScriptException : Exception
     {
-        public SourceRange Range { get; }
+        protected ScriptException(string message) : base(message)
+        {
+        }
+
+        public abstract SourceRange Range { get; }
+    }
+
+    public class ParserException : ScriptException
+    {
+        public override SourceRange Range { get; }
 
         public override string Message => $"{base.Message} at {Range.Start}";
 

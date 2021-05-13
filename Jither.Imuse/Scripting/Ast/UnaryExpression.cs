@@ -36,10 +36,10 @@ namespace Jither.Imuse.Scripting.Ast
     {
         public override NodeType Type => NodeType.UpdateExpression;
         public UpdateOperator Operator { get; }
-        public Expression Argument { get; }
+        public Identifier Argument { get; }
         public bool Prefix { get; }
 
-        public UpdateExpression(Expression argument, UpdateOperator op, bool prefix)
+        public UpdateExpression(Identifier argument, UpdateOperator op, bool prefix)
         {
             Argument = argument;
             Operator = op;

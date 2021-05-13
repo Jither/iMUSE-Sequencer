@@ -61,7 +61,7 @@ namespace Jither.Imuse.Scripting
 
             Expect("=");
 
-            var value = ParseLiteral();
+            var value = ParseExpression();
 
             return Finalize(new DefineDeclaration(identifier, value));
         }
@@ -117,19 +117,6 @@ namespace Jither.Imuse.Scripting
         {
             switch (lookahead.Type)
             {
-                case TokenType.Identifier:
-                    StartNode();
-                    var left = ParseIdentifier();
-
-                    // Assignment (id = 1)
-                    if (Matches("=", "+=", "-=", "*=", "/=", "%=") || MatchesKeyword("is"))
-                    {
-                        return ParseAssignment(left);
-                    }
-
-                    // Call (id arg1 arg2...)
-                    return ParseCallStatement(left);
-
                 case TokenType.Keyword:
                     return lookahead.Value switch
                     {
@@ -144,14 +131,48 @@ namespace Jither.Imuse.Scripting
                         _ => ThrowUnexpectedToken<Statement>(lookahead, expected: "statement"),
                     };
                 case TokenType.Punctuation:
-                    return lookahead.Value switch
+                    if (Matches("{"))
                     {
-                        "{" => ParseBlockStatement(),
-                        _ => ThrowUnexpectedToken<Statement>(lookahead, expected: "statement")
-                    };
-                default:
-                    return ThrowUnexpectedToken<Statement>(lookahead, expected: "statement");
+                        return ParseBlockStatement();
+                    }
+                    break;
             }
+            return ParseExpressionStatement();
+        }
+
+        private ExpressionStatement ParseExpressionStatement()
+        {
+            Expression expression = null;
+            switch (lookahead.Type)
+            {
+                case TokenType.Identifier:
+                    StartNode();
+                    var identifier = ParseIdentifier();
+
+                    // Assignment (id = 1)
+                    if (Matches("=", "+=", "-=", "*=", "/=", "%=") || MatchesKeyword("is"))
+                    {
+                        expression = ParseAssignment(identifier);
+                    }
+                    else
+                    {
+                        expression = ParseProcedureCallExpression(identifier);
+                    }
+                    break;
+                case TokenType.Punctuation:
+                    if (Matches("++", "--"))
+                    {
+                        expression = ParseUpdateExpression();
+                    }
+                    break;
+            }
+
+            if (expression == null)
+            {
+                return ThrowUnexpectedToken<ExpressionStatement>(lookahead);
+            }
+
+            return Finalize(new ExpressionStatement(expression));
         }
 
         private BlockStatement ParseBlockStatement()
@@ -256,7 +277,7 @@ namespace Jither.Imuse.Scripting
             return Finalize(new CaseStatement(discriminant, cases));
         }
 
-        private AssignmentStatement ParseAssignment(Identifier left)
+        private AssignmentExpression ParseAssignment(Identifier left)
         {
             AssignmentOperator? op = lookahead.Type switch
             {
@@ -275,14 +296,14 @@ namespace Jither.Imuse.Scripting
             };
             if (op == null)
             {
-                return ThrowUnexpectedToken<AssignmentStatement>(lookahead, expected: "assignment");
+                return ThrowUnexpectedToken<AssignmentExpression>(lookahead, expected: "assignment");
             }
 
             NextToken();
 
             var right = ParseExpression();
 
-            return Finalize(new AssignmentStatement(left, right, op.Value));
+            return Finalize(new AssignmentExpression(left, right, op.Value));
         }
 
         private IfStatement ParseIfStatement()
@@ -327,8 +348,12 @@ namespace Jither.Imuse.Scripting
             return Finalize(new ForStatement(iterator, from, to, increment, body));
         }
 
-        private CallStatement ParseCallStatement(Identifier name)
+        private Expression ParseProcedureCallExpression(Identifier name)
         {
+            // Function call statement (with no return value) differs from
+            // functionc call expression in syntax, but not semantics. So, it's an ExpressionStatement(CallExpression)
+
+            // No StartNode() - we started when parsing the identifier
             int line = CurrentLine;
             var arguments = new List<Expression>();
             while (CurrentLine == line && !Matches("}"))
@@ -345,7 +370,7 @@ namespace Jither.Imuse.Scripting
                 }
             }
 
-            return Finalize(new CallStatement(name, arguments));
+            return Finalize(new CallExpression(name, arguments));
         }
 
         private EnqueueStatement ParseEnqueueStatement()
@@ -555,14 +580,14 @@ namespace Jither.Imuse.Scripting
             {
                 StartNode();
                 var token = NextToken();
-                Expression expr = ParseUnaryExpression();
+                Identifier identifier = ParseIdentifier();
                 UpdateOperator op = token.Value switch
                 {
                     "++" => UpdateOperator.Increment,
                     "--" => UpdateOperator.Decrement,
                     _ => throw new NotImplementedException($"Update operator {token.Value} not implemented")
                 };
-                return Finalize(new UpdateExpression(expr, op, prefix: true));
+                return Finalize(new UpdateExpression(identifier, op, prefix: true));
             }
 
             return ParsePrimaryExpression();
@@ -616,7 +641,7 @@ namespace Jither.Imuse.Scripting
                     Expect(",");
                 }
                 Expect(")");
-                return Finalize(new FunctionCallExpression(identifier, arguments));
+                return Finalize(new CallExpression(identifier, arguments));
             }
 
             // Not a function call - pop the stored start position

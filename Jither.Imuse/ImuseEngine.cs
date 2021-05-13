@@ -26,12 +26,14 @@ namespace Jither.Imuse
         public ImuseQueue Queue { get; }
         public ImuseCommands Commands { get; }
 
-        public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options)
+        public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options = null)
         {
             this.transmitter = transmitter;
             transmitter.Engine = this;
 
             this.target = target;
+
+            options ??= new ImuseOptions();
 
             driver = GetDriver();
 

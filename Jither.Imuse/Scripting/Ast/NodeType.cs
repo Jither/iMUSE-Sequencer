@@ -12,6 +12,7 @@
 
         BlockStatement,
         BreakStatement,
+        ExpressionStatement,
         IfStatement,
         DoStatement,
         WhileStatement,

@@ -14,6 +14,7 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitBinaryExpression(BinaryExpression node);
         void VisitUnaryExpression(UnaryExpression node);
         void VisitUpdateExpression(UpdateExpression expr);
+        void VisitCallExpression(CallExpression node);
 
         void VisitDefineDeclaration(DefineDeclaration node);
         void VisitSoundsDeclaration(SoundsDeclaration node);
@@ -24,14 +25,13 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitBreakStatement(BreakStatement node);
         void VisitIfStatement(IfStatement node);
         void VisitDoStatement(DoStatement node);
+        void VisitExpressionStatement(ExpressionStatement node);
         void VisitWhileStatement(WhileStatement node);
         void VisitForStatement(ForStatement node);
         void VisitCaseStatement(CaseStatement node);
         void VisitCaseDefinition(CaseDefinition node);
-        void VisitFunctionCallExpression(FunctionCallExpression node);
-        void VisitAssignmentStatement(AssignmentStatement node);
+        void VisitAssignmentStatement(AssignmentExpression node);
         void VisitEnqueueStatement(EnqueueStatement node);
-        void VisitCallStatement(CallStatement node);
     }
 
     /// <summary>
@@ -92,19 +92,19 @@ namespace Jither.Imuse.Scripting.Ast
         protected abstract void Visit(Node node);
 
         public void VisitActionDeclaration(ActionDeclaration node) => Visit(node);
-        public void VisitAssignmentStatement(AssignmentStatement node) => Visit(node);
+        public void VisitAssignmentStatement(AssignmentExpression node) => Visit(node);
         public void VisitBinaryExpression(BinaryExpression node) => Visit(node);
 
         public void VisitBlockStatement(BlockStatement node) => Visit(node);
         public void VisitBreakStatement(BreakStatement node) => Visit(node);
-        public void VisitCallStatement(CallStatement node) => Visit(node);
+        public void VisitExpressionStatement(ExpressionStatement node) => Visit(node);
         public void VisitCaseDefinition(CaseDefinition node) => Visit(node);
         public void VisitCaseStatement(CaseStatement node) => Visit(node);
         public void VisitDefineDeclaration(DefineDeclaration node) => Visit(node);
         public void VisitDoStatement(DoStatement node) => Visit(node);
         public void VisitEnqueueStatement(EnqueueStatement node) => Visit(node);
         public void VisitForStatement(ForStatement node) => Visit(node);
-        public void VisitFunctionCallExpression(FunctionCallExpression node) => Visit(node);
+        public void VisitCallExpression(CallExpression node) => Visit(node);
         public void VisitIdentifier(Identifier node) => Visit(node);
         public void VisitIfStatement(IfStatement node) => Visit(node);
         public void VisitLiteral(Literal node) => Visit(node);
