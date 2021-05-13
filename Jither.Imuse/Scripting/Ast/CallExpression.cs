@@ -5,7 +5,7 @@ namespace Jither.Imuse.Scripting.Ast
 {
     public class CallExpression : Expression
     {
-        public override NodeType Type => NodeType.FunctionCallExpression;
+        public override NodeType Type => NodeType.CallExpression;
         public Identifier Name { get; }
         public List<Expression> Arguments { get; }
 

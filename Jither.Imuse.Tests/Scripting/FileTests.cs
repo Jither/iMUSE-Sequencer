@@ -6,7 +6,7 @@ namespace Jither.Imuse.Scripting
     {
         [Theory]
         [ScriptData("Scripts/ValidScripts.scripts")]
-        public void Parses_valid_scripts(string section, string source)
+        public void Parses_valid_scripts(string source)
         {
             var parser = new ScriptParser(source);
             var script = parser.Parse();

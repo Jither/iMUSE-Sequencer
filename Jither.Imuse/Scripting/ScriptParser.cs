@@ -45,10 +45,117 @@ namespace Jither.Imuse.Scripting
                     Keywords.Define => ParseDefineDeclaration(),
                     Keywords.Sounds => ParseSoundsDeclaration(),
                     Keywords.Action => ParseActionDeclaration(),
+                    Keywords.On => ParseEventDeclaration(),
                     _ => ThrowUnexpectedToken<Declaration>(lookahead),
                 };
             }
             return ThrowUnexpectedToken<Declaration>(lookahead);
+        }
+
+        private EventDeclaration ParseEventDeclaration()
+        {
+            StartNode();
+
+            ExpectKeyword(Keywords.On);
+
+            EventDeclarator decl = null;
+            if (lookahead.Type == TokenType.Identifier) // Soft keyword
+            {
+                switch (lookahead.Value)
+                {
+                    case Keywords.Key:
+                        decl = ParseKeyPressEventDeclarator();
+                        break;
+                    case Keywords.Measure:
+                    case Keywords.Beat:
+                    case Keywords.Tick:
+                        decl = ParseTimeEventDeclarator();
+                        break;
+                    case Keywords.Time:
+                        decl = ParseShortTimeEventDeclarator();
+                        break;
+                    case Keywords.Start: // For debugging/testing
+                        decl = ParseStartEventDeclarator();
+                        break;
+                }
+            }
+            if (decl == null)
+            {
+                return ThrowUnexpectedToken<EventDeclaration>(lookahead, expected: "event declaration");
+            }
+
+            Expect(":");
+
+            if (MatchesKeyword(Keywords.Action))
+            {
+                var action = ParseActionDeclaration();
+                return Finalize(new EventDeclaration(decl, action));
+            }
+            else if (Matches(TokenType.Identifier))
+            {
+                var action = ParseIdentifier();
+                return Finalize(new EventDeclaration(decl, action));
+            }
+
+            return ThrowUnexpectedToken<EventDeclaration>(lookahead, expected: "action declaration or identifier");
+        }
+
+        private KeyPressEventDeclarator ParseKeyPressEventDeclarator()
+        {
+            StartNode();
+
+            ExpectSoftKeyword(Keywords.Key);
+
+            var key = ParseExpression();
+
+            return Finalize(new KeyPressEventDeclarator(key));
+        }
+
+        private TimeEventDeclarator ParseTimeEventDeclarator()
+        {
+            StartNode();
+
+            Expression measure = null;
+            Expression beat = null;
+            Expression tick = null;
+
+            if (MatchesSoftKeyword(Keywords.Measure))
+            {
+                NextToken();
+                measure = ParseExpression();
+            }
+            if (MatchesSoftKeyword(Keywords.Beat))
+            {
+                NextToken();
+                beat = ParseExpression();
+            }
+            if (MatchesSoftKeyword(Keywords.Tick))
+            {
+                NextToken();
+                tick = ParseExpression();
+            }
+
+            return Finalize(new TimeEventDeclarator(measure, beat, tick));
+        }
+
+        private TimeEventDeclarator ParseShortTimeEventDeclarator()
+        {
+            StartNode();
+
+            ExpectSoftKeyword(Keywords.Time);
+
+            var time = ParseExpression();
+
+            return Finalize(new TimeEventDeclarator(time));
+        }
+
+        private StartEventDeclarator ParseStartEventDeclarator()
+        {
+            StartNode();
+
+            ExpectSoftKeyword(Keywords.Start);
+
+            return Finalize(new StartEventDeclarator());
         }
 
         private DefineDeclaration ParseDefineDeclaration()
@@ -94,17 +201,18 @@ namespace Jither.Imuse.Scripting
             Identifier id = null;
             while (!Matches("{"))
             {
-                switch (lookahead.Type)
+                if (MatchesSoftKeyword(Keywords.During))
                 {
-                    case TokenType.Identifier:
-                        id = ParseIdentifier();
-                        break;
-                    case TokenType.Keyword:
-                        ExpectKeyword(Keywords.During);
-                        during = ParseExpression();
-                        break;
-                    default:
-                        return ThrowUnexpectedToken<ActionDeclaration>(lookahead);
+                    NextToken();
+                    during = ParseExpression();
+                }
+                else if (Matches(TokenType.Identifier))
+                {
+                    id = ParseIdentifier();
+                }
+                else
+                {
+                    return ThrowUnexpectedToken<ActionDeclaration>(lookahead);
                 }
             }
 
@@ -143,6 +251,8 @@ namespace Jither.Imuse.Scripting
         private ExpressionStatement ParseExpressionStatement()
         {
             Expression expression = null;
+            StartNode();
+
             switch (lookahead.Type)
             {
                 case TokenType.Identifier:
@@ -150,7 +260,7 @@ namespace Jither.Imuse.Scripting
                     var identifier = ParseIdentifier();
 
                     // Assignment (id = 1)
-                    if (Matches("=", "+=", "-=", "*=", "/=", "%=") || MatchesKeyword("is"))
+                    if (Matches("=", "+=", "-=", "*=", "/=", "%=") || MatchesKeyword(Keywords.Is))
                     {
                         expression = ParseAssignment(identifier);
                     }
@@ -380,7 +490,7 @@ namespace Jither.Imuse.Scripting
             var soundId = ParseExpression();
 
             // Optional "marker" keyword
-            if (MatchesKeyword(Keywords.Marker))
+            if (MatchesSoftKeyword(Keywords.Marker))
             {
                 NextToken();
             }
@@ -419,7 +529,7 @@ namespace Jither.Imuse.Scripting
                 TokenType.Identifier => ParseIdentifierOrFunctionCall(),
                 
                 TokenType.IntegerLiteral or 
-                TokenType.NumericLiteral or 
+                TokenType.TimeLiteral or 
                 TokenType.StringLiteral or 
                 TokenType.BooleanLiteral => ParseLiteral(),
                 
@@ -555,7 +665,7 @@ namespace Jither.Imuse.Scripting
 
         private Expression ParseUnaryExpression()
         {
-            if (Matches("!", "+", "-") || MatchesKeyword("not"))
+            if (Matches("!", "+", "-") || MatchesKeyword(Keywords.Not))
             {
                 StartNode();
                 var token = NextToken();
@@ -587,7 +697,7 @@ namespace Jither.Imuse.Scripting
                     "--" => UpdateOperator.Decrement,
                     _ => throw new NotImplementedException($"Update operator {token.Value} not implemented")
                 };
-                return Finalize(new UpdateExpression(identifier, op, prefix: true));
+                return Finalize(new UpdateExpression(identifier, op));
             }
 
             return ParsePrimaryExpression();
@@ -657,7 +767,7 @@ namespace Jither.Imuse.Scripting
             {
                 TokenType.BooleanLiteral => new Literal(LiteralType.Boolean, NextToken().Value == "true"),
                 TokenType.IntegerLiteral => new Literal(LiteralType.Integer, NextToken().IntegerValue),
-                TokenType.NumericLiteral => new Literal(LiteralType.Number, NextToken().NumericValue),
+                TokenType.TimeLiteral => new Literal(LiteralType.Time, NextToken().TimeValue),
                 TokenType.StringLiteral => new Literal(LiteralType.String, NextToken().Value),
                 _ => ThrowUnexpectedToken<Literal>(lookahead, expected: "literal"),
             };
@@ -701,7 +811,7 @@ namespace Jither.Imuse.Scripting
                 TokenType.Identifier => $"Unexpected identifier '{token.Value}'",
                 TokenType.IntegerLiteral => $"Unexpected integer '{token.Value}'",
                 TokenType.Keyword => $"Unexpected keyword '{token.Value}'",
-                TokenType.NumericLiteral => $"Unexpected number '{token.Value}'",
+                TokenType.TimeLiteral => $"Unexpected time '{token.Value}'",
                 TokenType.Punctuation => $"Unexpected {token.Value}",
                 TokenType.StringLiteral => $"Unexpected string '{token.Value}'",
                 _ => "Unexpected token '{token.Value}'"
@@ -749,9 +859,15 @@ namespace Jither.Imuse.Scripting
             return lookahead.Type == TokenType.Punctuation && Array.IndexOf(values, lookahead.Value) >= 0;
         }
 
-        private bool MatchesKeyword(params string[] values)
+        private bool MatchesKeyword(string value)
         {
-            return lookahead.Type == TokenType.Keyword && Array.IndexOf(values, lookahead.Value) >= 0;
+            return lookahead.Type == TokenType.Keyword && lookahead.Value == value;
+        }
+
+        private bool MatchesSoftKeyword(string value)
+        {
+            // Soft keywords are just identifiers
+            return lookahead.Type == TokenType.Identifier && lookahead.Value == value;
         }
 
         private bool Matches(TokenType type)
@@ -772,6 +888,15 @@ namespace Jither.Imuse.Scripting
         {
             var token = NextToken();
             if (token.Type != TokenType.Keyword || token.Value != expectedName)
+            {
+                ThrowUnexpectedToken(token, expected: expectedName);
+            }
+        }
+
+        private void ExpectSoftKeyword(string expectedName)
+        {
+            var token = NextToken();
+            if (token.Type != TokenType.Identifier || token.Value != expectedName)
             {
                 ThrowUnexpectedToken(token, expected: expectedName);
             }

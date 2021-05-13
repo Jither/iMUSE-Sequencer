@@ -12,7 +12,7 @@ namespace Jither.Imuse.Scripting
         public const string Define = "define";
         public const string Sounds = "sounds";
         public const string Action = "action";
-        public const string During = "during";
+        public const string On = "on";
 
         public const string Break = "break";
         public const string Case = "case";
@@ -33,14 +33,23 @@ namespace Jither.Imuse.Scripting
         public const string Or = "or";
 
         public const string Enqueue = "enqueue";
+
+        // Soft keywords - these are scanned as identifiers, since they're only keywords in a specific context
+        public const string During = "during";
+        public const string Key = "key";
+        public const string Measure = "measure";
+        public const string Beat = "beat";
+        public const string Tick = "tick";
+        public const string Time = "time";
+        public const string Start = "start";
         public const string Marker = "marker";
 
-        public static readonly HashSet<string> All = new()
+        public static readonly HashSet<string> Hard = new()
         {
             Define,
             Sounds,
             Action,
-            During,
+            On,
 
             Break,
             Case,
@@ -60,8 +69,7 @@ namespace Jither.Imuse.Scripting
             And,
             Or,
 
-            Enqueue,
-            Marker
+            Enqueue
         };
     }
 
@@ -74,7 +82,6 @@ namespace Jither.Imuse.Scripting
     public class Scanner
     {
         private const CommentsStyle commentsStyle = CommentsStyle.Lisp;
-        private const bool supportFloatingPoint = false;
 
         private readonly string source;
         private readonly int length;
@@ -105,7 +112,7 @@ namespace Jither.Imuse.Scripting
             "--",
         };
 
-        private const string oneCharPunctuation = "<>=!+-*/%\\";
+        private const string oneCharPunctuation = "<>=!+-*/%\\:";
 
         public Scanner(string source)
         {
@@ -140,7 +147,7 @@ namespace Jither.Imuse.Scripting
 
         private static bool IsKeyword(string id)
         {
-            return Keywords.All.Contains(id);
+            return Keywords.Hard.Contains(id);
         }
 
         private static bool IsIdentifierCharacter(char c, bool start = false)
@@ -350,7 +357,7 @@ namespace Jither.Imuse.Scripting
             return builder;
         }
 
-        private Token ScanNumericLiteral()
+        private Token ScanIntegerOrTimeLiteral()
         {
             var builder = PrepareStringBuilder();
 
@@ -367,18 +374,30 @@ namespace Jither.Imuse.Scripting
                 c = CurrentChar;
             }
 
-            if (c == '.' && supportFloatingPoint)
+            bool isTime = false;
+            if (c == '.')
             {
-                Advance();
-                builder.Append(c);
-                c = CurrentChar;
-
-                while (c >= '0' && c <= '9')
+                // Parse time ([measure.]beat.tick)
+                int periodCount = 0;
+                while (c == '.')
                 {
+                    periodCount++;
+                    if (periodCount > 2)
+                    {
+                        ThrowUnexpectedToken(c);
+                    }
                     Advance();
                     builder.Append(c);
                     c = CurrentChar;
+
+                    while (c >= '0' && c <= '9')
+                    {
+                        Advance();
+                        builder.Append(c);
+                        c = CurrentChar;
+                    }
                 }
+                isTime = true;
             }
 
             // 123abc not allowed
@@ -386,9 +405,9 @@ namespace Jither.Imuse.Scripting
             {
                 ThrowUnexpectedToken(c);
             }
-            var number = builder.ToString();
+            var value = builder.ToString();
 
-            return Token(TokenType.NumericLiteral, number, start);
+            return isTime ? Token(TokenType.TimeLiteral, value, start) : Token(TokenType.IntegerLiteral, value, start);
         }
 
         private Token ScanStringLiteral()
@@ -474,7 +493,7 @@ namespace Jither.Imuse.Scripting
 
             if (c >= '0' && c <= '9')
             {
-                return ScanNumericLiteral();
+                return ScanIntegerOrTimeLiteral();
             }
 
             return ScanPunctuation();

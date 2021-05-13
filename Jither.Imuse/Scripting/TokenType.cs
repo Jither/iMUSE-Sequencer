@@ -6,7 +6,7 @@
         EOF,
         Identifier,
         Keyword,
-        NumericLiteral,
+        TimeLiteral,
         IntegerLiteral,
         Punctuation,
         StringLiteral

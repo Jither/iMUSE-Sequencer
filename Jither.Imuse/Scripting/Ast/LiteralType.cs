@@ -4,7 +4,7 @@
     {
         String,
         Boolean,
-        Number,
-        Integer
+        Integer,
+        Time
     }
 }

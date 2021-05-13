@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Jither.Imuse.Scripting;
+using Jither.Imuse.Scripting.Types;
 
 namespace Jither.Imuse.Scripting.Ast
 {
@@ -11,7 +12,7 @@ namespace Jither.Imuse.Scripting.Ast
 
         public string StringValue { get; }
         public bool BooleanValue { get; }
-        public double NumericValue { get; }
+        public Time TimeValue { get; }
         public int IntegerValue { get; }
 
         public object Value { get; }
@@ -28,10 +29,10 @@ namespace Jither.Imuse.Scripting.Ast
             Value = BooleanValue = value;
         }
 
-        public Literal(LiteralType type, double value)
+        public Literal(LiteralType type, Time value)
         {
             ValueType = type;
-            Value = NumericValue = value;
+            Value = TimeValue = value;
         }
 
         public Literal(LiteralType type, int value)

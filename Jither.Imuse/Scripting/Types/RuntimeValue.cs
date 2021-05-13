@@ -19,7 +19,7 @@ namespace Jither.Imuse.Scripting.Types
 
         Action,
         Command,
-        Function,
+        Time,
 
         Null
     }
@@ -105,6 +105,20 @@ namespace Jither.Imuse.Scripting.Types
         {
             return AsCommand(executer.Node);
         }
+
+        public Time AsTime(Executer executer)
+        {
+            return AsTime(executer.Node);
+        }
+
+        public Time AsTime(Node node)
+        {
+            if (Type != RuntimeType.Time)
+            {
+                ErrorHelper.ThrowTypeError(node, $"Expected time but got {Type}");
+            }
+            return ((TimeValue)this).Value;
+        }
     }
 
     public class BooleanValue : RuntimeValue
@@ -164,6 +178,21 @@ namespace Jither.Imuse.Scripting.Types
         public override string ToString()
         {
             return Value.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    public class TimeValue : RuntimeValue
+    {
+        public Time Value { get; }
+
+        public TimeValue(Time value) : base(RuntimeType.Time)
+        {
+            Value = value;
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString();
         }
     }
 

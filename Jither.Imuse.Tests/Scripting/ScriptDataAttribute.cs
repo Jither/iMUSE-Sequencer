@@ -29,7 +29,7 @@ namespace Jither.Imuse.Scripting
             }
 
             string[] lines = File.ReadAllLines(path, Encoding.UTF8);
-
+            int paramCount = testMethod.GetParameters().Length;
             string section = null;
             var builder = new StringBuilder();
             foreach (var line in lines)
@@ -38,7 +38,14 @@ namespace Jither.Imuse.Scripting
                 {
                     if (section != null)
                     {
-                        yield return new object[] { section, builder.ToString() };
+                        if (paramCount == 2)
+                        {
+                            yield return new object[] { builder.ToString(), section };
+                        }
+                        else
+                        {
+                            yield return new object[] { builder.ToString() };
+                        }
                         builder.Clear();
                     }
                     section = line[1..].Trim();
@@ -49,7 +56,14 @@ namespace Jither.Imuse.Scripting
                 }
             }
 
-            yield return new object[] { section, builder.ToString() };
+            if (paramCount == 2)
+            {
+                yield return new object[] { builder.ToString(), section };
+            }
+            else
+            {
+                yield return new object[] { builder.ToString() };
+            }
         }
     }
 }

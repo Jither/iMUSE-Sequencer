@@ -132,6 +132,18 @@ namespace Jither.Imuse.Scripting.Ast
             indentLevel--;
         }
 
+        public void VisitEventDeclaration(EventDeclaration evt)
+        {
+            Output("event");
+            indentLevel++;
+
+            evt.Event.Accept(this);
+            evt.ActionDeclaration?.Accept(this);
+            evt.ActionName?.Accept(this);
+
+            indentLevel--;
+        }
+
         public void VisitUnaryExpression(UnaryExpression expr)
         {
             Output(expr.Operator.OperatorString());
@@ -248,6 +260,48 @@ namespace Jither.Imuse.Scripting.Ast
         public void VisitBreakStatement(BreakStatement stmt)
         {
             Output("break");
+        }
+
+        public void VisitKeyPressEventDeclarator(KeyPressEventDeclarator node)
+        {
+            Output("key");
+            indentLevel++;
+            node.Key.Accept(this);
+            indentLevel--;
+        }
+
+        public void VisitTimeEventDeclarator(TimeEventDeclarator node)
+        {
+            Output("time");
+            indentLevel++;
+            node.Time?.Accept(this);
+            if (node.Measure != null)
+            {
+                Output("measure:");
+                indentLevel++;
+                node.Measure.Accept(this);
+                indentLevel--;
+            }
+            if (node.Beat != null)
+            {
+                Output("beat:");
+                indentLevel++;
+                node.Beat.Accept(this);
+                indentLevel--;
+            }
+            if (node.Tick != null)
+            {
+                Output("tick:");
+                indentLevel++;
+                node.Tick.Accept(this);
+                indentLevel--;
+            }
+            indentLevel--;
+        }
+
+        public void VisitStartEventDeclarator(StartEventDeclarator node)
+        {
+            Output("start");
         }
     }
 }

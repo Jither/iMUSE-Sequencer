@@ -19,6 +19,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 DefineDeclaration define => new DefineDeclarationExecuter(define),
                 SoundsDeclaration sounds => new SoundsDeclarationExecuter(sounds),
                 ActionDeclaration action => new ActionDeclarationExecuter(action),
+                EventDeclaration evt => new EventDeclarationExecuter(evt),
                 _ => ErrorHelper.ThrowUnknownNode<DeclarationExecuter>(declaration)
             };
         }

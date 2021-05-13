@@ -19,7 +19,11 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitDefineDeclaration(DefineDeclaration node);
         void VisitSoundsDeclaration(SoundsDeclaration node);
         void VisitActionDeclaration(ActionDeclaration node);
+        void VisitEventDeclaration(EventDeclaration node);
         void VisitSoundDeclarator(SoundDeclarator node);
+        void VisitKeyPressEventDeclarator(KeyPressEventDeclarator node);
+        void VisitTimeEventDeclarator(TimeEventDeclarator node);
+        void VisitStartEventDeclarator(StartEventDeclarator node);
 
         void VisitBlockStatement(BlockStatement node);
         void VisitBreakStatement(BreakStatement node);
@@ -103,6 +107,7 @@ namespace Jither.Imuse.Scripting.Ast
         public void VisitDefineDeclaration(DefineDeclaration node) => Visit(node);
         public void VisitDoStatement(DoStatement node) => Visit(node);
         public void VisitEnqueueStatement(EnqueueStatement node) => Visit(node);
+        public void VisitEventDeclaration(EventDeclaration node) => Visit(node);
         public void VisitForStatement(ForStatement node) => Visit(node);
         public void VisitCallExpression(CallExpression node) => Visit(node);
         public void VisitIdentifier(Identifier node) => Visit(node);
@@ -114,6 +119,9 @@ namespace Jither.Imuse.Scripting.Ast
         public void VisitUnaryExpression(UnaryExpression node) => Visit(node);
         public void VisitUpdateExpression(UpdateExpression node) => Visit(node);
         public void VisitWhileStatement(WhileStatement node) => Visit(node);
+        public void VisitKeyPressEventDeclarator(KeyPressEventDeclarator node) => Visit(node);
+        public void VisitTimeEventDeclarator(TimeEventDeclarator node) => Visit(node);
+        public void VisitStartEventDeclarator(StartEventDeclarator node) => Visit(node);
     }
 
     /// <summary>

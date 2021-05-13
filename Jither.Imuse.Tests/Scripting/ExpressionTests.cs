@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -167,18 +168,19 @@ namespace Jither.Imuse.Scripting
         }
 
         [Theory]
-        [InlineData("0.20", 0.2d)]
-        [InlineData("5.1", 5.1d)]
-        [InlineData("20.0", 20d)]
-        [InlineData("214.7483647", 214.7483647d)]
-        public void Parses_number_literals(string source, double expected)
+        [InlineData("4.2.400", 4, 2, 400)]
+        [InlineData("5.100", 0, 5, 100)]
+        [InlineData("0.5.200", 0, 5, 200)]
+        public void Parses_time_literals(string source, int expectedMeasure, int expectedBeat, int expectedTick)
         {
             var parser = new ScriptParser(source);
             var expr = parser.ParseExpression();
 
+            var expected = new Time(expectedMeasure, expectedBeat, expectedTick);
+
             var literal = Assert.IsType<Literal>(expr);
-            Assert.Equal(LiteralType.Number, literal.ValueType);
-            Assert.Equal(expected, literal.NumericValue);
+            Assert.Equal(LiteralType.Time, literal.ValueType);
+            Assert.Equal(expected, literal.TimeValue);
         }
 
         [Theory]

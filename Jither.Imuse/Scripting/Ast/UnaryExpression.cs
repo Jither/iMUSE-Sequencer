@@ -37,13 +37,11 @@ namespace Jither.Imuse.Scripting.Ast
         public override NodeType Type => NodeType.UpdateExpression;
         public UpdateOperator Operator { get; }
         public Identifier Argument { get; }
-        public bool Prefix { get; }
 
-        public UpdateExpression(Identifier argument, UpdateOperator op, bool prefix)
+        public UpdateExpression(Identifier argument, UpdateOperator op)
         {
             Argument = argument;
             Operator = op;
-            Prefix = prefix;
         }
 
         public override IEnumerable<Node> Children

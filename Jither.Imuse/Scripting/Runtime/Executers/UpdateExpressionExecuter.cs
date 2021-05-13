@@ -8,13 +8,11 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
     {
         private readonly Identifier identifier;
         private readonly UpdateOperator op;
-        private readonly bool prefix;
 
         public UpdateExpressionExecuter(UpdateExpression expr) : base(expr)
         {
             identifier = expr.Argument;
             op = expr.Operator;
-            prefix = expr.Prefix;
         }
 
         public override ExecutionResult Execute(ExecutionContext context)

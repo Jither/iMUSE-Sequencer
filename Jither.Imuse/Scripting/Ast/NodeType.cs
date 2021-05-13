@@ -7,8 +7,12 @@
         DefineDeclaration,
         SoundsDeclaration,
         ActionDeclaration,
+        EventDeclaration,
 
         SoundDeclarator,
+        KeyPressEventDeclarator,
+        TimeEventDeclarator,
+        StartEventDeclarator,
 
         BlockStatement,
         BreakStatement,
@@ -19,11 +23,10 @@
         ForStatement,
         CaseStatement,
         CaseDefinition,
-        CallStatement,
         EnqueueStatement,
         AssignmentStatement,
 
-        FunctionCallExpression,
+        CallExpression,
         BinaryExpression,
         UnaryExpression,
         UpdateExpression,
