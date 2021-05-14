@@ -1,5 +1,6 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime.Executers;
+using Jither.Imuse.Scripting.Types;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -28,5 +29,10 @@ namespace Jither.Imuse.Scripting.Runtime
             throw new RuntimeException(node, message);
         }
 
+        [DoesNotReturn]
+        public static void ThrowArgumentError(Node node, string message, Command command)
+        {
+            throw new RuntimeException(node, $"{message} in call to {command}");
+        }
     }
 }

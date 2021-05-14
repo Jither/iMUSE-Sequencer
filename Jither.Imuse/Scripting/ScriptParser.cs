@@ -323,6 +323,7 @@ namespace Jither.Imuse.Scripting
             if (MatchesKeyword(Keywords.Until))
             {
                 // SCUMM requires parentheses here - should we?
+                NextToken();
                 test = ParseExpression();
             }
 

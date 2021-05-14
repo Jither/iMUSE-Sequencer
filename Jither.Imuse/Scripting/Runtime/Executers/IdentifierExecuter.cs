@@ -6,6 +6,8 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
     {
         private readonly Identifier identifier;
 
+        public string Name => identifier.Name;
+
         public IdentifierExecuter(Identifier identifier) : base(identifier)
         {
             this.identifier = identifier;

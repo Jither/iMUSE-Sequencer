@@ -51,7 +51,7 @@ namespace Jither.Imuse.Scripting.Runtime
             var result = TryGetSymbol(node, name);
             if (result == null)
             {
-                ErrorHelper.ThrowTypeError(node, $"${name} is not defined.");
+                ErrorHelper.ThrowTypeError(node, $"{name} is not defined.");
             }
             return result;
         }

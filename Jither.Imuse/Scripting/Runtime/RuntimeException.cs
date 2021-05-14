@@ -8,7 +8,7 @@ namespace Jither.Imuse.Scripting.Runtime
         public Node Node { get; }
         public override SourceRange Range => Node.Range;
 
-        public override string Message => $"{base.Message} at {Node.Range.Start}";
+        public override string Message => $"{Node.Range.Start,6}: {base.Message}";
 
         public RuntimeException(Node node, string message) : base(message)
         {
