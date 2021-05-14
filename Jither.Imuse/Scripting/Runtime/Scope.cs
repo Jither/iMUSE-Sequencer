@@ -48,6 +48,16 @@ namespace Jither.Imuse.Scripting.Runtime
 
         public Symbol GetSymbol(Node node, string name)
         {
+            var result = TryGetSymbol(node, name);
+            if (result == null)
+            {
+                ErrorHelper.ThrowTypeError(node, $"${name} is not defined.");
+            }
+            return result;
+        }
+
+        public Symbol TryGetSymbol(Node node, string name)
+        {
             Scope lookupScope = this;
             while (lookupScope != null)
             {
@@ -58,7 +68,6 @@ namespace Jither.Imuse.Scripting.Runtime
                 }
                 lookupScope = lookupScope.parent;
             }
-            ErrorHelper.ThrowTypeError(node, $"${name} is not defined.");
             return null;
         }
 

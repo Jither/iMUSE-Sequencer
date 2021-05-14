@@ -24,7 +24,15 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         public override ExecutionResult Execute(ExecutionContext context)
         {
             // TODO: ExecutionResult here could actually be pre-calculated too
-            return new ExecutionResult(ExecutionResultType.Normal, value);
+            var result = value;
+
+            // Format string literal:
+            if (result is StringValue str)
+            {
+                result = str.Format(this, context);
+            }
+
+            return new ExecutionResult(ExecutionResultType.Normal, result);
         }
     }
 }
