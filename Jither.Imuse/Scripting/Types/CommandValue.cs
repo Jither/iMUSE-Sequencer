@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using Jither.Utilities;
+using System.Linq;
 
 namespace Jither.Imuse.Scripting.Types
 {
     public class CommandValue : RuntimeValue
     {
         public Command Value { get; }
+        public override object UntypedValue => Value;
 
         public CommandValue(Command value) : base(RuntimeType.Command)
         {
@@ -13,8 +15,7 @@ namespace Jither.Imuse.Scripting.Types
 
         public override string ToString()
         {
-            var prms = string.Join(", ", Value.Parameters.Select(p => $"{p}"));
-            return $"command {Value.Name} ({prms})";
+            return $"command {Value}";
         }
     }
 }

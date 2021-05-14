@@ -1,5 +1,6 @@
 ﻿using Jither.Imuse.Helpers;
 using Jither.Imuse.Scripting.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -45,7 +46,9 @@ namespace Jither.Imuse.Scripting.Runtime
                     var paramType = RuntimeTypes.FromClrType(paramInfo.ParameterType);
                     commandParameters.Add(new CommandParameter(paramName, paramType));
                 }
-                var command = new Command(name, commandParameters);
+                var returnType = RuntimeTypes.FromClrType(method.ReturnType);
+                var call = CommandHelper.CreateCommandMethod(commandObject, method);
+                var command = new Command(name, commandParameters, returnType, call);
                 CurrentScope.AddSymbol(name, new CommandValue(command), isConstant: true);
             }
         }

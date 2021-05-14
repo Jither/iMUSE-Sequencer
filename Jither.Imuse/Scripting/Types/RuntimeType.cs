@@ -6,7 +6,8 @@ namespace Jither.Imuse.Scripting.Types
 {
     public enum RuntimeType
     {
-        None,
+        [EnumMember(Value = "void")]
+        Void,
         [EnumMember(Value = "bool")]
         Boolean,
         [EnumMember(Value = "string")]
@@ -29,6 +30,7 @@ namespace Jither.Imuse.Scripting.Types
     {
         private static readonly Dictionary<Type, RuntimeType> runtimeTypesByType = new()
         {
+            [typeof(void)] = RuntimeType.Void,
             [typeof(int)] = RuntimeType.Integer,
             [typeof(string)] = RuntimeType.String,
             [typeof(bool)] = RuntimeType.Boolean,

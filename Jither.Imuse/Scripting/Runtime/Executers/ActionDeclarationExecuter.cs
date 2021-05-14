@@ -13,7 +13,10 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         public ActionDeclarationExecuter(ActionDeclaration action) : base(action)
         {
             name = action.Name?.Name;
-            during = ExpressionExecuter.Build(action.During);
+            if (during != null)
+            {
+                during = ExpressionExecuter.Build(action.During);
+            }
             body = StatementExecuter.Build(action.Body);
         }
 

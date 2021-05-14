@@ -3,6 +3,7 @@
     public class ActionValue : RuntimeValue
     {
         public ImuseAction Value { get; }
+        public override object UntypedValue => Value;
 
         public ActionValue(ImuseAction action) : base(RuntimeType.Action)
         {

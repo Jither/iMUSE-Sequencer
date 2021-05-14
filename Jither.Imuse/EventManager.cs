@@ -1,4 +1,5 @@
-﻿using Jither.Imuse.Scripting.Types;
+﻿using Jither.Imuse.Scripting.Runtime;
+using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,6 +55,14 @@ namespace Jither.Imuse
         public EventManager()
         {
 
+        }
+
+        public void TriggerStart(ExecutionContext context)
+        {
+            foreach (var evt in startEvents)
+            {
+                evt.Action.Execute(context);
+            }
         }
 
         public void RegisterEvent(ImuseEvent evt)

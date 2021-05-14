@@ -3,6 +3,7 @@
     public class TimeValue : RuntimeValue
     {
         public Time Value { get; }
+        public override object UntypedValue => Value;
 
         public TimeValue(Time value) : base(RuntimeType.Time)
         {

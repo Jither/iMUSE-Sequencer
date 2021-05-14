@@ -7,11 +7,15 @@ using System.Threading.Tasks;
 
 namespace Jither.Imuse.Scripting.Types
 {
+
     public abstract class RuntimeValue
     {
         public static readonly NullValue Null = new();
+        public static readonly VoidValue Void = new();
 
         public RuntimeType Type { get; }
+
+        public abstract object UntypedValue { get; }
 
         public RuntimeValue(RuntimeType type)
         {

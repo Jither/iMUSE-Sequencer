@@ -5,6 +5,7 @@ namespace Jither.Imuse.Scripting.Types
     public class IntegerValue : RuntimeValue
     {
         public int Value { get; }
+        public override object UntypedValue => Value;
 
         public IntegerValue(int value) : base(RuntimeType.Integer)
         {
