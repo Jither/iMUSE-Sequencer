@@ -1,4 +1,6 @@
-﻿namespace Jither.Imuse.Scripting.Types
+﻿using System;
+
+namespace Jither.Imuse.Scripting.Types
 {
     public class BooleanValue : RuntimeValue
     {
@@ -15,6 +17,11 @@
         public override string ToString()
         {
             return Value ? "true" : "false";
+        }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is BooleanValue boolean && boolean.Value == Value;
         }
     }
 }

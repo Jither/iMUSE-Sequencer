@@ -14,5 +14,10 @@
         {
             return Value;
         }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is StringValue str && str.Value == Value;
+        }
     }
 }

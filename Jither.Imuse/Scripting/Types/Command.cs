@@ -33,7 +33,7 @@ namespace Jither.Imuse.Scripting.Types
             return ReturnType switch
             {
                 RuntimeType.Boolean => (bool)result ? BooleanValue.True : BooleanValue.False,
-                RuntimeType.Integer => new IntegerValue((int)result),
+                RuntimeType.Integer => IntegerValue.Create((int)result),
                 RuntimeType.Void => RuntimeValue.Void,
                 RuntimeType.String => new StringValue((string)result),
                 RuntimeType.Time => new TimeValue((Time)result),

@@ -8,6 +8,7 @@ namespace Jither.Imuse.Scripting.Runtime
         public string Name { get; }
         public RuntimeValue Value { get; private set; }
         public bool IsConstant { get; }
+        internal bool IsImmutable { get; set; }
 
         public Symbol(string name, RuntimeValue value, bool isConstant = false)
         {
@@ -22,6 +23,15 @@ namespace Jither.Imuse.Scripting.Runtime
             {
                 ErrorHelper.ThrowTypeError(node, $"Cannot assign {value} to {Name} - it's a constant");
             }
+            if (IsImmutable)
+            {
+                ErrorHelper.ThrowTypeError(node, $"Cannot assign {value} to {Name} - it's immutable (e.g. a loop counter)");
+            }
+            UpdateWithNoChecks(value);
+        }
+
+        internal void UpdateWithNoChecks(RuntimeValue value)
+        {
             Value = value;
         }
 

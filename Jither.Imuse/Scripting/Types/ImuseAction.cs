@@ -19,7 +19,12 @@ namespace Jither.Imuse.Scripting.Types
 
         internal void Execute(ExecutionContext context)
         {
+            context.EnterScope($"Action {Name}");
             bodyExecuter.Execute(context);
+
+            context.Dump();
+
+            context.ExitScope();
         }
     }
 }

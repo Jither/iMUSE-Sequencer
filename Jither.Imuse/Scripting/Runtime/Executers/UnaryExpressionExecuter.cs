@@ -19,8 +19,8 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         {
             RuntimeValue result = op switch
             {
-                UnaryOperator.Plus => new IntegerValue(argument.GetValue(context).AsInteger(argument)),
-                UnaryOperator.Minus => new IntegerValue(-argument.GetValue(context).AsInteger(argument)),
+                UnaryOperator.Plus => IntegerValue.Create(argument.GetValue(context).AsInteger(argument)),
+                UnaryOperator.Minus => IntegerValue.Create(-argument.GetValue(context).AsInteger(argument)),
                 UnaryOperator.Not => argument.GetValue(context).AsBoolean(argument) ? BooleanValue.False : BooleanValue.True,
                 _ => throw new NotImplementedException($"Unary operator {op} not implemented."),
             };

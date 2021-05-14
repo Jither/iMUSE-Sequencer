@@ -36,8 +36,8 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 // These operate on any type:
                 result = op switch
                 {
-                    BinaryOperator.Equal => throw new NotImplementedException(),
-                    BinaryOperator.NotEqual => throw new NotImplementedException(),
+                    BinaryOperator.Equal => left.GetValue(context).IsEqualTo(right.GetValue(context)) ? BooleanValue.True : BooleanValue.False,
+                    BinaryOperator.NotEqual => left.GetValue(context).IsEqualTo(right.GetValue(context)) ? BooleanValue.False : BooleanValue.True,
                     _ => throw new NotImplementedException($"Binary operator {op} not implemented in interpreter")
                 };
             }
@@ -49,11 +49,11 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
 
                 result = op switch
                 {
-                    BinaryOperator.Add => new IntegerValue(leftValue + rightValue),
-                    BinaryOperator.Subtract => new IntegerValue(leftValue - rightValue),
-                    BinaryOperator.Multiply => new IntegerValue(leftValue * rightValue),
-                    BinaryOperator.Divide => new IntegerValue(leftValue / rightValue),
-                    BinaryOperator.Modulo => new IntegerValue(leftValue % rightValue),
+                    BinaryOperator.Add => IntegerValue.Create(leftValue + rightValue),
+                    BinaryOperator.Subtract => IntegerValue.Create(leftValue - rightValue),
+                    BinaryOperator.Multiply => IntegerValue.Create(leftValue * rightValue),
+                    BinaryOperator.Divide => IntegerValue.Create(leftValue / rightValue),
+                    BinaryOperator.Modulo => IntegerValue.Create(leftValue % rightValue),
                     BinaryOperator.Greater => leftValue > rightValue ? BooleanValue.True : BooleanValue.False,
                     BinaryOperator.GreaterOrEqual => leftValue >= rightValue ? BooleanValue.True : BooleanValue.False,
                     BinaryOperator.Less => leftValue < rightValue ? BooleanValue.True : BooleanValue.False,

@@ -14,5 +14,10 @@
         {
             return $"action {Value.Name ?? "<anonymous>"}{(Value.During == null ? "" : $" during {Value.During}")}";
         }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is ActionValue action && action.Value == Value;
+        }
     }
 }

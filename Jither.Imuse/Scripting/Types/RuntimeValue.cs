@@ -1,13 +1,13 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime;
 using Jither.Imuse.Scripting.Runtime.Executers;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Jither.Imuse.Scripting.Types
 {
-
     public abstract class RuntimeValue
     {
         public static readonly NullValue Null = new();
@@ -105,5 +105,8 @@ namespace Jither.Imuse.Scripting.Types
             }
             return ((ActionValue)this).Value;
         }
+
+        // We use a custom method of equality comparison - for now, we have no need for IEquatable<T> + operator overloading + GetHashCode etc.
+        public abstract bool IsEqualTo(RuntimeValue other);
     }
 }

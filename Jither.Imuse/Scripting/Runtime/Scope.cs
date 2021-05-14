@@ -1,6 +1,7 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Types;
 using Jither.Logging;
+using System;
 using System.Collections.Generic;
 
 namespace Jither.Imuse.Scripting.Runtime
@@ -23,6 +24,10 @@ namespace Jither.Imuse.Scripting.Runtime
         public Symbol AddSymbol(string name, RuntimeValue value, bool isConstant = false)
         {
             var symbol = new Symbol(name, value, isConstant);
+            if (symbols.ContainsKey(name))
+            {
+                throw new InvalidOperationException($"Symbol '{name}' is already defined in this scope");
+            }
             symbols.Add(name, symbol);
             return symbol;
         }

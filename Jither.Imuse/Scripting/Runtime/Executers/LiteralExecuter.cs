@@ -15,7 +15,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             value = literal.ValueType switch
             {
                 LiteralType.Boolean => literal.BooleanValue ? BooleanValue.True : BooleanValue.False,
-                LiteralType.Integer => new IntegerValue(literal.IntegerValue),
+                LiteralType.Integer => IntegerValue.Create(literal.IntegerValue),
                 LiteralType.String => new StringValue(literal.StringValue),
                 _ => throw new NotImplementedException($"Literal type {literal.ValueType} is not implemented in interpreter")
             };

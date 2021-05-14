@@ -30,6 +30,17 @@ namespace Jither.Imuse.Scripting.Runtime
             scopes.Push(new Scope("Global", CurrentScope));
         }
 
+        public void EnterScope(string name)
+        {
+            var scope = new Scope(name, CurrentScope);
+            scopes.Push(scope);
+        }
+
+        public void ExitScope()
+        {
+            scopes.Pop();
+        }
+
         public void PopulateCommands(object commandObject)
         {
             var methods = commandObject.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)

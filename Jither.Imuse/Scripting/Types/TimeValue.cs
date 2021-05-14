@@ -14,5 +14,10 @@
         {
             return Value.ToString();
         }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is TimeValue time && time.Value == Value;
+        }
     }
 }

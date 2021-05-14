@@ -9,10 +9,10 @@ namespace Jither.Imuse.Scripting.Ast
         public Identifier Iterator { get; }
         public Expression From { get; }
         public Expression To { get; }
-        public bool Increment { get; }
+        public bool? Increment { get; }
         public Statement Body { get; }
 
-        public ForStatement(Identifier iterator, Expression from, Expression to, bool increment, Statement body)
+        public ForStatement(Identifier iterator, Expression from, Expression to, bool? increment, Statement body)
         {
             Iterator = iterator;
             From = from;

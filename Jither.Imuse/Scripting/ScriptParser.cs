@@ -445,7 +445,8 @@ namespace Jither.Imuse.Scripting
             ExpectKeyword("to");
             var to = ParseExpression();
 
-            bool increment = true;
+            // Unlike SCUMM, we allow increment to not be defined - in that case, from/to decides the direction of the loop
+            bool? increment = null;
             if (Matches("++", "--"))
             {
                 var token = NextToken();

@@ -17,5 +17,10 @@ namespace Jither.Imuse.Scripting.Types
         {
             return $"command {Value}";
         }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is CommandValue command && command.Value == Value;
+        }
     }
 }

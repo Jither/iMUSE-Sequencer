@@ -41,7 +41,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                     AssignmentOperator.Modulo => leftInt % rightInt,
                     _ => throw new NotImplementedException($"Assignment operator {op} not implemented in interpreter"),
                 };
-                value = new IntegerValue(resultInt);
+                value = IntegerValue.Create(resultInt);
             }
             context.CurrentScope.AddOrUpdateSymbol(this.Node, identifierName, value);
             return new ExecutionResult(ExecutionResultType.Normal, value);

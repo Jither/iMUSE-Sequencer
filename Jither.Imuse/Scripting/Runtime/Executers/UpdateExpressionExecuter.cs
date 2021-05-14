@@ -30,7 +30,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 default:
                     throw new NotImplementedException($"Update operator {op} not implemented");
             }
-            var newValue = new IntegerValue(value);
+            var newValue = IntegerValue.Create(value);
             symbol.Update(Node, newValue);
             return new ExecutionResult(ExecutionResultType.Normal, newValue);
         }

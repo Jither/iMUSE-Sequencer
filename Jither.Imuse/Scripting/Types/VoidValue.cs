@@ -13,5 +13,10 @@
         {
             return "void";
         }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is VoidValue;
+        }
     }
 }

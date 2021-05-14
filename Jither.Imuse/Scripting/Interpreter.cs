@@ -24,7 +24,6 @@ namespace Jither.Imuse.Scripting
             context = new ExecutionContext(engine);
             script.Execute(context);
             engine.Events.TriggerStart(context);
-            context.Dump();
         }
     }
 }

@@ -179,7 +179,13 @@ namespace Jither.Imuse.Scripting.Ast
 
         public void VisitForStatement(ForStatement stmt)
         {
-            Output($"for {(stmt.Increment ? "++" : "--")}");
+            string inc = stmt.Increment switch
+            {
+                true => "++",
+                false => "--",
+                null => ""
+            };
+            Output($"for {inc}");
             indentLevel++;
 
             stmt.Iterator.Accept(this);

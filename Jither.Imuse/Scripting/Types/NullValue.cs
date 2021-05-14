@@ -13,5 +13,10 @@
         {
             return "null";
         }
+
+        public override bool IsEqualTo(RuntimeValue other)
+        {
+            return other is NullValue;
+        }
     }
 }
