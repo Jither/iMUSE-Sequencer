@@ -12,18 +12,23 @@ namespace Jither.Imuse.Scripting
     public class Interpreter
     {
         private readonly ScriptExecuter script;
-        private ExecutionContext context;
+        private readonly FileProvider fileProvider;
 
-        public Interpreter(Script script)
+        public ExecutionContext Context { get; private set; }
+
+        public Interpreter(string source, FileProvider fileProvider)
         {
-            this.script = new ScriptExecuter(script);
+            this.fileProvider = fileProvider;
+            var parser = new ScriptParser(source);
+            var ast = parser.Parse();
+            this.script = new ScriptExecuter(ast);
         }
 
         public void Execute(ImuseEngine engine)
         {
-            context = new ExecutionContext(engine);
-            script.Execute(context);
-            engine.Events.TriggerStart(context);
+            Context = new ExecutionContext(engine, engine.Commands, engine.Events, engine.Queue, fileProvider);
+            script.Execute(Context);
+            engine.Events.TriggerStart(Context);
         }
     }
 }

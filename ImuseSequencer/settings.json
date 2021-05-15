@@ -1,0 +1,15 @@
+﻿{
+  // Folder from which MUSK interpreter will load MIDI files
+  "midiFolder": "D:/SCUMM/Midis",
+
+  // Preferred MIDI output device for each sound target. Use "ImuseSequencer list-outputs" to see available outputs on your OS.
+  // The output can be specified using the integer ID that Windows assigns - but that is rather useless if devices are disconnected/reconnected.
+  // Instead, you can specify part of the name (any part), and the first device with the given string in its name will be chosen.
+  // Prepend the name/ID with "s:" to use Windows MIDI streaming (recommended), rather than the managed scheduler, which is likely to be less precise.
+  "devices": {
+    "Roland": "s:MT-32",
+    "GeneralMidi": "s:Playback",
+    "Adlib": "s:Playback",
+    "Speaker": "s:Playback"
+  }
+}

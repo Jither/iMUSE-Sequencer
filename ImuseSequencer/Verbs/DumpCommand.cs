@@ -37,15 +37,10 @@ namespace ImuseSequencer.Verbs
         };
     }
 
-    public class DumpCommand : Command
+    public class DumpCommand : Command<DumpOptions>
     {
-        private readonly Logger logger = LogProvider.Get(nameof(DumpCommand));
-
-        private readonly DumpOptions options;
-
-        public DumpCommand(DumpOptions options) : base(options)
+        public DumpCommand(Settings settings, DumpOptions options) : base(settings, options)
         {
-            this.options = options;
         }
 
         public override void Execute()
@@ -76,7 +71,7 @@ namespace ImuseSequencer.Verbs
             {
                 soundFile.Midi.Timeline.ApplyBeatPositions();
                 logger.Info("");
-                logger.Info("<b>Events</b>");
+                logger.Info("[b]Events[/]");
                 foreach (var track in soundFile.Midi.Tracks)
                 {
                     logger.Info("");
@@ -100,7 +95,7 @@ namespace ImuseSequencer.Verbs
             if (options.IncludeTimeline)
             {
                 logger.Info("");
-                logger.Info("<b>Timeline</b>");
+                logger.Info("[b]Timeline[/]");
                 foreach (var time in soundFile.Midi.Timeline)
                 {
                     logger.Info(time.ToString());
@@ -112,14 +107,14 @@ namespace ImuseSequencer.Verbs
         {
             return evt.Message switch
             {
-                NoteOnMessage => "a0a0a0",
-                NoteOffMessage => "606060",
-                ControlChangeMessage => "ffcc00",
-                ProgramChangeMessage => "88cc55",
-                ImuseMessage => "88bbff",
-                SysexMessage => "dd6666",
-                PitchBendChangeMessage => "6699cc",
-                MetaMessage => "ccaaff",
+                NoteOnMessage => "gray",
+                NoteOffMessage => "dark",
+                ControlChangeMessage => "yellow",
+                ProgramChangeMessage => "green",
+                ImuseMessage => "blue",
+                SysexMessage => "red",
+                PitchBendChangeMessage => "darkblue",
+                MetaMessage => "purple",
                 _ => null
             };
         }

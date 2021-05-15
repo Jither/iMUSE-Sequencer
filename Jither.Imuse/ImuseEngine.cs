@@ -1,5 +1,6 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
+using Jither.Imuse.Scripting.Events;
 using Jither.Logging;
 using Jither.Midi.Files;
 using Jither.Utilities;
@@ -37,8 +38,6 @@ namespace Jither.Imuse
             options ??= new ImuseOptions();
 
             driver = GetDriver();
-
-            logger.Info($"Target device: {target.GetFriendlyName()}");
 
             Queue = new ImuseQueue(this);
 
@@ -118,7 +117,10 @@ namespace Jither.Imuse
             }
             // Return number of ticks played so far. Will be less than the requested number of ticks, if player
             // signaled a stop.
-            return currentTick;
+            // TODO: Pretending we got full amount of ticks every time. Temporary measure to let the engine start before anything is ready to play...
+            // Plenty of issues with that, most notably:
+            // * when done playing, will output a noop ("call me") every tick.
+            return ticks; // currentTick;
         }
 
         public void Stop()

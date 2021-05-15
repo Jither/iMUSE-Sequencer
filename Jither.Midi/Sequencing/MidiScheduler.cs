@@ -118,6 +118,11 @@ namespace Jither.Midi.Sequencing
 
         public void Start()
         {
+            if (ticksPerQuarterNote == 0)
+            {
+                throw new InvalidOperationException("Ticks per quarternote should be set before starting MIDI scheduler.");
+            }
+
             if (isSchedulerThread || IsRunning)
             {
                 throw new InvalidOperationException("MidiScheduler is already running");

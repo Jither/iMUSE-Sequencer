@@ -7,10 +7,17 @@ using System.Threading.Tasks;
 
 namespace ImuseSequencer.Verbs
 {
-    public abstract class Command
+    public abstract class Command<TOptions> where TOptions: CommonOptions
     {
-        protected Command(CommonOptions options)
+        protected readonly Logger logger = LogProvider.Get(nameof(Command<TOptions>));
+
+        protected readonly TOptions options;
+        protected readonly Settings settings;
+
+        protected Command(Settings settings, TOptions options)
         {
+            this.settings = settings;
+            this.options = options;
             LogProvider.Level = options.LogLevel;
         }
 

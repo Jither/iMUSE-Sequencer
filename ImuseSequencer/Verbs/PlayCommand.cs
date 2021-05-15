@@ -7,11 +7,14 @@ using System.IO;
 using Jither.Imuse;
 using Jither.Imuse.Files;
 using System.Linq;
+using ImuseSequencer.Helpers;
+using ImuseSequencer.UI;
+using Jither.Utilities;
 
 namespace ImuseSequencer.Verbs
 {
     [Verb("play", Help = "Plays file")]
-    public class PlayOptions : CommonOptions, ICustomParsing
+    public class PlayOptions : CommonPlaybackOptions
     {
         [Positional(0, Name = "input file", Help = "Path to input MIDI file (Standard MIDI file or LEC chunk - SOUN, SOU, ADL, ROL etc.)", Required = true)]
         public string InputPath { get; set; }
@@ -19,84 +22,54 @@ namespace ImuseSequencer.Verbs
         [Positional(1, Name = "output file", Help = "Path to output MIDI file. Cannot be combined with output to device.")]
         public string OutputPath { get; set; }
 
-        [Option('o', "output", Help = "ID of MIDI output device. Cannot be combined with output to file.", ArgName = "device id")]
-        public string DeviceId { get; set; }
+        [Option('o', "output", Help = "MIDI output device selector. Cannot be combined with output to file. If not specified, settings.json will be used, based on target.", ArgName = "selector")]
+        public string DeviceSelector { get; set; }
 
         [Option('t', "target", Help = "Playback target device. 'Unknown' will determine from LEC chunk, if present.", ArgName = "target", Default = SoundTarget.Unknown)]
         public SoundTarget Target { get; set; }
 
-        [Option('m', "max-slots", Help = "Sets number of slots to maximum (15) rather than original iMUSE's 9 for General Midi and 8 for Roland.")]
-        public bool MaxSlots { get; set; }
-
-        [Option('c', "clean-jumps", Help = "Cuts off otherwise infinitely sustained loops when performing jumps.")]
-        public bool CleanJumps { get; set; }
-
-        [Option("loop-limit", Help = "Limits the number of loops performed by the sequencer. This is useful (necessary) for e.g. non-interactive recording. 0 indicates no limit for device outputs and 3 for MIDI file output.", ArgName = "limit", Default = 0)]
-        public int LoopLimit { get; set; }
-
-        [Option("jump-limit", Help = "Limits the number of times each jump hook is performed by the sequencer. This is useful (necessary) for e.g. non-interactive recording. 0 indicates no limit for device outputs and 3 for MIDI file output.", ArgName = "limit", Default = 0)]
-        public int JumpLimit { get; set; }
-
-        [Option("latency", Help = "Latency (in ticks) of playback. Only has an effect on device output. You probably shouldn't set this to something silly like 1...", ArgName = "ticks", Default = 480)]
-        public int Latency { get; set; }
-
         [Examples]
         public static IEnumerable<Example<PlayOptions>> Examples => new[]
         {
-            new Example<PlayOptions>("Play file using MIDI output device 2", new PlayOptions { InputPath = "LARGO.rol", DeviceId = "2" }),
-            new Example<PlayOptions>("Play file with MT-32 as target", new PlayOptions { InputPath = "OFFICE.mid", DeviceId = "2", Target = SoundTarget.Roland })
+            new Example<PlayOptions>("Play file using MIDI output device 2", new PlayOptions { InputPath = "LARGO.rol", DeviceSelector = "2" }),
+            new Example<PlayOptions>("Play file with MT-32 as target", new PlayOptions { InputPath = "OFFICE.mid", DeviceSelector = "2", Target = SoundTarget.Roland })
         };
 
         public bool ToFile => OutputPath != null;
-        public bool ToDevice => DeviceId != null;
+        public bool ToDevice => DeviceSelector != null;
 
-        public void AfterParse()
+        public override void AfterParse()
         {
             if (ToFile && ToDevice)
             {
                 throw new CustomParserException("Cannot output to both device and MIDI file at the same time. Pick one.");
             }
 
-            if (!ToFile && !ToDevice)
+            if (ToFile)
             {
-                throw new CustomParserException("Please specify either an output MIDI file or an output MIDI device.");
+                // File output has its own limits
+                if (JumpLimit == 0)
+                {
+                    JumpLimit = 3;
+                }
+                if (LoopLimit == 0)
+                {
+                    LoopLimit = 3;
+                }
             }
 
-            if (JumpLimit == 0)
-            {
-                JumpLimit = ToFile ? 3 : int.MaxValue;
-            }
-
-            if (LoopLimit == 0)
-            {
-                LoopLimit = ToFile ? 3 : int.MaxValue;
-            }
-
-            if (Latency < 1)
-            {
-                throw new CustomParserException("Don't set latency to a silly value...");
-            }
+            base.AfterParse();
         }
     }
 
-    public class PlayCommand : Command
+    public class PlayCommand : Command<PlayOptions>
     {
-        private readonly Logger logger = LogProvider.Get(nameof(PlayCommand));
-
-        private readonly PlayOptions options;
-        private readonly ImuseOptions imuseOptions;
-
-        public PlayCommand(PlayOptions options) : base(options)
+        public PlayCommand(Settings settings, PlayOptions options) : base(settings, options)
         {
-            this.options = options;
-            imuseOptions = new ImuseOptions { JumpLimit = options.JumpLimit, LoopLimit = options.LoopLimit, MaxSlots = options.MaxSlots, CleanJumps = options.CleanJumps };
         }
 
         public override void Execute()
         {
-            // TODO: Remove this test crap
-            //Test();
-            //return;
             SoundFile soundFile;
             try
             {
@@ -113,92 +86,49 @@ namespace ImuseSequencer.Verbs
                 throw new ImuseSequencerException("Unable to determine target device. Please specify it as an argument.");
             }
 
-            if (options.ToDevice)
-            {
-                PlayToDevice(soundFile, target);
-            }
-            else
+            if (options.ToFile)
             {
                 PlayToFile(soundFile, target);
             }
-        }
-
-        private ConsoleCancelEventHandler cancelHandler;
-
-        private void SetupCancelHandler(ImuseEngine engine, ITransmitter transmitter)
-        {
-            // Clean up, even with Ctrl+C
-            cancelHandler = new ConsoleCancelEventHandler((sender, e) =>
-            {
-                logger.Warning("Abrupt exit - trying to clean up...");
-                engine.Dispose();
-                if (transmitter is IDisposable disposableTransmitter)
-                {
-                    disposableTransmitter.Dispose();
-                }
-            });
-            Console.CancelKeyPress += cancelHandler;
-        }
-
-        private void TearDownCancelHandler()
-        {
-            if (cancelHandler != null)
-            {
-                Console.CancelKeyPress -= cancelHandler;
-            }
-        }
-
-        private ITransmitter CreateTransmitter()
-        {
-            // TODO: Temporary debugging measure - s:<device-id> selects stream transmitter
-            var idParts = options.DeviceId.Split(':');
-            string strDeviceId;
-            string transmitterType = null;
-            if (idParts.Length == 2)
-            {
-                transmitterType = idParts[0];
-                strDeviceId = idParts[1];
-            }
             else
             {
-                strDeviceId = idParts[0];
+                PlayToDevice(soundFile, target);
             }
-
-            if (!Int32.TryParse(strDeviceId, out int deviceId))
-            {
-                throw new ImuseSequencerException($"Invalid device ID: {strDeviceId}");
-            }
-
-            return transmitterType switch
-            {
-                "s" => new OutputStreamTransmitter(deviceId, options.Latency),
-                _ => new OutputDeviceTransmitter(deviceId, options.Latency),
-            };
         }
 
         private void PlayToDevice(SoundFile soundFile, SoundTarget target)
         {
-            logger.Info($"Playing <c#88cc55>{options.InputPath}</c>...");
+            logger.Info($"Playing [green]{options.InputPath}[/]...");
+            var uiHandler = new UIHandler();
+
+            options.DeviceSelector = OutputHelpers.Instance.DetermineDeviceSelector(options.DeviceSelector, target);
 
             try
             {
-                using (var transmitter = CreateTransmitter())
+                using (var transmitter = OutputHelpers.Instance.CreateTransmitter(options.DeviceSelector, options.Latency))
                 {
-                    using (var engine = new ImuseEngine(transmitter, target, imuseOptions))
+                    using (var engine = new ImuseEngine(transmitter, target, options.ImuseOptions))
                     {
                         // Clean up, even with Ctrl+C
-                        SetupCancelHandler(engine, transmitter);
+                        ConsoleHelpers.SetupCancelHandler(engine, transmitter);
+
+                        logger.Info($"Target device: [green]{target.GetDisplayName()}[/]");
+                        logger.Info($"Outputting to: [green]{transmitter.OutputName}[/]");
+                        logger.Info("");
 
                         engine.RegisterSound(0, soundFile);
-
                         engine.StartSound(0);
-                        BuildCommands(engine);
+
+                        logger.Info("");
+
+                        BuildCommands(engine, uiHandler);
+                        uiHandler.OutputMenu();
 
                         transmitter.Start();
 
-                        GameLoop(engine);
+                        uiHandler.Run();
 
-                        TearDownCancelHandler();
+                        ConsoleHelpers.TearDownCancelHandler();
                     }
                 }
             }
@@ -208,41 +138,26 @@ namespace ImuseSequencer.Verbs
             }
         }
 
-        private void Test()
+        private void PlayToFile(SoundFile soundFile, SoundTarget target)
         {
-            var target = SoundTarget.Roland;
-            var soundFiles = new List<SoundFile>
-            {
-                new SoundFile(@"\scumm\midis\mi2\wood.rol"),
-                new SoundFile(@"\scumm\midis\mi2\woodbar.rol")
-            };
-
-            //logger.Info($"Playing <c#88cc55>{options.InputPath}</c>...");
+            logger.Info($"Writing playback of [green]{options.InputPath}[/] to [green]{options.OutputPath}[/]...");
 
             try
             {
-                using (var transmitter = CreateTransmitter())
+                var transmitter = new MidiFileWriterTransmitter();
+                using (var engine = new ImuseEngine(transmitter, target, options.ImuseOptions))
                 {
-                    using (var engine = new ImuseEngine(transmitter, target, imuseOptions))
-                    {
-                        // Clean up, even with Ctrl+C
-                        SetupCancelHandler(engine, transmitter);
+                    // Clean up, even with Ctrl+C
+                    ConsoleHelpers.SetupCancelHandler(engine, transmitter);
 
-                        int i = 0;
-                        foreach (var file in soundFiles)
-                        {
-                            engine.RegisterSound(i++, file);
-                        }
+                    engine.RegisterSound(0, soundFile);
+                    engine.StartSound(0);
 
-                        engine.StartSound(0);
-                        BuildCommands(engine);
+                    transmitter.Start();
 
-                        transmitter.Start();
+                    transmitter.Write(options.OutputPath);
 
-                        GameLoop(engine);
-
-                        TearDownCancelHandler();
-                    }
+                    ConsoleHelpers.TearDownCancelHandler();
                 }
             }
             catch (ImuseException ex)
@@ -251,17 +166,14 @@ namespace ImuseSequencer.Verbs
             }
         }
 
-        private readonly Dictionary<char, HookInfo> hooksByKey = new();
         private readonly string hookChars = "1234567890abcdefghijklmnoprstuvwxy";
 
-        private void BuildCommands(ImuseEngine engine)
+        private void BuildCommands(ImuseEngine engine, UIHandler handler)
         {
             var interactivityInfo = engine.Commands.GetInteractivityInfo(0);
 
             int index = 0;
 
-            logger.Info("");
-            logger.Info("Commands:");
             foreach (var hook in interactivityInfo.Hooks)
             {
                 if (hook.Id == 0)
@@ -270,85 +182,16 @@ namespace ImuseSequencer.Verbs
                     continue;
                 }
                 var c = hookChars[index];
-                hooksByKey.Add(c, hook);
-                logger.Info($"{c}: {hook}");
+                handler.RegisterKeyPress(c.ToString(), $"{hook}", key => { engine.Commands.SetHook(0, hook.Type, hook.Id, hook.Channel); return true; });
                 index++;
             }
             if (interactivityInfo.SetLoops.Any())
             {
-                logger.Info("z: clear-loop");
-            }
-            logger.Info("q: quit");
-            logger.Info("");
-        }
-
-        private void GameLoop(ImuseEngine engine)
-        {
-            var random = new Random();
-            while (true)
-            {
-                var keyInfo = Console.ReadKey(intercept: true);
-                switch (keyInfo.Key)
-                {
-                    case ConsoleKey.Z:
-                        engine.Commands.ClearLoop(0);
-                        break;
-
-                    case ConsoleKey.Q:
-                        return;
-
-                    // TODO: Testing, 1 2 3...
-                    case ConsoleKey.T:
-                        logger.Info("Enqueuing triggers entering bar");
-                        engine.Queue.Enqueue(new QueueItem(0, 0, new List<QueueCommand> { new JumpCommand(0, random.Next(1, 5), 4, 400) }));
-                        engine.Queue.Enqueue(new QueueItem(0, 1, new List<QueueCommand> { new StopSoundCommand(1), new StartSoundCommand(1) }));
-                        break;
-
-                    // TODO: Testing, 1 2 3...
-                    case ConsoleKey.Y:
-                        logger.Info("Enqueuing triggers exiting bar");
-                        engine.Queue.Enqueue(new QueueItem(1, 0, new List<QueueCommand> { new SetHookCommand(1, HookType.Jump, 1) }));
-                        engine.Queue.Enqueue(new QueueItem(1, 1, new List<QueueCommand> { new StopSoundCommand(0), new StartSoundCommand(0), new SetHookCommand(0, HookType.Jump, random.Next(1, 7)) }));
-                        break;
-
-                    default:
-                        if (hooksByKey.TryGetValue(keyInfo.KeyChar, out var hookInfo))
-                        {
-                            engine.Commands.SetHook(0, hookInfo.Type, hookInfo.Id, hookInfo.Channel);
-                        }
-                        break;
-                }
+                var c = hookChars[index];
+                handler.RegisterKeyPress(c.ToString(), "clear-loop", key => { engine.Commands.ClearLoop(0); return true; });
             }
 
-        }
-
-        private void PlayToFile(SoundFile soundFile, SoundTarget target)
-        {
-            logger.Info($"Writing playback of <c#88cc55>{options.InputPath}</c> to <c#88cc55>{options.OutputPath}</c>...");
-
-            try
-            {
-                var transmitter = new MidiFileWriterTransmitter();
-                using (var engine = new ImuseEngine(transmitter, target, imuseOptions))
-                {
-                    // Clean up, even with Ctrl+C
-                    SetupCancelHandler(engine, transmitter);
-
-                    engine.RegisterSound(0, soundFile);
-                    engine.StartSound(0);
-
-                    transmitter.Start();
-
-                    // TODO: Temporary quick-hack to play everything when engine is done.
-                    transmitter.Write(options.OutputPath);
-
-                    TearDownCancelHandler();
-                }
-            }
-            catch (ImuseException ex)
-            {
-                throw new ImuseSequencerException(ex.Message, ex);
-            }
+            handler.RegisterKeyPress("esc", "Quit", key => false);
         }
     }
 }

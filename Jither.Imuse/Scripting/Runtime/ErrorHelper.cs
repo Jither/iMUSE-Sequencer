@@ -34,5 +34,11 @@ namespace Jither.Imuse.Scripting.Runtime
         {
             throw new RuntimeException(node, $"{message} in call to {command}");
         }
+
+        [DoesNotReturn]
+        public static void ThrowEngineError(Node node, string message)
+        {
+            throw new RuntimeException(node, message);
+        }
     }
 }

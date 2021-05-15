@@ -15,7 +15,7 @@ namespace Jither.Imuse.Scripting.Types
 
         public override string ToString()
         {
-            return $"{Type.GetFriendlyName()} {Name}";
+            return $"{Type.GetDisplayName()} {Name}";
         }
     }
 }

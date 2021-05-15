@@ -11,6 +11,8 @@ namespace Jither.Imuse
     {
         public ImuseEngine Engine { get; set; }
 
+        public string OutputName => "NULL";
+
         public void Init(int ticksPerQuarterNote)
         {
         }

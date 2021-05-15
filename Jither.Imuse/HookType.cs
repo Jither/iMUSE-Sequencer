@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.Serialization;
 
 namespace Jither.Imuse
 {
@@ -7,17 +8,17 @@ namespace Jither.Imuse
     /// </summary>
     public enum HookType
     {
-        [EnumMember(Value = "jump")]
+        [Display(Name = "jump")]
         Jump,
-        [EnumMember(Value = "transpose")]
+        [Display(Name = "transpose")]
         Transpose,
-        [EnumMember(Value = "part-enable")]
+        [Display(Name = "part-enable")]
         PartEnable,
-        [EnumMember(Value = "part-volume")]
+        [Display(Name = "part-volume")]
         PartVolume,
-        [EnumMember(Value = "part-program-change")]
+        [Display(Name = "part-program-change")]
         PartProgramChange,
-        [EnumMember(Value = "part-transpose")]
+        [Display(Name = "part-transpose")]
         PartTranspose
     }
 }

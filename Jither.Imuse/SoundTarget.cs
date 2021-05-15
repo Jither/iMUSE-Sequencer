@@ -1,22 +1,19 @@
-﻿using System.Runtime.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.Serialization;
 
 namespace Jither.Imuse
 {
     public enum SoundTarget
     {
-        [EnumMember(Value = "Unknown")]
+        [Display(Name = "Unknown", ShortName = "UNK")]
         Unknown,
-        [EnumMember(Value = "Adlib")]
+        [Display(Name = "Adlib", ShortName = "ADL")]
         Adlib,
-        [EnumMember(Value = "Roland MT-32")]
+        [Display(Name = "Roland MT-32", ShortName = "ROL")]
         Roland,
-        [EnumMember(Value = "SoundBlaster")]
-        SoundBlaster,
-        [EnumMember(Value = "General MIDI")]
+        [Display(Name = "General MIDI", ShortName = "GMD")]
         GeneralMidi,
-        [EnumMember(Value = "Tandy")]
-        Tandy,
-        [EnumMember(Value = "Speaker")]
+        [Display(Name = "Speaker", ShortName = "SPK")]
         Speaker
     }
 }

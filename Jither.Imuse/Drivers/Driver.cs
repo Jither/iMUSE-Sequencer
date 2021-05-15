@@ -123,8 +123,8 @@ namespace Jither.Imuse.Drivers
         }
 
         /// <summary>
-        /// Retrieves the currently held notes on the given slot. Note that the channel returned for each
-        /// each note the Part (input) channel, not the Slot (output) channel.
+        /// Retrieves the currently held notes on the given slot. Note that the channel returned for
+        /// each note is the Part (input) channel, not the Slot (output) channel.
         /// </summary>
         public void GetSustainNotes(Slot slot, HashSet<SustainedNote> notes)
         {

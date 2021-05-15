@@ -27,6 +27,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
 
             var argValues = new List<RuntimeValue>();
 
+            // Argument checks
             var parameters = command.Parameters;
             int parameterIndex = 0;
             int argumentIndex = 0;
@@ -50,14 +51,14 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 // Argument type checking
                 if (value.Type != param.Type)
                 {
-                    ErrorHelper.ThrowArgumentError(arg.Node, $"Incorrect type ({value.Type.GetFriendlyName()}) for parameter {param.Name} ({param.Type.GetFriendlyName()})", command);
+                    ErrorHelper.ThrowArgumentError(arg.Node, $"Incorrect type ({value.Type.GetDisplayName()}) for parameter {param.Name} ({param.Type.GetDisplayName()})", command);
                 }
                 argValues.Add(value);
             }
 
             if (argValues.Count != command.Parameters.Count)
             {
-                ErrorHelper.ThrowArgumentError(Node, "Too few arguments", command);
+                ErrorHelper.ThrowArgumentError(Node, "Not enough arguments", command);
             }
 
             var result = command.Execute(argValues);

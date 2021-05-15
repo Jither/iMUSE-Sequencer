@@ -18,35 +18,24 @@ namespace Jither.Midi.Devices.Windows
                 {
                     throw new WindowsMidiDeviceException(result);
                 }
-                yield return new WindowsDeviceDescription
+                yield return new DeviceDescription
                 {
-                    Id = i,
-                    ManufacturerId = caps.mid,
-                    ProductId = caps.pid,
-                    Name = caps.name,
-                    Version = caps.driverVersion,
-                    Technology = (MidiOutputTechnology)caps.technology,
-                    MaxVoices = caps.voices,
-                    MaxNotes = caps.notes,
-                    ChannelMask = caps.channelMask,
-                    SupportFlags = caps.support
+                    Id = i.ToString(),
+                    Name = caps.name
                 };
             }
         }
 
-        public override OutputDevice GetOutputDevice(int deviceId)
+        protected override OutputDevice GetOutputDeviceById(string deviceId, string name)
         {
-            return new WindowsOutputDevice(deviceId);
+            int id = Int32.Parse(deviceId);
+            return new WindowsOutputDevice(id, name);
         }
 
-        public override IEnumerable<DeviceDescription> GetInputDeviceDescriptions()
+        protected override OutputStream GetOutputStreamById(string deviceId, string name)
         {
-            throw new NotImplementedException();
-        }
-
-        public override InputDevice GetInputDevice(int deviceId)
-        {
-            throw new NotImplementedException();
+            int id = Int32.Parse(deviceId);
+            return new WindowsOutputStream(id, name);
         }
     }
 }

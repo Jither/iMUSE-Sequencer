@@ -21,10 +21,12 @@ namespace Jither.Imuse.Scripting.Types
         {
             context.EnterScope($"Action {Name}");
             bodyExecuter.Execute(context);
-
-            context.Dump();
-
             context.ExitScope();
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 }

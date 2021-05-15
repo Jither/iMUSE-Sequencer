@@ -301,7 +301,6 @@ namespace Jither.Imuse
                     queue.ProcessMarker(this, marker.Id);
                     break;
                 case ImuseV3Marker marker:
-                    // TODO: Handle markers
                     queue.ProcessMarker(this, marker.Id);
                     break;
 

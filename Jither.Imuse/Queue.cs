@@ -1,4 +1,6 @@
-﻿using Jither.Logging;
+﻿using Jither.Imuse.Scripting.Runtime;
+using Jither.Imuse.Scripting.Runtime.Executers;
+using Jither.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,6 +87,25 @@ namespace Jither.Imuse
         }
     }
 
+    public class MuskQueueCommand : QueueCommand
+    {
+        private readonly ExecutionContext context;
+        private readonly Scope scope;
+        private readonly StatementExecuter body;
+
+        public MuskQueueCommand(ExecutionContext context, Scope scope, StatementExecuter body)
+        {
+            this.context = context;
+            this.scope = scope;
+            this.body = body;
+        }
+
+        public override void Execute(CommandManager commands)
+        {
+            body.Execute(context);
+        }
+    }
+
     /// <summary>
     /// Triggers start sounds
     /// </summary>
@@ -117,6 +138,11 @@ namespace Jither.Imuse
         public void Enqueue(QueueItem item)
         {
             items.Enqueue(item);
+        }
+
+        public void Enqueue(int soundId, int markerId, StatementExecuter body, ExecutionContext context)
+        {
+            items.Enqueue(new QueueItem(soundId, markerId, new List<QueueCommand> { new MuskQueueCommand(context, context.CurrentScope, body) }));
         }
 
         public void ProcessMarker(Player player, int markerId)

@@ -15,7 +15,15 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
 
         public override ExecutionResult Execute(ExecutionContext context)
         {
-            throw new System.NotImplementedException();
+            while (test.GetValue(context).AsBoolean(test))
+            {
+                var result = body.Execute(context);
+                if (result.Type == ExecutionResultType.Break)
+                {
+                    break;
+                }
+            }
+            return ExecutionResult.Void;
         }
     }
 

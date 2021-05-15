@@ -55,7 +55,7 @@ namespace Jither.Imuse.Files
 
         public override string ToString()
         {
-            string result = $"set-{Type.GetFriendlyName()}-hook {Id}";
+            string result = $"set-{Type.GetDisplayName()}-hook {Id}";
             if (Type != HookType.Jump && Type != HookType.Transpose)
             {
                 result += $" {Channel}";
@@ -209,10 +209,8 @@ namespace Jither.Imuse.Files
         {
             ["ADL "] = SoundTarget.Adlib,
             ["ROL "] = SoundTarget.Roland,
-            ["SBL "] = SoundTarget.SoundBlaster,
             ["GMD "] = SoundTarget.GeneralMidi,
             ["MIDI"] = SoundTarget.GeneralMidi,
-            ["TAN "] = SoundTarget.Tandy,
             ["SPK "] = SoundTarget.Speaker
         };
 
@@ -342,7 +340,7 @@ namespace Jither.Imuse.Files
 
         public override string ToString()
         {
-            return $"Target: {Target.GetFriendlyName()}";
+            return $"Target: {Target.GetDisplayName()}";
         }
     }
 }

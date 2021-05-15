@@ -71,7 +71,6 @@ namespace Jither.Imuse
             loopEndBeat = 1;
             loopEndTick = 0;
 
-            // TODO: Check this - should it be reset?
             currentTick = 0;
 
             //SetMicroSecondsPerQuarter(500000);

@@ -28,11 +28,11 @@ namespace Jither.Imuse
         {
             if (type == HookType.Jump || type == HookType.Transpose)
             {
-                logger.Info($"Setting {type.GetFriendlyName()} hook to {value}");
+                logger.Info($"Setting {type.GetDisplayName()} hook to {value}");
             }
             else
             {
-                logger.Info($"Setting {type.GetFriendlyName()} hook for channel {channel} to {value}");
+                logger.Info($"Setting {type.GetDisplayName()} hook for channel {channel} to {value}");
             }
             switch (type)
             {

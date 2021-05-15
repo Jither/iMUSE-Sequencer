@@ -1,28 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 
 namespace Jither.Imuse.Scripting.Types
 {
     public enum RuntimeType
     {
-        [EnumMember(Value = "void")]
+        [Display(Name = "void")]
         Void,
-        [EnumMember(Value = "bool")]
+        [Display(Name = "bool")]
         Boolean,
-        [EnumMember(Value = "string")]
+        [Display(Name = "string")]
         String,
-        [EnumMember(Value = "int")]
+        [Display(Name = "int")]
         Integer,
 
-        [EnumMember(Value = "action")]
+        [Display(Name = "action")]
         Action,
-        [EnumMember(Value = "command")]
+        [Display(Name = "command")]
         Command,
-        [EnumMember(Value = "time")]
+        [Display(Name = "time")]
         Time,
 
-        [EnumMember(Value = "null")]
+        [Display(Name = "null")]
         Null
     }
 

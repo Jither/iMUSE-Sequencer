@@ -1,0 +1,189 @@
+define woodtick-theme       = 0
+define bar-theme            = 1
+define cartographers-theme  = 2
+define inn-theme            = 3
+define laundry-theme        = 4
+define woodshop-theme       = 5
+
+sounds
+{
+    "mi2/wood"      woodtick-theme
+    "mi2/woodbar"   bar-theme
+    "mi2/woodcart"  cartographers-theme
+    "mi2/woodinn"   inn-theme
+    "mi2/woodlaun"  laundry-theme
+    "mi2/woodshop"  woodshop-theme
+}
+
+action enter-bar
+{
+    enqueue woodtick-theme marker 0
+    {
+        track-number = random(1,5)
+        jump-to woodtick-theme track-number 4.400
+    }
+    
+    enqueue woodtick-theme marker 1
+    {
+        restart-sound bar-theme
+    }
+}
+
+action exit-bar
+{
+    enqueue bar-theme marker 0
+    {
+        set-jump-hook bar-theme 1
+    }
+    
+    enqueue bar-theme marker 1
+    {
+        restart-sound woodtick-theme
+        set-jump-hook woodtick-theme random(1,6)
+    }
+}
+
+action enter-wallys
+{
+    enqueue woodtick-theme marker 0
+    {
+        track-number = random(1,5)
+        jump-to woodtick-theme track-number 4.400
+    }
+    
+    enqueue woodtick-theme marker 1
+    {
+        ; quick hack:
+        wally-snatched is false
+        know-wally-is-gone is false
+        
+        restart-sound cartographers-theme
+        if (wally-snatched)
+        {
+            if (!know-wally-is-gone)
+            {
+                know-wally-is-gone is true
+                set-jump-hook cartographers-theme 3
+            }
+            else
+            {
+                set-part-enable-hook cartographers-theme 1 channel 3
+            }
+        }
+    }
+}
+
+action exit-wallys
+{
+    enqueue cartographers-theme marker 0
+    {
+        set-jump-hook cartographers-theme 1
+    }
+
+    enqueue cartographers-theme marker 1
+    {
+        restart-sound woodtick-theme
+        set-jump-hook woodtick-theme random(1,6)
+    }
+}
+
+action enter-inn
+{
+    enqueue woodtick-theme marker 0
+    {
+        track-number = random(1,5)
+        jump-to woodtick-theme track-number 4.400
+    }
+    
+    enqueue woodtick-theme marker 1
+    {
+        restart-sound inn-theme
+    }
+}
+
+action exit-inn
+{
+    enqueue inn-theme marker 0
+    {
+        set-jump-hook inn-theme 1
+    }
+    
+    enqueue inn-theme marker 1
+    {
+        restart-sound woodtick-theme
+        set-jump-hook woodtick-theme random(1,6)
+    }
+}
+
+action enter-laundry
+{
+    enqueue woodtick-theme marker 0
+    {
+        track-number = random(1,5)
+        jump-to woodtick-theme track-number 4.400
+    }
+    
+    enqueue woodtick-theme marker 1
+    {
+        restart-sound laundry-theme
+    }
+}
+
+action exit-laundry
+{
+    enqueue laundry-theme marker 0
+    {
+        set-jump-hook laundry-theme 1
+    }
+    
+    enqueue laundry-theme marker 1
+    {
+        restart-sound woodtick-theme
+        set-jump-hook woodtick-theme random(1,6)
+    }
+}
+
+action enter-woodshop
+{
+    enqueue woodtick-theme marker 0
+    {
+        track-number = random(1,5)
+        jump-to woodtick-theme track-number 4.400
+    }
+    
+    enqueue woodtick-theme marker 1
+    {
+        restart-sound woodshop-theme
+    }
+}
+
+action exit-woodshop
+{
+    enqueue woodshop-theme marker 0
+    {
+        set-jump-hook woodshop-theme 1
+    }
+    
+    enqueue woodshop-theme marker 1
+    {
+        restart-sound woodtick-theme
+        set-jump-hook woodtick-theme random(1,6)
+    }
+}
+
+action start
+{
+    start-sound woodtick-theme
+}
+
+on key "S":         start
+on key "Shift+B":   enter-bar
+on key "B":         exit-bar
+on key "Shift+C":   enter-wallys
+on key "C":         exit-wallys
+on key "Shift+I":   enter-inn
+on key "I":         exit-inn
+on key "Shift+L":   enter-laundry
+on key "L":         exit-laundry
+on key "Shift+W":   enter-woodshop
+on key "W":         exit-woodshop

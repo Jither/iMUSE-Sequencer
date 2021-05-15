@@ -509,12 +509,6 @@ namespace Jither.Imuse.Scripting
             var name = ParseStringLiteral("sound name");
             var id = ParseExpression();
 
-            // TODO: May not belong in the parser (type checking)
-            if (id is not Identifier && id is not Literal { ValueType: LiteralType.Integer })
-            {
-                return ThrowError<SoundDeclarator>("sound ID should be an integer constant or literal", id.Range.Start);
-            }
-
             return Finalize(new SoundDeclarator(name, id));
         }
 
@@ -824,28 +818,6 @@ namespace Jither.Imuse.Scripting
                 message += $". Expected {expected}";
             }
             throw new UnexpectedTokenException(token, message);
-        }
-
-        [DoesNotReturn]
-        private void ThrowError(string message, SourceLocation start = null, SourceLocation end = null)
-        {
-            if (start == null)
-            {
-                start = lookahead.Range.Start;
-                end = lookahead.Range.End;
-            }
-            else if (end == null)
-            {
-                end = start;
-            }
-            throw new InvalidTokenException(message, new SourceRange(start, end));
-        }
-
-        [DoesNotReturn]
-        private T ThrowError<T>(string message, SourceLocation location = null) where T : Node
-        {
-            ThrowError(message, location);
-            return null;
         }
 
         [MemberNotNull(nameof(lookahead))]

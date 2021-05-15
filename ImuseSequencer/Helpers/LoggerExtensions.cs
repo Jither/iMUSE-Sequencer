@@ -13,7 +13,7 @@ namespace ImuseSequencer.Helpers
         {
             if (color != null)
             {
-                logger.Info($"<c#{color}>{message}</c>");
+                logger.Info($"[{color}]{message}[/]");
             }
             else
             {

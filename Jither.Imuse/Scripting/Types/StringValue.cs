@@ -6,11 +6,11 @@ namespace Jither.Imuse.Scripting.Types
 {
     public class StringValue : RuntimeValue
     {
-        private static readonly Regex FormatToken = new Regex("%(?<id>.*?)%", RegexOptions.Compiled);
+        private static readonly Regex FormatToken = new("%(?<id>.*?)%", RegexOptions.Compiled);
         public string Value { get; }
         public override object UntypedValue => Value;
 
-        private bool mayNeedFormatting = false;
+        private readonly bool mayNeedFormatting = false;
 
         public StringValue(string value) : base(RuntimeType.String)
         {

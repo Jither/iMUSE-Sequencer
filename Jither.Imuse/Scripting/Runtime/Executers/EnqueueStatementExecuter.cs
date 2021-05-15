@@ -17,7 +17,10 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
 
         public override ExecutionResult Execute(ExecutionContext context)
         {
-            throw new System.NotImplementedException();
+            // Quick hack - we actually enqueue the entire body as a "closure" of sorts
+            // Original iMUSE enqueues specific queueable commands explicitly.
+            context.Queue.Enqueue(soundId.GetValue(context).AsInteger(soundId), markerId.GetValue(context).AsInteger(markerId), body, context);
+            return ExecutionResult.Void;
         }
     }
 }

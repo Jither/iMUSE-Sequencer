@@ -41,6 +41,12 @@ namespace Jither.Imuse
             players.StopSound(sound);
         }
 
+        public void RestartSound(int sound)
+        {
+            StopSound(sound);
+            StartSound(sound);
+        }
+
         public void ClearLoop(int sound)
         {
             GetPlayer(sound)?.Sequencer.ClearLoop();

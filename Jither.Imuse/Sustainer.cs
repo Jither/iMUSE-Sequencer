@@ -47,14 +47,12 @@ namespace Jither.Imuse
         {
             NoteOnFound,
             NoteOffFound,
-            NoteNotFound,
             ReachedEndOfTrack
         }
 
         private class SeekNoteResult
         {
             public static readonly SeekNoteResult ReachedEndOfTrack = new(SeekNoteStatus.ReachedEndOfTrack, 0, 0, 0);
-            public static readonly SeekNoteResult NoteNotFound = new(SeekNoteStatus.NoteNotFound, 0, 0, 0);
 
             public SeekNoteStatus Status { get; }
             public int Channel { get; }
@@ -171,6 +169,10 @@ namespace Jither.Imuse
             while (sustainTicks < maxTicks)
             {
                 var result = SeekNote(newTrackPos);
+                if (result.Status == SeekNoteStatus.ReachedEndOfTrack)
+                {
+                    break;
+                }
                 if (result.Status == SeekNoteStatus.NoteOnFound)
                 {
                     var sustainDef = sustainDefs.Find(s => s.Note == result.Note && s.Channel == result.Channel);
@@ -189,17 +191,34 @@ namespace Jither.Imuse
 
         private SeekNoteResult SeekNote(SequencerPointer pos)
         {
-            var message = pos.Event?.Message;
-            pos.Advance();
-            return message switch
+            while (true)
             {
-                NoteOffMessage noteOff => new SeekNoteResult(SeekNoteStatus.NoteOffFound, noteOff.Channel, noteOff.Key, noteOff.Velocity),
-                NoteOnMessage noteOn => new SeekNoteResult(
-                    noteOn.Velocity > 0 ? SeekNoteStatus.NoteOnFound : SeekNoteStatus.NoteOffFound, 
-                    noteOn.Channel, noteOn.Key, noteOn.Velocity),// iMUSE accepts velocity 0 as note-off
-                EndOfTrackMessage => SeekNoteResult.ReachedEndOfTrack,
-                _ => SeekNoteResult.NoteNotFound
-            };
+                var message = pos.Event?.Message;
+                if (message == null)
+                {
+                    // End of track (without end of track message)
+                    return SeekNoteResult.ReachedEndOfTrack;
+                }
+
+                pos.Advance();
+                switch (message)
+                {
+                    case NoteOffMessage noteOff: return new SeekNoteResult(
+                        SeekNoteStatus.NoteOffFound, 
+                        noteOff.Channel, 
+                        noteOff.Key, 
+                        noteOff.Velocity
+                        );
+                    case NoteOnMessage noteOn: return new SeekNoteResult(
+                        // iMUSE accepts velocity 0 as note-off
+                        noteOn.Velocity > 0 ? SeekNoteStatus.NoteOnFound : SeekNoteStatus.NoteOffFound,
+                        noteOn.Channel,
+                        noteOn.Key,
+                        noteOn.Velocity
+                        );
+                    case EndOfTrackMessage: return SeekNoteResult.ReachedEndOfTrack;
+                }
+            }
         }
     }
 }

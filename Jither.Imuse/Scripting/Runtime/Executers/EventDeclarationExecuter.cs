@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Events;
 using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
@@ -44,22 +45,29 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 throw new InvalidOperationException($"Executer found neither action name nor action declaration for event...");
             }
 
-            switch (evt)
+            try
             {
-                case StartEventDeclaratorExecuter start:
-                    start.Execute(context);
-                    context.Events.RegisterEvent(new StartEvent(action));
-                    break;
-                case TimeEventDeclaratorExecuter timed:
-                    var time = timed.GetValue(context).AsTime(timed);
-                    context.Events.RegisterEvent(new TimedEvent(time, action));
-                    break;
-                case KeyPressEventDeclaratorExecuter keyPress:
-                    var key = keyPress.GetValue(context).AsString(keyPress);
-                    context.Events.RegisterEvent(new KeyPressEvent(key, action));
-                    break;
-                default:
-                    throw new NotImplementedException($"Event registration for {evt} not implemented in executer");
+                switch (evt)
+                {
+                    case StartEventDeclaratorExecuter start:
+                        start.Execute(context);
+                        context.Events.RegisterEvent(new StartEvent(action));
+                        break;
+                    case TimeEventDeclaratorExecuter timed:
+                        var time = timed.GetValue(context).AsTime(timed);
+                        context.Events.RegisterEvent(new TimedEvent(time, action));
+                        break;
+                    case KeyPressEventDeclaratorExecuter keyPress:
+                        var key = keyPress.GetValue(context).AsString(keyPress);
+                        context.Events.RegisterEvent(new KeyPressEvent(key, action));
+                        break;
+                    default:
+                        throw new NotImplementedException($"Event registration for {evt} not implemented in executer");
+                }
+            }
+            catch (EventException ex)
+            {
+                ErrorHelper.ThrowEngineError(this.Node, $"Error registering event: {ex.Message}");
             }
 
             return ExecutionResult.Void;

@@ -7,11 +7,11 @@ namespace Jither.Midi.Devices
     {
         private bool disposed = false;
 
-        public int DeviceId { get; }
+        public string Name { get; }
 
-        public OutputDevice(int deviceId)
+        public OutputDevice(string name)
         {
-            DeviceId = deviceId;
+            Name = name;
         }
 
         public abstract void SendMessage(MidiMessage message);

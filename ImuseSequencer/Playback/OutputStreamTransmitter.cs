@@ -12,20 +12,24 @@ namespace ImuseSequencer.Playback
     public class OutputStreamTransmitter : ITransmitter
     {
         private static readonly Logger logger = LogProvider.Get(nameof(OutputStreamTransmitter));
-        private readonly WindowsOutputStream stream;
+        // TODO: Don't hardcode WindowsDeviceProvider
+        private readonly DeviceProvider deviceProvider = new WindowsDeviceProvider();
+        private readonly OutputStream stream;
         private readonly int ticksPerBatch;
 
         private bool disposed;
         private bool done;
 
+        public string OutputName => $"{stream.Name} (streaming)";
+
         public ImuseEngine Engine { get; set; }
 
-        public OutputStreamTransmitter(int deviceId, int ticksPerBatch)
+        public OutputStreamTransmitter(string selector, int ticksPerBatch)
         {
             this.ticksPerBatch = ticksPerBatch;
             try
             {
-                stream = new WindowsOutputStream(deviceId);
+                stream = deviceProvider.GetOutputStream(selector);
                 stream.NoOpOccurred += Stream_NoOpOccurred;
             }
             catch (MidiDeviceException ex)
@@ -85,13 +89,13 @@ namespace ImuseSequencer.Playback
                 throw new InvalidOperationException($"{nameof(Engine)} was not set on transmitter.");
             }
 
-            Task.Run(stream.Run);
+            //Task.Run(stream.Run);
 
             // Engine.Init must be called before starting the stream - it sets PPQN on the stream, which much be done while the stream is stopped.
             Engine.Init();
 
             stream.Flush();
-            stream.Start();
+            stream.Play();
         }
 
         public void Dispose()

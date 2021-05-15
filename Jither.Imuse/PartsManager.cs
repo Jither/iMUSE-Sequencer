@@ -189,57 +189,79 @@ namespace Jither.Imuse
 
         private void AssignFreeSlots()
         {
-            // TODO: Rid this method of LINQ
-            // Find parts needing a slot
-            var slotlessParts = parts.Where(p => p.NeedsSlot);
-            
-            if (!slotlessParts.Any())
+            while (true)
             {
-                return;
-            }
-
-            logger.Verbose($"{slotlessParts.Count()} parts in need of a slot: {String.Join(", ", slotlessParts)}");
-
-            // Sort relevant parts by descending priority:
-            slotlessParts = slotlessParts.OrderByDescending(p => p.PriorityEffective);
-
-            // Sort slots by ascending priority, unused slots first (effective priority for unused slots is -1)
-            var slotCandidates = slots.OrderBy(slot => slot.PriorityEffective).ToList();
-
-            int slotIndex = 0;
-            foreach (var part in slotlessParts)
-            {
-                for (int i = slotIndex; i < slotCandidates.Count; i++)
+                // Find the highest priority slotless part
+                int highestPartPriority = 0;
+                Part highestPart = null;
+                foreach (var part in parts)
                 {
-                    var slot = slotCandidates[i];
-                    if (slot.PriorityEffective < part.PriorityEffective)
+                    if (!part.NeedsSlot || part.PriorityEffective < highestPartPriority)
                     {
-                        if (slot.IsInUse)
-                        {
-                            logger.Verbose($"Stealing {slot} from {slot.Part} (pri: {slot.PriorityEffective}) for {part} (pri: {part.PriorityEffective})");
-                        }
-                        else
-                        {
-                            logger.Verbose($"Assigning unused {slot} to {part} (pri: {part.PriorityEffective})");
-                        }
-                        slot.AssignPart(part);
-                        
-                        driver.SetVolume(part);
-                        driver.SetPan(part);
-                        driver.SetPitchOffset(part);
-                        driver.SetModWheel(part);
-                        driver.SetSustain(part);
-                        driver.SetReverb(part);
-                        driver.SetChorus(part);
+                        continue;
+                    }
+                    highestPartPriority = part.PriorityEffective;
+                    highestPart = part;
+                }
 
-                        driver.DoProgramChange(part);
-                        
+                if (highestPart == null)
+                {
+                    return;
+                }
+
+                // Find the lowest priority slot - or an unused one
+                int lowestSlotPriority = 255;
+                Slot lowestSlot = null;
+                Slot selectedSlot = null;
+                foreach (var slot in slots)
+                {
+                    if (!slot.IsInUse)
+                    {
+                        logger.Verbose($"Assigning unused {slot} to {highestPart} (pri: {highestPart.PriorityEffective})");
+                        selectedSlot = slot;
                         break;
                     }
+                    if (slot.IsInUse)
+                    {
+                        if (slot.Part.PriorityEffective <= lowestSlotPriority)
+                        {
+                            lowestSlotPriority = slot.PriorityEffective;
+                            lowestSlot = slot;
+                        }
+                    }
                 }
-                if (part.Slot == null)
+
+                // If we didn't find an unused slot, try the one with the lowest priority
+                if (selectedSlot == null)
                 {
-                    logger.Verbose($"No available slot for {part}");
+                    if (lowestSlotPriority >= highestPartPriority)
+                    {
+                        return;
+                    }
+
+                    selectedSlot = lowestSlot;
+
+                    logger.Verbose($"Stealing {selectedSlot} from {selectedSlot.Part} (pri: {selectedSlot.PriorityEffective}) for {highestPart} (pri: {highestPart.PriorityEffective})");
+
+                    selectedSlot.Part.StopAllNotes();
+                    selectedSlot.AbandonPart();
+                }
+
+                if (selectedSlot != null)
+                {
+                    selectedSlot.AssignPart(highestPart);
+                    driver.SetVolume(highestPart);
+                    driver.SetPan(highestPart);
+                    driver.SetPitchOffset(highestPart);
+                    driver.SetModWheel(highestPart);
+                    driver.SetSustain(highestPart);
+                    driver.SetReverb(highestPart);
+                    driver.SetChorus(highestPart);
+                    driver.DoProgramChange(highestPart);
+                }
+                else
+                {
+                    logger.Verbose($"No available slot for {highestPart}");
                 }
             }
         }

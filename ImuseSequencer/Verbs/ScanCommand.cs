@@ -33,13 +33,10 @@ namespace ImuseSequencer.Verbs
         public bool ListSkipped { get; set; }
     }
 
-    public class ScanCommand : Command
+    public class ScanCommand : Command<ScanOptions>
     {
-        private static readonly Logger logger = LogProvider.Get(nameof(ScanCommand));
-        private readonly ScanOptions options;
-        public ScanCommand(ScanOptions options) : base(options)
+        public ScanCommand(Settings settings, ScanOptions options) : base(settings, options)
         {
-            this.options = options;
         }
 
         public override void Execute()

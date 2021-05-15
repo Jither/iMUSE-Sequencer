@@ -1,11 +1,12 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 
 namespace Jither.Midi.Devices.Windows
 {
-    public class WinApiConstants
+    internal class WinApiConstants
     {
         public const int CALLBACK_NULL = 0x0;
         public const int CALLBACK_WINDOW = 0x10000;
@@ -41,21 +42,21 @@ namespace Jither.Midi.Devices.Windows
         public const int MHDR_ISSTRM = 0x08;
     }
 
-    public enum MidiOutputTechnology
+    internal enum MidiOutputTechnology
     {
-        [EnumMember(Value = "MIDI port")]
+        [Display(Name = "MIDI port")]
         MOD_MIDIPORT = 1,
-        [EnumMember(Value = "Synth")]
+        [Display(Name = "Synth")]
         MOD_SYNTH    = 2,
-        [EnumMember(Value = "Square Wave Synth")]
+        [Display(Name = "Square Wave Synth")]
         MOD_SQSYNTH  = 3,
-        [EnumMember(Value = "FM Synth")]
+        [Display(Name = "FM Synth")]
         MOD_FMSYNTH  = 4,
-        [EnumMember(Value = "MIDI Mapper")]
+        [Display(Name = "MIDI Mapper")]
         MOD_MAPPER   = 5,
-        [EnumMember(Value = "WaveTable Synth")]
+        [Display(Name = "WaveTable Synth")]
         MOD_WAVETABLE= 6,
-        [EnumMember(Value = "Software Synth")]
+        [Display(Name = "Software Synth")]
         MOD_SWSYNTH  = 7
     }
 
@@ -63,7 +64,7 @@ namespace Jither.Midi.Devices.Windows
     /// <see href="https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-midioutcaps" />
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct MidiOutCaps
+    internal struct MidiOutCaps
     {
         public short mid;
         public short pid;
@@ -107,13 +108,13 @@ namespace Jither.Midi.Devices.Windows
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Property
+    internal struct Property
     {
         public int cbStruct;
         public int property;
     }
 
-    public enum TimeType
+    internal enum TimeType
     {
         Milliseconds = 0x0001,
         Samples = 0x0002,
@@ -124,7 +125,7 @@ namespace Jither.Midi.Devices.Windows
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct MMTime
+    internal struct MMTime
     {
         [FieldOffset(0)]
         public int type;

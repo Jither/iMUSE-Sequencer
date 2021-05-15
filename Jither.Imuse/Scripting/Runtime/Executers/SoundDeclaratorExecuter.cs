@@ -19,13 +19,11 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         {
             int soundId = id.GetValue(context).AsInteger(id);
             string name = this.name.GetValue(context).AsString(this.name);
-            Console.WriteLine($"Register sound {soundId} from {name}");
-           /* context.Engine.RegisterSound(
+            context.Engine.RegisterSound(
                 soundId,
                 // TODO: The actual loading of the SoundFile should be the Engine's job
-                new SoundFile(name)
+                context.FileProvider.Load(name)
             );
-           */
 
             return ExecutionResult.Void;
         }

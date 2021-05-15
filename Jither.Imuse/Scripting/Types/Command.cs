@@ -44,7 +44,7 @@ namespace Jither.Imuse.Scripting.Types
         public override string ToString()
         {
             var prms = string.Join(", ", Parameters.Select(p => $"{p}"));
-            return $"{ReturnType.GetFriendlyName()} {Name} ({prms})";
+            return $"{ReturnType.GetDisplayName()} {Name} ({prms})";
         }
     }
 }

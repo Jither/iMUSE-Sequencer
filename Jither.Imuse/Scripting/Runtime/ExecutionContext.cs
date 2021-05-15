@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Helpers;
+using Jither.Imuse.Scripting.Events;
 using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
@@ -12,15 +13,19 @@ namespace Jither.Imuse.Scripting.Runtime
         public ImuseEngine Engine { get; }
         public EventManager Events { get; }
         public CommandManager Commands { get; }
+        public ImuseQueue Queue { get; }
+        public FileProvider FileProvider { get; }
         public Scope CurrentScope => scopes.Peek();
 
         private readonly Stack<Scope> scopes = new();
 
-        public ExecutionContext(ImuseEngine engine)
+        public ExecutionContext(ImuseEngine engine, CommandManager commands, EventManager events, ImuseQueue queue, FileProvider fileProvider)
         {
             Engine = engine;
-            Events = engine.Events;
-            Commands = engine.Commands;
+            Events = events;
+            Commands = commands;
+            Queue = queue;
+            FileProvider = fileProvider;
 
             // Intrinsic scope (commands, params etc.)
             scopes.Push(new Scope("Intrinsic", null));

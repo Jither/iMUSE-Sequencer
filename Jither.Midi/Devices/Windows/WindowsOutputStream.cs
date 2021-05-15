@@ -24,13 +24,12 @@ namespace Jither.Midi.Devices.Windows
     }
 
     // TODO: Proper threading!!!
-    public class WindowsOutputStream : IDisposable
+    public class WindowsOutputStream : OutputStream
     {
         private static readonly Logger logger = LogProvider.Get(nameof(WindowsOutputStream));
         private readonly WinApi.MidiOutProc midiOutCallback;
         private IntPtr handle;
         private readonly object lockMidi = new();
-        private bool disposed;
         private readonly MemoryStream eventsStream = new();
         private readonly WindowsMidiStreamWriter writer;
         private readonly Channel<Message> messageChannel = Channel.CreateUnbounded<Message>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
@@ -40,9 +39,9 @@ namespace Jither.Midi.Devices.Windows
         private readonly WindowsBufferPool bufferPool = new();
         private bool closing;
 
-        public event Action<int> NoOpOccurred; 
+        public override event Action<int> NoOpOccurred; 
 
-        public WindowsOutputStream(int deviceId)
+        public WindowsOutputStream(int deviceId, string name) : base(name)
         {
             // We need to manually create the delegate to avoid it being garbage collected
             midiOutCallback = new WinApi.MidiOutProc(HandleMessage);
@@ -51,6 +50,8 @@ namespace Jither.Midi.Devices.Windows
             EnsureSuccess(result);
 
             writer = new WindowsMidiStreamWriter(eventsStream);
+
+            Task.Run(Run);
         }
 
         ~WindowsOutputStream()
@@ -58,16 +59,20 @@ namespace Jither.Midi.Devices.Windows
             Dispose(false);
         }
 
-        public async Task Run()
+        private async Task Run()
         {
-            await foreach (Message item in messageChannel.Reader.ReadAllAsync())
+            var messages = messageChannel.Reader.ReadAllAsync();
+            await foreach (Message item in messages)
             {
                 item.Callback(item.State);
             }
             logger.Debug("OutputStream finished");
         }
 
-        public void Start()
+        /// <summary>
+        /// Starts the Windows scheduler playback
+        /// </summary>
+        public override void Play()
         {
             lock (lockMidi)
             {
@@ -77,7 +82,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public void Pause()
+        public override void Pause()
         {
             lock (lockMidi)
             {
@@ -87,7 +92,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public void Stop()
+        public override void Stop()
         {
             lock (lockMidi)
             {
@@ -97,7 +102,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public void Reset()
+        public override void Reset()
         {
             eventsStream.SetLength(0);
 
@@ -105,7 +110,7 @@ namespace Jither.Midi.Devices.Windows
             EnsureSuccess(result);
         }
 
-        public void Write(MidiEvent e)
+        public override void Write(MidiEvent e)
         {
             Write(e.AbsoluteTicks, e.Message);
         }
@@ -127,7 +132,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public void WriteNoOp(long ticks, int data)
+        public override void WriteNoOp(long ticks, int data)
         {
             writer.WriteHeader(ticks, streamId);
             writer.WriteNoOp(data);
@@ -140,7 +145,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public void Flush()
+        public override void Flush()
         {
             var data = eventsStream.ToArray();
             if (data.Length == 0)
@@ -178,7 +183,8 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public MMTime GetTime(TimeType type)
+        // TODO: Make public API for GetTime
+        internal MMTime GetTime(TimeType type)
         {
             var time = new MMTime
             {
@@ -251,7 +257,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public int Division
+        public override int Division
         {
             get
             {
@@ -289,7 +295,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        public int Tempo
+        public override int Tempo
         {
             get
             {
@@ -337,7 +343,7 @@ namespace Jither.Midi.Devices.Windows
             }
         }
 
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
@@ -375,18 +381,6 @@ namespace Jither.Midi.Devices.Windows
                 _ = WinApi.midiStreamClose(handle);
             }
             handle = IntPtr.Zero;
-        }
-
-        public void Dispose()
-        {
-            if (disposed)
-            {
-                return;
-            }
-            disposed = true;
-
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }

@@ -16,14 +16,10 @@ namespace ImuseSequencer.Verbs
 
     }
 
-    public class ListOutputsCommand : Command
+    public class ListOutputsCommand : Command<ListOutputsOptions>
     {
-        private static readonly Logger logger = LogProvider.Get(nameof(ListOutputsCommand));
-        private readonly ListOutputsOptions options;
-
-        public ListOutputsCommand(ListOutputsOptions options) : base(options)
+        public ListOutputsCommand(Settings settings, ListOutputsOptions options) : base(settings, options)
         {
-            this.options = options;
         }
 
         public override void Execute()

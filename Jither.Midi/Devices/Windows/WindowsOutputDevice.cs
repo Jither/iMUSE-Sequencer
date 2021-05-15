@@ -20,12 +20,14 @@ namespace Jither.Midi.Devices.Windows
         private readonly WinApi.MidiOutProc midiOutCallback;
         private readonly WindowsBufferPool bufferPool = new();
 
-        public WindowsOutputDevice(int deviceId) : base(deviceId)
+        public WindowsOutputDevice(int deviceId, string name) : base(name)
         {
             // We need to manually create the delegate to avoid it being garbage collected
             midiOutCallback = new WinApi.MidiOutProc(HandleMessage);
             int result = WinApi.midiOutOpen(out handle, deviceId, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
             EnsureSuccess(result);
+
+            Task.Run(Run);
         }
 
         ~WindowsOutputDevice()
@@ -33,7 +35,7 @@ namespace Jither.Midi.Devices.Windows
             Dispose(false);
         }
 
-        public async Task Run()
+        private async Task Run()
         {
             await foreach (Message item in messageChannel.Reader.ReadAllAsync())
             {

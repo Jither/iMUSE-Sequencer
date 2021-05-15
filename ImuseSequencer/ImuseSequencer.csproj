@@ -6,6 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Scripts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Jither.Common\Jither.Common\Jither.Common.csproj" />
     <ProjectReference Include="..\Jither.Imuse\Jither.Imuse.csproj" />
     <ProjectReference Include="..\Jither.Midi\Jither.Midi.csproj" />
