@@ -1,4 +1,4 @@
-﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Types;
 using Jither.Logging;
 using System;
@@ -34,7 +34,7 @@ namespace Jither.Imuse.Scripting.Runtime
 
         public Symbol AddOrUpdateSymbol(Node node, string name, RuntimeValue value)
         {
-            var symbol = TryGetLocalSymbol(name);
+            var symbol = TryGetSymbol(node, name);
             if (symbol != null)
             {
                 symbol.Update(node, value);

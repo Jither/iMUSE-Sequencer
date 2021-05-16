@@ -17,6 +17,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             return declaration switch
             {
                 DefineDeclaration define => new DefineDeclarationExecuter(define),
+                VariableDeclaration variable => new VariableDeclarationExecuter(variable),
                 SoundsDeclaration sounds => new SoundsDeclarationExecuter(sounds),
                 ActionDeclaration action => new ActionDeclarationExecuter(action),
                 EventDeclaration evt => new EventDeclarationExecuter(evt),

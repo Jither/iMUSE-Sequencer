@@ -25,6 +25,6 @@ namespace Jither.Imuse.Scripting.Ast
                 yield return Right;
             }
         }
-        public override void Accept(IAstVisitor visitor) => visitor.VisitAssignmentStatement(this);
+        public override void Accept(IAstVisitor visitor) => visitor.VisitAssignmentExpression(this);
     }
 }

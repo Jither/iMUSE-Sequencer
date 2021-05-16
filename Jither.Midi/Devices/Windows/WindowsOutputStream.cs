@@ -364,7 +364,11 @@ namespace Jither.Midi.Devices.Windows
                     while (bufferPool.UnreleasedBufferCount > 0)
                     {
                         logger.Debug($"Waiting for buffer releases... {bufferPool.UnreleasedBufferCount}");
-                        Monitor.Wait(lockMidi);
+                        if (!Monitor.Wait(lockMidi, 2000))
+                        {
+                            logger.Warning("MIDI buffer release deadlock timeout");
+                            break;
+                        }
                     }
                     messageChannel.Writer.TryComplete();
 

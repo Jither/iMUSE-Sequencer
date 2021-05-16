@@ -17,6 +17,7 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitCallExpression(CallExpression node);
 
         void VisitDefineDeclaration(DefineDeclaration node);
+        void VisitVariableDeclaration(VariableDeclaration node);
         void VisitSoundsDeclaration(SoundsDeclaration node);
         void VisitActionDeclaration(ActionDeclaration node);
         void VisitEventDeclaration(EventDeclaration node);
@@ -34,7 +35,7 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitForStatement(ForStatement node);
         void VisitCaseStatement(CaseStatement node);
         void VisitCaseDefinition(CaseDefinition node);
-        void VisitAssignmentStatement(AssignmentExpression node);
+        void VisitAssignmentExpression(AssignmentExpression node);
         void VisitEnqueueStatement(EnqueueStatement node);
     }
 
@@ -95,33 +96,39 @@ namespace Jither.Imuse.Scripting.Ast
 
         protected abstract void Visit(Node node);
 
+        public void VisitScript(Script node) => Visit(node);
+
+        public void VisitDefineDeclaration(DefineDeclaration node) => Visit(node);
+        public void VisitVariableDeclaration(VariableDeclaration node) => Visit(node);
+
+        public void VisitSoundsDeclaration(SoundsDeclaration node) => Visit(node);
+        public void VisitSoundDeclarator(SoundDeclarator node) => Visit(node);
+
         public void VisitActionDeclaration(ActionDeclaration node) => Visit(node);
-        public void VisitAssignmentStatement(AssignmentExpression node) => Visit(node);
+
+        public void VisitEventDeclaration(EventDeclaration node) => Visit(node);
+        public void VisitKeyPressEventDeclarator(KeyPressEventDeclarator node) => Visit(node);
+        public void VisitTimeEventDeclarator(TimeEventDeclarator node) => Visit(node);
+        public void VisitStartEventDeclarator(StartEventDeclarator node) => Visit(node);
+
+        public void VisitAssignmentExpression(AssignmentExpression node) => Visit(node);
         public void VisitBinaryExpression(BinaryExpression node) => Visit(node);
+        public void VisitCallExpression(CallExpression node) => Visit(node);
+        public void VisitUnaryExpression(UnaryExpression node) => Visit(node);
+        public void VisitUpdateExpression(UpdateExpression node) => Visit(node);
+        public void VisitIdentifier(Identifier node) => Visit(node);
+        public void VisitLiteral(Literal node) => Visit(node);
 
         public void VisitBlockStatement(BlockStatement node) => Visit(node);
         public void VisitBreakStatement(BreakStatement node) => Visit(node);
         public void VisitExpressionStatement(ExpressionStatement node) => Visit(node);
         public void VisitCaseDefinition(CaseDefinition node) => Visit(node);
         public void VisitCaseStatement(CaseStatement node) => Visit(node);
-        public void VisitDefineDeclaration(DefineDeclaration node) => Visit(node);
         public void VisitDoStatement(DoStatement node) => Visit(node);
         public void VisitEnqueueStatement(EnqueueStatement node) => Visit(node);
-        public void VisitEventDeclaration(EventDeclaration node) => Visit(node);
         public void VisitForStatement(ForStatement node) => Visit(node);
-        public void VisitCallExpression(CallExpression node) => Visit(node);
-        public void VisitIdentifier(Identifier node) => Visit(node);
         public void VisitIfStatement(IfStatement node) => Visit(node);
-        public void VisitLiteral(Literal node) => Visit(node);
-        public void VisitScript(Script node) => Visit(node);
-        public void VisitSoundDeclarator(SoundDeclarator node) => Visit(node);
-        public void VisitSoundsDeclaration(SoundsDeclaration node) => Visit(node);
-        public void VisitUnaryExpression(UnaryExpression node) => Visit(node);
-        public void VisitUpdateExpression(UpdateExpression node) => Visit(node);
         public void VisitWhileStatement(WhileStatement node) => Visit(node);
-        public void VisitKeyPressEventDeclarator(KeyPressEventDeclarator node) => Visit(node);
-        public void VisitTimeEventDeclarator(TimeEventDeclarator node) => Visit(node);
-        public void VisitStartEventDeclarator(StartEventDeclarator node) => Visit(node);
     }
 
     /// <summary>

@@ -10,6 +10,7 @@ namespace Jither.Imuse.Scripting
     {
         // Declarations
         public const string Define = "define";
+        public const string Variable = "variable";
         public const string Sounds = "sounds";
         public const string Action = "action";
         public const string On = "on";
@@ -47,6 +48,7 @@ namespace Jither.Imuse.Scripting
         public static readonly HashSet<string> Hard = new()
         {
             Define,
+            Variable,
             Sounds,
             Action,
             On,

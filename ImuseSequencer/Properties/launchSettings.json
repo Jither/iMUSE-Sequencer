@@ -2,7 +2,7 @@
   "profiles": {
     "ImuseSequencer": {
       "commandName": "Project",
-      "commandLineArgs": "play \\scumm\\midis\\mi2\\largo.rol"
+      "commandLineArgs": "run scripts\\woodtick.musk -t roland"
     }
   }
 }

@@ -5,6 +5,9 @@ define inn-theme            = 3
 define laundry-theme        = 4
 define woodshop-theme       = 5
 
+variable wally-snatched     = false
+variable know-wally-is-gone = false
+
 sounds
 {
     "mi2/wood"      woodtick-theme
@@ -53,24 +56,27 @@ action enter-wallys
     
     enqueue woodtick-theme marker 1
     {
-        ; quick hack:
-        wally-snatched is false
-        know-wally-is-gone is false
-        
         restart-sound cartographers-theme
         if (wally-snatched)
         {
-            if (!know-wally-is-gone)
+            if (not know-wally-is-gone)
             {
+                print-line "Where's Wally?"
                 know-wally-is-gone is true
                 set-jump-hook cartographers-theme 3
             }
             else
             {
+                print-line "He's still gone..."
                 set-part-enable-hook cartographers-theme 1 channel 3
             }
         }
     }
+}
+
+action read-wallys-note
+{
+    set-jump-hook cartographers-theme 2
 }
 
 action exit-wallys
@@ -171,6 +177,17 @@ action exit-woodshop
     }
 }
 
+action kidnap-wally
+{
+    wally-snatched is true
+}
+
+action return-wally
+{
+    wally-snatched is false
+    know-wally-is-gone is false
+}
+
 action start
 {
     start-sound woodtick-theme
@@ -187,3 +204,6 @@ on key "Shift+L":   enter-laundry
 on key "L":         exit-laundry
 on key "Shift+W":   enter-woodshop
 on key "W":         exit-woodshop
+on key "K":         kidnap-wally
+on key "Shift+K":   return-wally
+on key "R":         read-wallys-note

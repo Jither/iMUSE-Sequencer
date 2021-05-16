@@ -43,6 +43,7 @@ namespace Jither.Imuse.Scripting
                 return lookahead.Value switch
                 {
                     Keywords.Define => ParseDefineDeclaration(),
+                    Keywords.Variable => ParseVariableDeclaration(),
                     Keywords.Sounds => ParseSoundsDeclaration(),
                     Keywords.Action => ParseActionDeclaration(),
                     Keywords.On => ParseEventDeclaration(),
@@ -171,6 +172,26 @@ namespace Jither.Imuse.Scripting
             var value = ParseExpression();
 
             return Finalize(new DefineDeclaration(identifier, value));
+        }
+
+        private VariableDeclaration ParseVariableDeclaration()
+        {
+            StartNode();
+
+            ExpectKeyword(Keywords.Variable);
+
+            var identifier = ParseIdentifier();
+
+            // Initialization of global variable is optional
+            Expression value = null;
+            if (Matches("="))
+            {
+                NextToken();
+
+                value = ParseExpression();
+            }
+
+            return Finalize(new VariableDeclaration(identifier, value));
         }
 
         private SoundsDeclaration ParseSoundsDeclaration()

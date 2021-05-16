@@ -5,6 +5,7 @@
         Script,
 
         DefineDeclaration,
+        VariableDeclaration,
         SoundsDeclaration,
         ActionDeclaration,
         EventDeclaration,
