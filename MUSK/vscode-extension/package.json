@@ -1,0 +1,25 @@
+{
+    "name": "musk",
+    "displayName": "MUSK",
+    "description": "Language support for MUSK language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "musk",
+            "aliases": ["MUSK iMUSE Sequencer scripting language", "musk"],
+            "extensions": [".musk"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "musk",
+            "scopeName": "source.musk",
+            "path": "./syntaxes/musk.tmLanguage.json"
+        }]
+    }
+}

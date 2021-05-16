@@ -1,0 +1,246 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "MUSK iMUSE Sequencer scripting language",
+	"patterns": [
+		{
+			"include": "#event"
+		},
+		{
+			"include": "#enqueue"
+		},
+		{
+			"include": "#main"
+		}
+	],
+	"repository": {
+		"main": {
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#keywords"
+				},
+				{
+					"include": "#literals"
+				},
+				{
+					"include": "#supportFunctions"
+				},
+				{
+					"include": "#identifiers"
+				},
+				{
+					"include": "#operators"
+				},
+				{
+					"include": "#punctuation"			
+				}
+			]
+		},
+		"event": {
+			"begin": "\\bon\\b",
+			"end": ":",
+			"beginCaptures": {
+				"0": { "name": "keyword.other.musk" }
+			},
+			"endCaptures": {
+				"0": { "name": "punctuation.separator.musk" }
+			},
+			"patterns": [
+				{
+					"name": "keyword.other.musk",
+					"match": "\\b(key|time|start)\\b"
+				},
+				{
+					"include": "#main"
+				}
+			]
+		},
+		"enqueue": {
+			"begin": "\\benqueue\\b",
+			"end": "\\{",
+			"beginCaptures": {
+				"0": { "name": "keyword.other.musk" }
+			},
+			"endCaptures": {
+				"0": { "name": "punctuation.brace.musk" }
+			},
+			"patterns": [
+				{
+					"name": "keyword.other.musk",
+					"match": "\\b(marker)\\b"
+				},
+				{
+					"include": "#main"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.musk",
+					"match": "\\b(break|case|of|default|otherwise|do|until|for|to|if|else|while)\\b"
+				},
+				{
+					"name": "keyword.operator.word.musk",
+					"match": "\\b(is|not|is-not|and|or)\\b"
+				},
+				{
+					"name": "keyword.other.musk",
+					"match": "\\b(define|sounds|action|on|enqueue)\\b"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.assignment.musk",
+					"match": "([+*/%-]?=)"
+				},
+				{
+					"name": "keyword.operator.arithmetic.musk",
+					"match": "([+*/%-])"
+				},
+				{
+					"name": "keyword.operator.logical.musk",
+					"match": "(\\!|&&|\\|\\|)"
+				}
+			]
+		},
+		"punctuation": {
+			"patterns": [
+				{
+					"name": "punctuation.separator.comma.musk",
+					"match": "(,)"
+				},
+				{
+					"name": "punctuation.separator.musk",
+					"match": "(:)"
+				},
+				{
+					"name": "meta.brace.round.musk",
+					"match": "(\\()"
+				},
+				{
+					"name": "meta.brace.round.musk",
+					"match": "(\\))"
+				}
+			]
+		},
+		"supportFunctions": {
+			"patterns": [{
+				"name": "support.function.musk",
+				"match": "\\b(jump-to|set-jump-hook|set-transpose-hook|random|restart-sound|start-sound|stop-sound|set-part-enable-hook|set-part-transpose-hook|set-part-volume-hook|set-part-pgmch-hook|print-line)\\b"
+			}]
+		},
+		"identifiers": {
+			"patterns": [{
+				"name": "variable.musk",
+				"match": "\\b([A-Za-z$_][A-Za-z0-9$_-]*)\\b"
+			}]
+		},
+		"literals": {
+			"patterns": [
+				{
+					"include": "#stringLiterals"
+				},
+				{
+					"include": "#booleanLiterals"
+				},
+				{
+					"include": "#timeLiterals"
+				},
+				{
+					"include": "#integerLiterals"
+				}
+			]
+		},
+		"booleanLiterals": {
+			"name": "constant.language.boolean.musk",
+			"patterns": [
+				{
+					"name": "constant.language.boolean.true.musk",
+					"match": "\\b(true)\\b"
+				},
+				{
+					"name": "constant.language.boolean.false.musk",
+					"match": "\\b(false)\\b"
+				}
+			]
+		},
+		"stringLiterals": {
+			"patterns": [
+				{
+					"name": "string.quoted.double.musk",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{ "include": "#stringTokens" }
+					]
+				},
+				{
+					"name": "string.quoted.single.musk",
+					"begin": "'",
+					"end": "'",
+					"patterns": [
+						{ "include": "#stringTokens" }
+					]
+				}
+			]
+		},
+
+		"stringTokens": {
+			"patterns": [
+				{
+					"name": "constant.character.escape.musk",
+					"match": "\\\\."
+				},
+				{
+					"name": "meta.template.expression.musk",
+					"begin": "%",
+					"end": "%",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.template-expression.begin.musk" }
+					},
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.template-expression.end.musk" }
+					},
+					"patterns": [
+						{
+							"match": "[A-Za-z$_][A-Za-z0-9$_-]*"
+						}
+					],
+					"contentName": "meta.embedded.line.musk"
+				}
+			]
+		},
+
+		"timeLiterals": {
+			"patterns": [
+				{
+					"name": "constant.other.musk",
+					"match": "\\b([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\\b"
+				}
+			]
+		},
+		"integerLiterals": {
+			"patterns": [
+				{
+					"name": "constant.numeric.musk",
+					"match": "\\b([0-9]+)\\b"
+				}
+			]
+		},
+		"comments": {
+			"name": "comment",
+			"patterns": [
+				{
+					"name": "comment.line",
+					"match": "(;.*$)"
+				}
+			]
+		}
+	},
+	"scopeName": "source.musk"
+}

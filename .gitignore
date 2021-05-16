@@ -1,4 +1,12 @@
+#Visual Studio
 .vs/
 bin/
 obj/
 *.user
+
+#VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
