@@ -5,6 +5,7 @@ using Jither.Logging;
 using Jither.Midi.Files;
 using Jither.Midi.Helpers;
 using Jither.Midi.Messages;
+using Jither.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,8 @@ namespace ImuseSequencer.Verbs
         CtrlMessage,
         SysMessage,
         ImuseHookId,
-        ImuseUnknown
+        ImuseUnknown,
+        ImuseVersion
     }
 
     [Verb("scan", Help = "Scans MIDI files for various MIDI properties and lists them for each file")]
@@ -62,25 +64,32 @@ namespace ImuseSequencer.Verbs
                     continue;
                 }
 
-                EnumerateEvents(soundFile, events);
-
-                if (events.Count == 0)
+                if (options.Type == PropertyType.ImuseVersion)
                 {
-                    logger.Info($"{fileName} has no events of this type.");
+                    logger.Info($"{fileName, -60}: {soundFile.ImuseVersion.GetDisplayName()}");
                 }
                 else
                 {
-                    if (options.Type == PropertyType.ImuseUnknown)
+                    EnumerateEvents(soundFile, events);
+
+                    if (events.Count == 0)
                     {
-                        logger.Info($"{fileName}:");
-                        foreach (var evt in events)
-                        {
-                            logger.Info($"  {evt}");
-                        }
+                        logger.Info($"{fileName} has no events of this type.");
                     }
                     else
                     {
-                        logger.Info($"{fileName}: {String.Join(", ", events)}");
+                        if (options.Type == PropertyType.ImuseUnknown)
+                        {
+                            logger.Info($"{fileName}:");
+                            foreach (var evt in events)
+                            {
+                                logger.Info($"  {evt}");
+                            }
+                        }
+                        else
+                        {
+                            logger.Info($"{fileName}: {String.Join(", ", events)}");
+                        }
                     }
                 }
             }

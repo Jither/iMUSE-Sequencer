@@ -114,6 +114,7 @@ namespace ImuseSequencer.Verbs
 
                         logger.Info($"Target device: [green]{target.GetDisplayName()}[/]");
                         logger.Info($"Outputting to: [green]{transmitter.OutputName}[/]");
+                        logger.Info($"iMUSE version: [green]{soundFile.ImuseVersion.GetDisplayName()}[/]");
                         logger.Info("");
 
                         engine.RegisterSound(0, soundFile);

@@ -4,6 +4,7 @@ using Jither.Midi.Files;
 using Jither.Midi.Messages;
 using Jither.Utilities;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Text;
 
@@ -202,6 +203,18 @@ namespace Jither.Imuse.Files
         }
     }
 
+    public enum ImuseVersion
+    {
+        [Display(ShortName = "unknown")]
+        Unknown,
+        [Display(ShortName = "v1", Name = "v1 (MI2, FOA)")]
+        V1,
+        [Display(ShortName = "v2", Name = "v2 (DOTT, X-Wing, Tie-Fighter)")]
+        V2,
+        [Display(ShortName = "v3", Name = "v3 (SNM, Dark Forces)")]
+        V3
+    }
+
     public class SoundFile
     {
         private static readonly Logger logger = LogProvider.Get(nameof(SoundFile));
@@ -231,6 +244,8 @@ namespace Jither.Imuse.Files
 
         public MidiFile Midi { get; private set; }
 
+        public ImuseVersion ImuseVersion { get; }
+
         public SoundFile(string path)
         {
             Name = path;
@@ -247,8 +262,42 @@ namespace Jither.Imuse.Files
                         throw new MidiFileException($"iMUSE does not support non-PPQN files");
                     }
                     Midi.Timeline.ApplyBeatPositions();
+
+                    ImuseVersion = DetermineVersion();
                 }
             }
+        }
+
+        private ImuseVersion DetermineVersion()
+        {
+            bool imuseMessageFound = false;
+            foreach (var track in Midi.Tracks)
+            {
+                foreach (var evt in track.Events)
+                {
+                    if (evt.Message is not ImuseMessage message)
+                    {
+                        continue;
+                    }
+
+                    imuseMessageFound = true;
+
+                    switch (evt.Message)
+                    {
+                        case ImuseAllocPart:
+                        case ImuseDeallocPart:
+                        case ImuseDeallocAllParts:
+                            return ImuseVersion.V1;
+                        case ImuseV3HookJump:
+                        case ImuseV3Marker:
+                        case ImuseV3Text:
+                            return ImuseVersion.V3;
+                    }
+                }
+            }
+            // If we did find iMUSE messages, but not V3 or V1, then it must be V2.
+            // If we didn't find any, we can't possibly know what version the file is.
+            return imuseMessageFound ? ImuseVersion.V2 : ImuseVersion.Unknown;
         }
 
         private void FindMidiHeader(MidiReader reader)
