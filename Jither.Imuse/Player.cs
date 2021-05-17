@@ -23,7 +23,7 @@ namespace Jither.Imuse
         private readonly int index;
         private readonly Driver driver;
         private readonly ImuseQueue queue;
-        private readonly PartsManager parts;
+        private readonly PartManager parts;
         private readonly Sequencer sequencer;
         private SoundFile file;
         public HookBlock HookBlock { get; }
@@ -48,7 +48,7 @@ namespace Jither.Imuse
         internal PartsCollection Parts => linkedParts;
         internal Sequencer Sequencer => sequencer;
 
-        public Player(int index, Driver driver, PartsManager parts, Sustainer sustainer, ImuseQueue queue, ImuseOptions options)
+        public Player(int index, Driver driver, PartManager parts, Sustainer sustainer, ImuseQueue queue, ImuseOptions options)
         {
             this.index = index;
             this.driver = driver;

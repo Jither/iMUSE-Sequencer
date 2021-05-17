@@ -17,7 +17,7 @@ namespace Jither.Imuse
         private readonly Driver driver;
         private readonly Sustainer sustainer;
         private readonly PlayerManager players;
-        private readonly PartsManager parts;
+        private readonly PartManager parts;
         private readonly FileManager files = new();
 
         private int ticksPerQuarterNote;
@@ -41,7 +41,7 @@ namespace Jither.Imuse
 
             Queue = new ImuseQueue(this);
 
-            parts = new PartsManager(driver, options);
+            parts = new PartManager(driver, options);
             sustainer = new Sustainer(options);
             players = new PlayerManager(files, parts, sustainer, driver, Queue, options);
 

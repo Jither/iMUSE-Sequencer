@@ -7,16 +7,16 @@ using System.Linq;
 
 namespace Jither.Imuse
 {
-    public class PartsManager
+    public class PartManager
     {
-        private static readonly Logger logger = LogProvider.Get(nameof(PartsManager));
+        private static readonly Logger logger = LogProvider.Get(nameof(PartManager));
         private const int partCount = 32;
 
         private readonly Driver driver;
         private readonly List<Part> parts = new();
         private readonly List<Slot> slots = new();
 
-        public PartsManager(Driver driver, ImuseOptions options)
+        public PartManager(Driver driver, ImuseOptions options)
         {
             this.driver = driver;
 

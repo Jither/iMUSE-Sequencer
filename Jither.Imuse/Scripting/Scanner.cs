@@ -38,9 +38,6 @@ namespace Jither.Imuse.Scripting
         // Soft keywords - these are scanned as identifiers, since they're only keywords in a specific context
         public const string During = "during";
         public const string Key = "key";
-        public const string Measure = "measure";
-        public const string Beat = "beat";
-        public const string Tick = "tick";
         public const string Time = "time";
         public const string Start = "start";
         public const string Marker = "marker";

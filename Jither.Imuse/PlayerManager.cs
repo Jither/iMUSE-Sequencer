@@ -14,10 +14,10 @@ namespace Jither.Imuse
         private const int playerCount = 8;
 
         private readonly FileManager files;
-        private readonly PartsManager parts;
+        private readonly PartManager parts;
         private readonly List<Player> players = new();
 
-        public PlayerManager(FileManager files, PartsManager parts, Sustainer sustainer, Driver driver, ImuseQueue queue, ImuseOptions options)
+        public PlayerManager(FileManager files, PartManager parts, Sustainer sustainer, Driver driver, ImuseQueue queue, ImuseOptions options)
         {
             this.files = files;
             this.parts = parts;

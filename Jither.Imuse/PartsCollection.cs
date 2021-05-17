@@ -14,7 +14,7 @@ namespace Jither.Imuse
         private static readonly Logger logger = LogProvider.Get(nameof(PartsCollection));
 
         private readonly Player player;
-        private readonly PartsManager manager;
+        private readonly PartManager manager;
         private readonly Driver driver;
         private readonly List<Part> parts = new();
         private readonly Dictionary<int, Part> partsByChannel = new();
@@ -23,7 +23,7 @@ namespace Jither.Imuse
 
         public Part this[int index] => parts[index];
 
-        public PartsCollection(PartsManager manager, Player player, Driver driver)
+        public PartsCollection(PartManager manager, Player player, Driver driver)
         {
             this.player = player;
             this.manager = manager;
