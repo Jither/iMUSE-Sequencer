@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Drivers;
+using Jither.Imuse.Files;
 using Jither.Imuse.Messages;
 using Jither.Logging;
 using System;
@@ -39,7 +40,8 @@ namespace Jither.Imuse
         {
             foreach (var part in parts)
             {
-                UnlinkPart(part);
+                // Don't reallocate the slot - we're terminating
+                UnlinkPart(part, reallocateSlot: false);
             }
         }
 
@@ -80,7 +82,8 @@ namespace Jither.Imuse
                 var part = parts[i];
                 if (part.InputChannel == channel)
                 {
-                    UnlinkPart(part);
+                    // Don't reallocate the slot - we do that ourselves after the loop
+                    UnlinkPart(part, reallocateSlot: false);
                     deallocated = true;
                 }
             }
@@ -95,7 +98,8 @@ namespace Jither.Imuse
             for (int i = parts.Count - 1; i >= 0; i--)
             {
                 var part = parts[i];
-                UnlinkPart(part);
+                // Don't reallocate the slot - we doing that ourselves after the loop
+                UnlinkPart(part, reallocateSlot: false);
             }
             this.AssignFreeSlots();
         }
@@ -134,7 +138,8 @@ namespace Jither.Imuse
 
             if (weakestPart != null)
             {
-                UnlinkPart(weakestPart);
+                // Don't reallocate the slot - we've just selected it for a specific part!
+                UnlinkPart(weakestPart, reallocateSlot: false);
             }
             logger.Info($"Stealing part {weakestPart}");
             return weakestPart;
@@ -168,13 +173,14 @@ namespace Jither.Imuse
 
             if (weakestSlot == null)
             {
-                logger.Verbose($"No slot for part. Priority: {priority}");
+                logger.Verbose($"No available slot for part (priority: {priority})");
             }
 
             return weakestSlot;
         }
 
-        private void UnlinkPart(Part part)
+        // Not quite sure why we have this method... all call references set reallocateSlot to false
+        private void UnlinkPart(Part part, bool reallocateSlot)
         {
             if (!part.IsInUse)
             {
@@ -183,7 +189,7 @@ namespace Jither.Imuse
 
             if (part.Slot != null)
             {
-                ReleaseSlot(part.Slot);
+                ReleaseSlot(part.Slot, reallocateSlot);
             }
         }
 
@@ -266,12 +272,16 @@ namespace Jither.Imuse
             }
         }
 
-        private void ReleaseSlot(Slot slot)
+        // TODO: Not sure why we have the reallocateSlot parameter - it's always set to false...
+        private void ReleaseSlot(Slot slot, bool reallocateSlot)
         {
             driver.StopAllNotes(slot);
             slot.AbandonPart();
 
-            AssignFreeSlots();
+            if (reallocateSlot)
+            {
+                AssignFreeSlots();
+            }
         }
     }
 }
