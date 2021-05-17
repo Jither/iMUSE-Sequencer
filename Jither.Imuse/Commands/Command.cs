@@ -1,27 +1,30 @@
 ﻿using Jither.Imuse.Helpers;
+using Jither.Imuse.Scripting.Types;
 using Jither.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Jither.Imuse.Scripting.Types
+namespace Jither.Imuse.Commands
 {
     public class Command
     {
         public string Name { get; }
         public List<CommandParameter> Parameters { get; }
         public RuntimeType ReturnType { get; }
+        public bool IsEnqueuable { get; }
         private readonly CommandMethod method;
 
-        public Command(string name, List<CommandParameter> parameters, RuntimeType returnType, CommandMethod method)
+        public Command(string name, List<CommandParameter> parameters, RuntimeType returnType, CommandMethod method, bool enqueuable)
         {
             Name = name;
             Parameters = parameters;
             ReturnType = returnType;
             this.method = method;
+            IsEnqueuable = enqueuable;
         }
 
-        public RuntimeValue Execute(List<RuntimeValue> arguments)
+        public RuntimeValue Execute(IReadOnlyList<RuntimeValue> arguments)
         {
             object[] args = new object[arguments.Count];
             for (int i = 0; i < args.Length; i++)

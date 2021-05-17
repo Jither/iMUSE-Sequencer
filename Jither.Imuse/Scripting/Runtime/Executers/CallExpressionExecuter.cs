@@ -1,6 +1,8 @@
-﻿using Jither.Imuse.Scripting.Ast;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Types;
 using Jither.Utilities;
+using System;
 using System.Collections.Generic;
 
 namespace Jither.Imuse.Scripting.Runtime.Executers
@@ -61,7 +63,16 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 ErrorHelper.ThrowArgumentError(Node, "Not enough arguments", command);
             }
 
-            var result = command.Execute(argValues);
+            RuntimeValue result;
+            if (context.EnqueuingCommands != null && command.IsEnqueuable)
+            {
+                context.EnqueuingCommands.Add(new CommandCall(command, argValues));
+                result = RuntimeValue.Void;
+            }
+            else
+            {
+                result = command.Execute(argValues);
+            }
 
             return new ExecutionResult(ExecutionResultType.Normal, result);
         }

@@ -1,4 +1,5 @@
-﻿using Jither.Imuse.Drivers;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
 using Jither.Imuse.Scripting.Events;
 using Jither.Logging;
@@ -25,7 +26,7 @@ namespace Jither.Imuse
         private bool disposed;
 
         public ImuseQueue Queue { get; }
-        public CommandManager Commands { get; }
+        public ImuseCommands Commands { get; }
         public EventManager Events { get; }
 
         public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options = null)
@@ -45,7 +46,7 @@ namespace Jither.Imuse
             sustainer = new Sustainer(options);
             players = new PlayerManager(files, parts, sustainer, driver, Queue, options);
 
-            Commands = new CommandManager(players);
+            Commands = new ImuseCommands(players);
             Events = new EventManager();
         }
 

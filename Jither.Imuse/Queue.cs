@@ -1,4 +1,5 @@
-﻿using Jither.Imuse.Scripting.Runtime;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Scripting.Runtime;
 using Jither.Imuse.Scripting.Runtime.Executers;
 using Jither.Logging;
 using System;
@@ -9,114 +10,14 @@ using System.Threading.Tasks;
 
 namespace Jither.Imuse
 {
-    public abstract class QueueCommand
-    {
-        public abstract void Execute(CommandManager commands);
-    }
-
-    public class JumpCommand : QueueCommand
-    {
-        public int SoundId { get; }
-        public int Track { get; }
-        public int Beat { get; }
-        public int Tick { get; }
-
-        public JumpCommand(int soundId, int track, int beat, int tick)
-        {
-            SoundId = soundId;
-            Track = track;
-            Beat = beat;
-            Tick = tick;
-        }
-
-        public override void Execute(CommandManager commands)
-        {
-            var player = commands.GetPlayer(SoundId);
-            player.Sequencer.Jump(Track, Beat, Tick, "marker");
-        }
-    }
-
-    public class StartSoundCommand : QueueCommand
-    {
-        public int SoundId { get; }
-
-        public StartSoundCommand(int soundId)
-        {
-            SoundId = soundId;
-        }
-
-        public override void Execute(CommandManager commands)
-        {
-            commands.StartSound(SoundId);
-        }
-    }
-
-    public class StopSoundCommand : QueueCommand
-    {
-        public int SoundId { get; }
-
-        public StopSoundCommand(int soundId)
-        {
-            SoundId = soundId;
-        }
-
-        public override void Execute(CommandManager commands)
-        {
-            commands.StopSound(SoundId);
-        }
-    }
-
-    public class SetHookCommand : QueueCommand
-    {
-        public int SoundId { get; }
-        public HookType Type { get; }
-        public int HookId { get; }
-        public int Channel { get; }
-
-        public SetHookCommand(int soundId, HookType type, int hookId, int channel = 0)
-        {
-            SoundId = soundId;
-            Type = type;
-            HookId = hookId;
-            Channel = channel;
-        }
-
-        public override void Execute(CommandManager commands)
-        {
-            commands.SetHook(SoundId, Type, HookId, Channel);
-        }
-    }
-
-    public class MuskQueueCommand : QueueCommand
-    {
-        private readonly ExecutionContext context;
-        private readonly Scope scope;
-        private readonly StatementExecuter body;
-
-        public MuskQueueCommand(ExecutionContext context, Scope scope, StatementExecuter body)
-        {
-            this.context = context;
-            this.scope = scope;
-            this.body = body;
-        }
-
-        public override void Execute(CommandManager commands)
-        {
-            body.Execute(context);
-        }
-    }
-
-    /// <summary>
-    /// Triggers start sounds
-    /// </summary>
     public class QueueItem
     {
         public int SoundId { get; }
         public int MarkerId { get; }
 
-        public IReadOnlyList<QueueCommand> Commands { get; }
+        public IReadOnlyList<CommandCall> Commands { get; }
 
-        public QueueItem(int soundId, int markerId, List<QueueCommand> commands)
+        public QueueItem(int soundId, int markerId, IReadOnlyList<CommandCall> commands)
         {
             SoundId = soundId;
             MarkerId = markerId;
@@ -135,14 +36,15 @@ namespace Jither.Imuse
             this.engine = engine;
         }
 
-        public void Enqueue(QueueItem item)
+        public void Enqueue(int soundId, int markerId, List<CommandCall> commands)
         {
-            items.Enqueue(item);
+            items.Enqueue(new QueueItem(soundId, markerId, commands));
         }
 
-        public void Enqueue(int soundId, int markerId, StatementExecuter body, ExecutionContext context)
+        public bool SoundInQueue(int soundId)
         {
-            items.Enqueue(new QueueItem(soundId, markerId, new List<QueueCommand> { new MuskQueueCommand(context, context.CurrentScope, body) }));
+            // TODO: Implement SoundInQueue when queue has been rewritten
+            return false;
         }
 
         public void ProcessMarker(Player player, int markerId)
@@ -158,7 +60,7 @@ namespace Jither.Imuse
                 items.Dequeue();
                 foreach (var cmd in item.Commands)
                 {
-                    cmd.Execute(engine.Commands);
+                    cmd.Command.Execute(cmd.Arguments);
                 }
             }
         }

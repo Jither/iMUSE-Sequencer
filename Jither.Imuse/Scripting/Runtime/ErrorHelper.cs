@@ -1,6 +1,6 @@
-﻿using Jither.Imuse.Scripting.Ast;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime.Executers;
-using Jither.Imuse.Scripting.Types;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -37,6 +37,11 @@ namespace Jither.Imuse.Scripting.Runtime
 
         [DoesNotReturn]
         public static void ThrowEngineError(Node node, string message)
+        {
+            throw new RuntimeException(node, message);
+        }
+
+        public static void ThrowInvalidOperationError(Node node, string message)
         {
             throw new RuntimeException(node, message);
         }

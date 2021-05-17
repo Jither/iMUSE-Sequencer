@@ -1,6 +1,7 @@
-﻿using Jither.Utilities;
+﻿using Jither.Imuse.Scripting.Types;
+using Jither.Utilities;
 
-namespace Jither.Imuse.Scripting.Types
+namespace Jither.Imuse.Commands
 {
     public class CommandParameter
     {

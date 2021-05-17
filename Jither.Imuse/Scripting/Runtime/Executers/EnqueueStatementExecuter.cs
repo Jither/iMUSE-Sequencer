@@ -1,4 +1,6 @@
-﻿using Jither.Imuse.Scripting.Ast;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Scripting.Ast;
+using System.Collections.Generic;
 
 namespace Jither.Imuse.Scripting.Runtime.Executers
 {
@@ -17,9 +19,24 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
 
         public override ExecutionResult Execute(ExecutionContext context)
         {
-            // Quick hack - we actually enqueue the entire body as a "closure" of sorts
-            // Original iMUSE enqueues specific queueable commands explicitly.
-            context.Queue.Enqueue(soundId.GetValue(context).AsInteger(soundId), markerId.GetValue(context).AsInteger(markerId), body, context);
+            if (context.EnqueuingCommands != null)
+            {
+                ErrorHelper.ThrowInvalidOperationError(Node, "Cannot enqueue while another queue is being built (no nested enqueue statements)");
+            }
+            
+            var soundIdValue = soundId.GetValue(context).AsInteger(soundId);
+            var markerIdValue = markerId.GetValue(context).AsInteger(markerId);
+            var commandList = new List<CommandCall>();
+            
+            // Start enqueueing state
+            context.EnqueuingCommands = commandList;
+            
+            body.Execute(context);
+            context.Queue.Enqueue(soundIdValue, markerIdValue, commandList);
+
+            // End of enqueuing state
+            context.EnqueuingCommands = null;
+
             return ExecutionResult.Void;
         }
     }

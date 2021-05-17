@@ -1,4 +1,5 @@
-﻿using Jither.Imuse.Scripting.Ast;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime;
 using Jither.Imuse.Scripting.Runtime.Executers;
 using System;

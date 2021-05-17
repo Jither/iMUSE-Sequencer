@@ -17,10 +17,13 @@ namespace Jither.Imuse
         private readonly PartManager parts;
         private readonly List<Player> players = new();
 
+        private readonly ImuseQueue queue;
+
         public PlayerManager(FileManager files, PartManager parts, Sustainer sustainer, Driver driver, ImuseQueue queue, ImuseOptions options)
         {
             this.files = files;
             this.parts = parts;
+            this.queue = queue;
 
             for (int i = 0; i < playerCount; i++)
             {
@@ -103,7 +106,7 @@ namespace Jither.Imuse
         /// </summary>
         public void StopAllSounds()
         {
-            // TODO: Clear queue
+            queue.Clear();
             foreach (var player in players)
             {
                 player.Stop();
@@ -117,7 +120,10 @@ namespace Jither.Imuse
                 return PlayerStatus.On;
             }
 
-            // TODO: Get from queue
+            if (queue.SoundInQueue(soundId))
+            {
+                return PlayerStatus.On; // Actually "MIDI"
+            }
             return PlayerStatus.Off;
         }
 

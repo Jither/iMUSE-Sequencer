@@ -1,4 +1,5 @@
-﻿using Jither.Imuse.Scripting.Ast;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime;
 using Jither.Imuse.Scripting.Runtime.Executers;
 using System;
@@ -13,6 +14,7 @@ namespace Jither.Imuse.Scripting
     {
         private readonly ScriptExecuter script;
         private readonly FileProvider fileProvider;
+        private readonly MuskCommands scriptCommands = new();
 
         public ExecutionContext Context { get; private set; }
 
@@ -26,7 +28,15 @@ namespace Jither.Imuse.Scripting
 
         public void Execute(ImuseEngine engine)
         {
-            Context = new ExecutionContext(engine, engine.Commands, engine.Events, engine.Queue, fileProvider);
+            Context = new ExecutionContext(engine, engine.Events, engine.Queue, fileProvider);
+            
+            // iMUSE specific commands:
+            Context.AddCommands(engine.Commands);
+            // Scripting commands (e.g. random, print-line...)
+            Context.AddCommands(scriptCommands);
+
+            Context.EnterScope("Global");
+
             script.Execute(Context);
             engine.Events.TriggerStart(Context);
         }

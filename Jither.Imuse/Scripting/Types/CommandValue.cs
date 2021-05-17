@@ -1,4 +1,5 @@
-﻿using Jither.Utilities;
+﻿using Jither.Imuse.Commands;
+using Jither.Utilities;
 using System.Linq;
 
 namespace Jither.Imuse.Scripting.Types

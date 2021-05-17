@@ -1,4 +1,5 @@
-﻿using Jither.Imuse.Helpers;
+﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Helpers;
 using Jither.Imuse.Scripting.Events;
 using Jither.Imuse.Scripting.Types;
 using System;
@@ -12,27 +13,22 @@ namespace Jither.Imuse.Scripting.Runtime
     {
         public ImuseEngine Engine { get; }
         public EventManager Events { get; }
-        public CommandManager Commands { get; }
         public ImuseQueue Queue { get; }
         public FileProvider FileProvider { get; }
         public Scope CurrentScope => scopes.Peek();
+        public List<CommandCall> EnqueuingCommands { get; set; }
 
         private readonly Stack<Scope> scopes = new();
 
-        public ExecutionContext(ImuseEngine engine, CommandManager commands, EventManager events, ImuseQueue queue, FileProvider fileProvider)
+        public ExecutionContext(ImuseEngine engine, EventManager events, ImuseQueue queue, FileProvider fileProvider)
         {
             Engine = engine;
             Events = events;
-            Commands = commands;
             Queue = queue;
             FileProvider = fileProvider;
 
             // Intrinsic scope (commands, params etc.)
             scopes.Push(new Scope("Intrinsic", null));
-            PopulateCommands(Commands);
-
-            // Global scope (for script)
-            scopes.Push(new Scope("Global", CurrentScope));
         }
 
         public void EnterScope(string name)
@@ -46,7 +42,7 @@ namespace Jither.Imuse.Scripting.Runtime
             scopes.Pop();
         }
 
-        public void PopulateCommands(object commandObject)
+        public void AddCommands(object commandObject)
         {
             var methods = commandObject.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(m => m.GetCustomAttribute<NoScriptingAttribute>() == null);
@@ -64,7 +60,17 @@ namespace Jither.Imuse.Scripting.Runtime
                 }
                 var returnType = RuntimeTypes.FromClrType(method.ReturnType);
                 var call = CommandHelper.CreateCommandMethod(commandObject, method);
-                var command = new Command(name, commandParameters, returnType, call);
+                
+                var enqueuable = method.GetCustomAttribute<EnqueueableAttribute>() != null;
+
+                // Enqueuing a function call (return value) is a mistake. Functions shouldn't be queueable, since the queue doesn't handle it -
+                // this could e.g. be a call to random(), which should be executed immediately, even in the enqueuing state.
+                if (enqueuable && returnType != RuntimeType.Void)
+                {
+                    throw new InvalidOperationException($"Commands with return value should not be enqueuable. {method.DeclaringType.Name}.{method.Name} returns {method.ReturnType}");
+                }
+
+                var command = new Command(name, commandParameters, returnType, call, enqueuable);
                 CurrentScope.AddSymbol(name, new CommandValue(command), isConstant: true);
             }
         }
