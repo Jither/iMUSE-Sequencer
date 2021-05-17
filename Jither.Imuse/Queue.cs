@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Commands;
+using Jither.Imuse.Helpers;
 using Jither.Imuse.Scripting.Runtime;
 using Jither.Imuse.Scripting.Runtime.Executers;
 using Jither.Logging;
@@ -27,6 +28,8 @@ namespace Jither.Imuse
 
     public class ImuseQueue
     {
+        private static readonly string START_SOUND_COMMAND = nameof(ImuseCommands.StartSound).Scummify();
+
         private static readonly Logger logger = LogProvider.Get(nameof(ImuseQueue));
         private readonly Queue<QueueItem> items = new();
         private readonly ImuseEngine engine;
@@ -43,7 +46,17 @@ namespace Jither.Imuse
 
         public bool SoundInQueue(int soundId)
         {
-            // TODO: Implement SoundInQueue when queue has been rewritten
+            // Check if the sound ID has a start-sound in the queue
+            foreach (var item in items)
+            {
+                foreach (var cmd in item.Commands)
+                {
+                    if (cmd.Command.Name == START_SOUND_COMMAND && (int)cmd.Arguments[0].UntypedValue == soundId)
+                    {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
 

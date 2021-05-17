@@ -113,18 +113,18 @@ namespace Jither.Imuse
             }
         }
 
-        public PlayerStatus GetStatus(int soundId)
+        public SoundStatus GetStatus(int soundId)
         {
             if (GetPlayerBySound(soundId) != null)
             {
-                return PlayerStatus.On;
+                return SoundStatus.Playing;
             }
 
             if (queue.SoundInQueue(soundId))
             {
-                return PlayerStatus.On; // Actually "MIDI"
+                return SoundStatus.Pending;
             }
-            return PlayerStatus.Off;
+            return SoundStatus.NotPlaying;
         }
 
         /// <summary>

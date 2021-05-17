@@ -11,7 +11,14 @@ namespace Jither.Imuse
     public enum PlayerStatus
     {
         Off,
-        On,
+        On
+    }
+
+    public enum SoundStatus
+    {
+        NotPlaying,
+        Playing,
+        Pending
     }
 
     /// <summary>

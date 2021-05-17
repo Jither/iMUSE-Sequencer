@@ -46,7 +46,7 @@ namespace Jither.Imuse
             sustainer = new Sustainer(options);
             players = new PlayerManager(files, parts, sustainer, driver, Queue, options);
 
-            Commands = new ImuseCommands(players);
+            Commands = new ImuseCommands(players, Queue);
             Events = new EventManager();
         }
 

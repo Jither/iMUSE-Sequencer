@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Jither.Imuse.Scripting.Types
 {
+    // TODO: Handle measures! Right now, everything using Time pretends measures don't exist.
     public record Time(int Measure, int Beat, int Tick)
     {
         public static bool TryParse(string str, out Time time)
