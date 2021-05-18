@@ -1,4 +1,4 @@
-﻿namespace Jither.Imuse
+﻿namespace Jither.Imuse.Parts
 {
     public interface IPartAllocation
     {

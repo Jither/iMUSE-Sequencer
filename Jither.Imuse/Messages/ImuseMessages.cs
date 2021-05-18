@@ -4,6 +4,7 @@ using Jither.Midi.Files;
 using System;
 using Jither.Logging;
 using System.Text;
+using Jither.Imuse.Parts;
 
 namespace Jither.Imuse.Messages
 {

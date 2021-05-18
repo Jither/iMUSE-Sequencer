@@ -1,4 +1,4 @@
-﻿namespace Jither.Imuse
+﻿namespace Jither.Imuse.Parts
 {
     // Used by auto allocation (iMUSE v2)
     public class DefaultPartAllocation : IPartAllocation

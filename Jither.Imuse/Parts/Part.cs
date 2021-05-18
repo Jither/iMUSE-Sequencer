@@ -4,7 +4,7 @@ using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
 
-namespace Jither.Imuse
+namespace Jither.Imuse.Parts
 {
     /// <summary>
     /// A Part represents a single channel in a MIDI being played. It handles its playback properties
@@ -96,7 +96,7 @@ namespace Jither.Imuse
             get => priorityOffset;
             set
             {
-                this.priorityOffset = value;
+                priorityOffset = value;
                 if (!TransposeLocked)
                 {
                     //Priority has changed, so may lose slot - or gain it.
@@ -128,7 +128,8 @@ namespace Jither.Imuse
         /// <remarks>
         /// Setting this property will notify the driver that panning has changed.
         /// </remarks>
-        public int Pan {
+        public int Pan
+        {
             get => pan;
             private set
             {
@@ -143,7 +144,8 @@ namespace Jither.Imuse
         /// <remarks>
         /// Setting this property will notify the driver that transposition has changed.
         /// </remarks>
-        public int Transpose {
+        public int Transpose
+        {
             get => transpose;
             set
             {
@@ -319,7 +321,7 @@ namespace Jither.Imuse
         /// <summary>
         /// Effective volume for this part, based on player's volume and the part's volume.
         /// </summary>
-        public int VolumeEffective => (player.EffectiveVolume * (Volume + 1)) >> 7;
+        public int VolumeEffective => player.EffectiveVolume * (Volume + 1) >> 7;
 
         /// <summary>
         /// Effective panning for this part, based on player's panning and the part's panning. Limited to -64 to 63.
@@ -364,7 +366,7 @@ namespace Jither.Imuse
 
         public void UnlinkPlayer()
         {
-            this.player = null;
+            player = null;
         }
 
         public void LinkSlot(Slot slot)
@@ -374,7 +376,7 @@ namespace Jither.Imuse
 
         public void UnlinkSlot()
         {
-            this.slot = null;
+            slot = null;
         }
 
         public void Alloc(IPartAllocation alloc)
@@ -454,7 +456,7 @@ namespace Jither.Imuse
                     break;
                 case PitchBendChangeMessage pitchBend:
                     int bender = pitchBend.Bender - 0x2000; // Center around 0
-                    PitchBend = (bender * PitchBendRange) >> 6;
+                    PitchBend = bender * PitchBendRange >> 6;
                     break;
                 default:
                     throw new ArgumentException($"Unexpected message to part: {message}");
@@ -545,7 +547,7 @@ namespace Jither.Imuse
             {
                 // We could let the driver do this, but that would require public Program and Bank
                 program = loadSetup.SetupNumber & 0xff;
-                bank = (loadSetup.SetupNumber >> 8) & 0xff;
+                bank = loadSetup.SetupNumber >> 8 & 0xff;
                 driver.DoProgramChange(this);
                 MayRequireSlotReassignment();
             }

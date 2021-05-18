@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Messages;
+using Jither.Imuse.Parts;
 using Jither.Logging;
 using Jither.Midi.Messages;
 using System.Collections.Generic;

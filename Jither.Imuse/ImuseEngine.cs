@@ -1,6 +1,7 @@
 ﻿using Jither.Imuse.Commands;
 using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
+using Jither.Imuse.Parts;
 using Jither.Imuse.Scripting.Events;
 using Jither.Logging;
 using Jither.Midi.Files;
@@ -14,14 +15,16 @@ namespace Jither.Imuse
         private static readonly Logger logger = LogProvider.Get(nameof(ImuseEngine));
 
         private readonly ITransmitter transmitter;
-        private readonly SoundTarget target;
+        private readonly ImuseOptions options;
         private readonly Driver driver;
         private readonly Sustainer sustainer;
         private readonly PlayerManager players;
-        private readonly PartManager parts;
         private readonly FileManager files = new();
 
+        private bool isInitialized;
         private int ticksPerQuarterNote;
+        private ImuseVersion imuseVersion;
+        private PartManager parts;
 
         private bool disposed;
 
@@ -33,18 +36,17 @@ namespace Jither.Imuse
         {
             this.transmitter = transmitter;
             transmitter.Engine = this;
-
-            this.target = target;
+            this.options = options;
 
             options ??= new ImuseOptions();
 
-            driver = GetDriver();
+            driver = GetDriver(target);
 
             Queue = new ImuseQueue(this);
 
-            parts = new PartManager(driver, options);
             sustainer = new Sustainer(options);
-            players = new PlayerManager(files, parts, sustainer, driver, Queue, options);
+
+            players = new PlayerManager(files, Queue, options);
 
             Commands = new ImuseCommands(players, Queue);
             Events = new EventManager();
@@ -57,19 +59,41 @@ namespace Jither.Imuse
                 throw new ImuseException($"iMUSE only supports PPQN division MIDI files - this appears to be SMPTE.");
             }
 
-            if (this.ticksPerQuarterNote != 0)
+            if (!isInitialized)
             {
-                if (file.Midi.TicksPerQuarterNote != this.ticksPerQuarterNote)
-                {
-                    throw new ImuseException($"Ticks per quarter note (PPQN) for sound '{file.Name}' differs from sounds registered earlier. Cannot register this sound.");
-                }
+                Initialize(file);
             }
             else
             {
-                this.ticksPerQuarterNote = file.Midi.TicksPerQuarterNote;
+                CheckFileConsistency(file);
             }
 
             files.Register(id, file);
+        }
+
+        private void Initialize(SoundFile file)
+        {
+            this.ticksPerQuarterNote = file.Midi.TicksPerQuarterNote;
+            this.imuseVersion = file.ImuseVersion;
+
+            parts = imuseVersion == ImuseVersion.V1 ? new PartManagerV1(driver, options) : new PartManagerV2(driver, options);
+
+            players.Init(driver, parts, sustainer);
+
+            isInitialized = true;
+        }
+
+        private void CheckFileConsistency(SoundFile file)
+        {
+            if (file.ImuseVersion != this.imuseVersion)
+            {
+                throw new ImuseException($"iMUSE version for sound '{file.Name}' differs from sounds registered earlier. Cannot register this sound.");
+            }
+
+            if (file.Midi.TicksPerQuarterNote != this.ticksPerQuarterNote)
+            {
+                throw new ImuseException($"Ticks per quarter note (PPQN) for sound '{file.Name}' differs from sounds registered earlier. Cannot register this sound.");
+            }
         }
 
         public void StartSound(int id)
@@ -77,6 +101,12 @@ namespace Jither.Imuse
             players.StartSound(id);
         }
 
+        public InteractivityInfo GetInteractivityInfo(int sound)
+        {
+            return files.Get(sound).GetInteractivityInfo();
+        }
+
+        // TODO: Can this be combined with Initialize?
         public void Init()
         {
             transmitter.Init(ticksPerQuarterNote);
@@ -129,7 +159,7 @@ namespace Jither.Imuse
             driver.Close();
         }
 
-        private Driver GetDriver()
+        private Driver GetDriver(SoundTarget target)
         {
             return target switch
             {

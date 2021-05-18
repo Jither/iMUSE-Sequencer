@@ -97,7 +97,7 @@ namespace Jither.Imuse
                     // Velocity for note-offs doesn't matter. Driver will replace it.
                     var message = new NoteOffMessage(sustainDef.Channel, (byte)sustainDef.Note, 0);
                     logger.Verbose($"Stopping sustained note {message}");
-                    sustainDef.Sequencer.Parts.HandleChannelMessage(message);
+                    sustainDef.Sequencer.Player.HandleEvent(message);
                     activeSustainDefs.RemoveAt(i);
                 }
             }
@@ -113,7 +113,7 @@ namespace Jither.Imuse
 
             // Get all notes that are currently on:
             noteTable.Clear();
-            sequencer.Parts.GetSustainNotes(noteTable);
+            sequencer.Player.GetSustainNotes(noteTable);
 
             // Now search forward from the old position for all note-offs for those notes:
             long sustainTicks = sequencer.NextEventTick - sequencer.CurrentTick;

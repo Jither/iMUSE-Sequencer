@@ -171,7 +171,7 @@ namespace ImuseSequencer.Verbs
 
         private void BuildCommands(ImuseEngine engine, UIHandler handler)
         {
-            var interactivityInfo = engine.Commands.GetInteractivityInfo(0);
+            var interactivityInfo = engine.GetInteractivityInfo(0);
 
             int index = 0;
 

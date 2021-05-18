@@ -1,4 +1,5 @@
-﻿using Jither.Midi.Messages;
+﻿using Jither.Imuse.Parts;
+using Jither.Midi.Messages;
 
 namespace Jither.Imuse.Drivers
 {

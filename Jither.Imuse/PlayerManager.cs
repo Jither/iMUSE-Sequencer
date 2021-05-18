@@ -1,5 +1,6 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
+using Jither.Imuse.Parts;
 using Jither.Logging;
 using System.Collections.Generic;
 
@@ -14,17 +15,20 @@ namespace Jither.Imuse
         private const int playerCount = 8;
 
         private readonly FileManager files;
-        private readonly PartManager parts;
         private readonly List<Player> players = new();
 
         private readonly ImuseQueue queue;
+        private readonly ImuseOptions options;
 
-        public PlayerManager(FileManager files, PartManager parts, Sustainer sustainer, Driver driver, ImuseQueue queue, ImuseOptions options)
+        public PlayerManager(FileManager files, ImuseQueue queue, ImuseOptions options)
         {
             this.files = files;
-            this.parts = parts;
             this.queue = queue;
+            this.options = options;
+        }
 
+        public void Init(Driver driver, PartManager parts, Sustainer sustainer)
+        {
             for (int i = 0; i < playerCount; i++)
             {
                 players.Add(new Player(i, driver, parts, sustainer, queue, options));

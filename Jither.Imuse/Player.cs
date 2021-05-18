@@ -1,6 +1,7 @@
 ﻿using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
 using Jither.Imuse.Messages;
+using Jither.Imuse.Parts;
 using Jither.Logging;
 using Jither.Midi.Messages;
 using System;
@@ -80,22 +81,12 @@ namespace Jither.Imuse
             linkedParts.Remove(part);
         }
 
-        // AKA DeallocAllParts
-        public void UnlinkAllParts()
-        {
-            for (int i = linkedParts.Count - 1; i >= 0; i--)
-            {
-                UnlinkPart(linkedParts[i]);
-            }
-        }
-
         /// <summary>
         /// Starts playback of sound. 
         /// </summary>
-        /// <returns><c>true</c> if playback successfully started. Otherwise <c>false</c>.</returns>
         public void Start(int id, SoundFile file)
         {
-            logger.Debug($"Starting sound {id} on player {index}");
+            logger.Verbose($"Starting sound {id} on player {index}");
             this.file = file;
 
             Status = PlayerStatus.On;
@@ -109,15 +100,6 @@ namespace Jither.Imuse
             HookBlock.Clear();
 
             sequencer.Start(file.Midi);
-        }
-
-        /// <summary>
-        /// Gets information on loops, hooks and markers for the sound file currently being played by this Player.
-        /// </summary>
-        /// <returns></returns>
-        public InteractivityInfo GetInteractivityInfo()
-        {
-            return file?.GetInteractivityInfo();
         }
 
         /// <summary>
@@ -138,7 +120,7 @@ namespace Jither.Imuse
         {
             sequencer.Stop();
             // TODO: StopFade();
-            UnlinkAllParts();
+            parts.DeallocAllParts(this);
             Status = PlayerStatus.Off;
             logger.Verbose($"Player {index} stopped.");
         }
@@ -224,6 +206,14 @@ namespace Jither.Imuse
             linkedParts.StopAllNotesForJump();
         }
 
+        public void GetSustainNotes(HashSet<SustainedNote> notes)
+        {
+            foreach (var part in linkedParts)
+            {
+                part.GetSustainNotes(notes);
+            }
+        }
+
         /// <summary>
         /// Handles events from sequencer.
         /// </summary>
@@ -253,13 +243,13 @@ namespace Jither.Imuse
             {
                 // Parts
                 case ImuseAllocPart alloc:
-                    parts.AllocPart(this, alloc);
+                    parts.ExplicitAllocPart(this, alloc);
                     break;
                 case ImuseDeallocPart dealloc:
                     parts.DeallocPart(dealloc.Channel);
                     break;
                 case ImuseDeallocAllParts:
-                    parts.DeallocAllParts();
+                    parts.DeallocAllParts(this);
                     break;
 
                 // TODO: Marker meta messages for hooks

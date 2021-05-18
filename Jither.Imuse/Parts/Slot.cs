@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Jither.Imuse
+namespace Jither.Imuse.Parts
 {
     /// <summary>
     /// Slots represent the usable channels on a synth with limited channels (e.g. MT-32 with 8 melodic channels + 1 percussion).

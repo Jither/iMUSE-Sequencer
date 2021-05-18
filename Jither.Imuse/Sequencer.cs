@@ -1,6 +1,7 @@
 ﻿using Jither.Logging;
 using Jither.Midi.Messages;
 using Jither.Midi.Files;
+using Jither.Imuse.Parts;
 
 namespace Jither.Imuse
 {
@@ -17,7 +18,7 @@ namespace Jither.Imuse
 
         private static readonly Logger logger = LogProvider.Get(nameof(Sequencer));
 
-        private readonly Player player;
+        internal Player Player { get; }
         private readonly Sustainer sustainer;
         private MidiFile file;
 
@@ -39,7 +40,6 @@ namespace Jither.Imuse
         
         private bool bail;
 
-        internal PartsCollection Parts => player.Parts;
         internal long NextEventTick => nextEventTick;
         internal long CurrentTick => currentTick;
         private MidiTrack CurrentTrack => file.Tracks[currentTrackIndex];
@@ -51,7 +51,7 @@ namespace Jither.Imuse
         public Sequencer(int index, Player player, Sustainer sustainer)
         {
             Index = index;
-            this.player = player;
+            this.Player = player;
             this.sustainer = sustainer;
         }
 
@@ -211,7 +211,7 @@ namespace Jither.Imuse
             if (!skip)
             {
                 // Pass message on to player
-                player.HandleEvent(message);
+                Player.HandleEvent(message);
             }
 
             return trackEnded;
@@ -278,7 +278,7 @@ namespace Jither.Imuse
 
             // Now we've found the destination position - stop (MIDI controller) sustain:
             // TODO: In iMUSE v3, this also resets modwheel and pitchbend - is that OK for iMUSE v1-2 too?
-            player.StopAllSustains();
+            Player.StopAllSustains();
 
             if (sustain)
             {
@@ -290,7 +290,7 @@ namespace Jither.Imuse
             else
             {
                 // ... or (v3) cut off notes immediately (and reset controllers)
-                player.StopAllNotesForJump();
+                Player.StopAllNotesForJump();
             }
 
             // ... and transfer state to the sequencer:
@@ -308,7 +308,7 @@ namespace Jither.Imuse
             }
 
             // Emit jump meta marker
-            player.HandleEvent(new MarkerMessage($"jump ({reason})"));
+            Player.HandleEvent(new MarkerMessage($"jump ({reason})"));
 
             // Make sequencer bail from this tick - we've jumped, so it shouldn't update e.g. nextEventIndex
             bail = true;

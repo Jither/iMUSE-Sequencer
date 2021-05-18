@@ -202,14 +202,7 @@ namespace Jither.Imuse.Commands
             queue.Clear();
         }
 
-        [NoScripting]
-        public InteractivityInfo GetInteractivityInfo(int sound)
-        {
-            return GetPlayer(sound)?.GetInteractivityInfo();
-        }
-
-        [NoScripting]
-        public Player GetPlayer(int soundId)
+        private Player GetPlayer(int soundId)
         {
             return players.GetPlayerBySound(soundId);
         }

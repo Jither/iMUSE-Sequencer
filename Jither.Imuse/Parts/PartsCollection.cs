@@ -6,9 +6,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Jither.Imuse
+namespace Jither.Imuse.Parts
 {
-
     public class PartsCollection : IReadOnlyList<Part>
     {
         private static readonly Logger logger = LogProvider.Get(nameof(PartsCollection));
@@ -61,14 +60,6 @@ namespace Jither.Imuse
             foreach (var part in parts)
             {
                 part.StopAllNotesForJump();
-            }
-        }
-
-        public void GetSustainNotes(HashSet<SustainedNote> notes)
-        {
-            foreach (var part in parts)
-            {
-                part.GetSustainNotes(notes);
             }
         }
 
@@ -231,8 +222,7 @@ namespace Jither.Imuse
             // pt_set_reverb        HandleChannelMessage (via ctrl change)
             if (part == null)
             {
-                logger.Verbose($"Auto-allocating part for channel {channel}");
-                part = manager.AllocPart(player, new DefaultPartAllocation(channel, driver.DefaultReverb));
+                part = manager.AutoAllocPart(player, new DefaultPartAllocation(channel, driver.DefaultReverb));
             }
 
             return part;

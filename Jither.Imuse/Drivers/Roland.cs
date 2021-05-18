@@ -1,4 +1,5 @@
-﻿using Jither.Midi.Messages;
+﻿using Jither.Imuse.Parts;
+using Jither.Midi.Messages;
 using System;
 using System.Text;
 
@@ -79,13 +80,9 @@ namespace Jither.Imuse.Drivers
 
         public override int GetChannelForSlot(int slotIndex)
         {
-            int result = slotIndex + 1; // Channels 2-9 (1-8 zero-indexed)
+            // Channels 2-9 (1-8 zero-indexed)
             // Don't stomp on rhythm channel:
-            if (result >= rhythmChannel)
-            {
-                result++;
-            }
-            return result;
+            return slotIndex + 1 >= rhythmChannel ? slotIndex + 2 : slotIndex + 1;
         }
 
         protected override void Init()
