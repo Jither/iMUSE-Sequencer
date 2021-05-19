@@ -121,46 +121,5 @@ namespace Jither.Imuse.Scripting
                 decl => ScriptAssert.NodeMatches(source, "poke-largo", NodeType.Identifier, decl)
             );
         }
-
-        [Fact]
-        public void Assigns_correct_node_locations_long_timeevent()
-        {
-            string source = @"on measure 7 beat 2: poke-largo";
-            var parser = new ScriptParser(source);
-            var script = parser.Parse();
-
-            var visitor = new FlatAstVisitor();
-            visitor.Traverse(script);
-
-            Assert.Collection(visitor.Nodes,
-                decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
-                decl => ScriptAssert.NodeMatches(source, source, NodeType.EventDeclaration, decl),
-                decl => ScriptAssert.NodeMatches(source, "measure 7 beat 2", NodeType.TimeEventDeclarator, decl),
-                decl => ScriptAssert.NodeMatches(source, "7", NodeType.Literal, decl),
-                decl => ScriptAssert.NodeMatches(source, "2", NodeType.Literal, decl),
-                decl => ScriptAssert.NodeMatches(source, "poke-largo", NodeType.Identifier, decl)
-            );
-        }
-
-        [Fact]
-        public void Assigns_correct_node_locations_long_timeevent2()
-        {
-            string source = @"on measure 7 beat 2 tick 100: poke-largo";
-            var parser = new ScriptParser(source);
-            var script = parser.Parse();
-
-            var visitor = new FlatAstVisitor();
-            visitor.Traverse(script);
-
-            Assert.Collection(visitor.Nodes,
-                decl => ScriptAssert.NodeMatches(source, source, NodeType.Script, decl),
-                decl => ScriptAssert.NodeMatches(source, source, NodeType.EventDeclaration, decl),
-                decl => ScriptAssert.NodeMatches(source, "measure 7 beat 2 tick 100", NodeType.TimeEventDeclarator, decl),
-                decl => ScriptAssert.NodeMatches(source, "7", NodeType.Literal, decl),
-                decl => ScriptAssert.NodeMatches(source, "2", NodeType.Literal, decl),
-                decl => ScriptAssert.NodeMatches(source, "100", NodeType.Literal, decl),
-                decl => ScriptAssert.NodeMatches(source, "poke-largo", NodeType.Identifier, decl)
-            );
-        }
     }
 }

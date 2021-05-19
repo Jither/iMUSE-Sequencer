@@ -123,18 +123,19 @@ namespace Jither.Imuse
             {
                 ticks = Int64.MaxValue;
             }
-            long currentTick = 0;
 
             // We use this no-op MIDI message to indicate the start of this batch of MIDI messages.
             // When the no-op reaches the transmitter, it can use it as an indication that it should start
             // preparing the next batch.
             driver.TransmitNoOp(Messages.NoOpSignal.ReadyForNextBatch);
 
-            while (currentTick < ticks)
+            long remainingTicks = ticks;
+            while (remainingTicks > 0)
             {
                 bool continuePlaying = players.Tick();
                 continuePlaying = sustainer.Tick() || continuePlaying;
                 driver.CurrentTick++;
+                remainingTicks--;
                 if (!continuePlaying)
                 {
                     var sustainNotes = parts.GetSustainNotes();
@@ -142,15 +143,16 @@ namespace Jither.Imuse
                     {
                         logger.Warning($"Still playing note: {note}");
                     }
+                    // TODO: Temporary measure because the engine is constantly playing, and we don't want 1 tick between each
+                    driver.CurrentTick += remainingTicks;
                     break;
                 }
-                currentTick++;
             }
             // Return number of ticks played so far. Will be less than the requested number of ticks, if player
             // signaled a stop.
             // TODO: Pretending we got full amount of ticks every time. Temporary measure to let the engine start before anything is ready to play...
             // Plenty of issues with that, most notably:
-            // * when done playing, will output a noop ("call me") every tick.
+            // * when done playing, will output a noop ("call me") every tick - which we "fix" by telling the driver to add the remaining ticks:
             return ticks; // currentTick;
         }
 

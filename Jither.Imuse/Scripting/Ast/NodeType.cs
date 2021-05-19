@@ -33,5 +33,14 @@
         UpdateExpression,
         Identifier,
         Literal,
+
+        // Pseudo statement used during flattening/"compilation"
+        Label, 
+
+        // Statements used for transforming flow control statements (and enqueue)
+        ConditionalJumpStatement, 
+        JumpStatement,
+        EnqueueStartStatement,
+        EnqueueEndStatement
     }
 }

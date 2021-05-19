@@ -8,12 +8,17 @@ namespace Jither.Imuse.Scripting.Ast
         public override NodeType Type => NodeType.ActionDeclaration;
         public Expression During { get; }
         public Identifier Name { get; }
-        public Statement Body { get; }
+        public BlockStatement Body { get; private set;  }
 
-        public ActionDeclaration(Identifier name, Expression during, Statement body)
+        public ActionDeclaration(Identifier name, Expression during, BlockStatement body)
         {
             Name = name;
             During = during;
+            Body = body;
+        }
+
+        internal void ReplaceBody(BlockStatement body)
+        {
             Body = body;
         }
 

@@ -23,6 +23,8 @@ namespace Jither.Imuse.Scripting
             this.fileProvider = fileProvider;
             var parser = new ScriptParser(source);
             var ast = parser.Parse();
+            var flattener = new ActionFlattener();
+            flattener.Execute(ast);
             this.script = new ScriptExecuter(ast);
         }
 

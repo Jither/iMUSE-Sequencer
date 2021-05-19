@@ -16,9 +16,9 @@ namespace Jither.Imuse
         public int SoundId { get; }
         public int MarkerId { get; }
 
-        public IReadOnlyList<CommandCall> Commands { get; }
+        public IEnumerable<CommandCall> Commands { get; }
 
-        public QueueItem(int soundId, int markerId, IReadOnlyList<CommandCall> commands)
+        public QueueItem(int soundId, int markerId, IEnumerable<CommandCall> commands)
         {
             SoundId = soundId;
             MarkerId = markerId;
@@ -39,7 +39,7 @@ namespace Jither.Imuse
             this.engine = engine;
         }
 
-        public void Enqueue(int soundId, int markerId, List<CommandCall> commands)
+        public void Enqueue(int soundId, int markerId, IEnumerable<CommandCall> commands)
         {
             items.Enqueue(new QueueItem(soundId, markerId, commands));
         }

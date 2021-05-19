@@ -12,11 +12,6 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             this.Node = node;
         }
 
-        public abstract ExecutionResult Execute(ExecutionContext context);
-
-        public RuntimeValue GetValue(ExecutionContext context)
-        {
-            return Execute(context).Value;
-        }
+        public abstract RuntimeValue Execute(ExecutionContext context);
     }
 }

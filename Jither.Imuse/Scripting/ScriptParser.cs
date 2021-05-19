@@ -18,6 +18,8 @@ namespace Jither.Imuse.Scripting
 
         private readonly Scanner scanner;
 
+        private bool enqueuing;
+
         public ScriptParser(string source)
         {
             scanner = new Scanner(source);
@@ -142,7 +144,7 @@ namespace Jither.Imuse.Scripting
                 }
             }
 
-            var body = ParseStatement();
+            var body = ParseBlockStatement();
 
             return Finalize(new ActionDeclaration(id, during, body));
         }
@@ -305,6 +307,13 @@ namespace Jither.Imuse.Scripting
 
         private EnqueueStatement ParseEnqueueStatement()
         {
+            if (enqueuing)
+            {
+                return ThrowSyntaxError<EnqueueStatement>(lookahead, "enqueue statement cannot be nested");
+            }
+
+            enqueuing = true;
+
             StartNode();
             ExpectKeyword(Keywords.Enqueue);
             var soundId = ParseExpression();
@@ -318,6 +327,7 @@ namespace Jither.Imuse.Scripting
 
             var body = ParseStatement();
 
+            enqueuing = false;
             return Finalize(new EnqueueStatement(soundId, markerId, body));
         }
 
@@ -435,13 +445,15 @@ namespace Jither.Imuse.Scripting
             ExpectKeyword("to");
             var to = ParseExpression();
 
-            // Unlike SCUMM, we allow increment to not be defined - in that case, from/to decides the direction of the loop
-            bool? increment = null;
-            if (Matches("++", "--"))
+            // We need to know at compile-time, whether to increment or decrement.
+            // We cannot determine this from to/from expressions, so - like SCUMM - we require ++/-- in the for loop.
+            // We also do not set ++ as a "default", because "for x = 2 to 1" would be a rather catastrophic error, yielding 2^32-1 iterations.
+            if (!Matches("++", "--"))
             {
-                var token = NextToken();
-                increment = token.Value == "++";
+                return ThrowUnexpectedToken<ForStatement>(lookahead, "for loop requires an increment/decrement operator", "++ or --");
             }
+            var token = NextToken();
+            bool increment = token.Value == "++";
 
             // For loop requires a block statement in SCUMM
             var body = ParseBlockStatement();
@@ -761,6 +773,12 @@ namespace Jither.Imuse.Scripting
         {
             node.Finalize(startLocations.Pop(), endLocation ?? currentEndToken.Range.End);
             return node;
+        }
+
+        [DoesNotReturn]
+        private T ThrowSyntaxError<T>(Token token, string message) where T : Node
+        {
+            throw new SyntaxException(token, message);
         }
 
         [DoesNotReturn]

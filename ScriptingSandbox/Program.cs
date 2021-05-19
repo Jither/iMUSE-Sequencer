@@ -38,7 +38,7 @@ action during woodtick-theme
         }
         else
         {
-            for a = 1 to 5
+            for a = 1 to 5 ++
             {
                 x = a + b * c / (d - e * b)
                 jump-to woodtick-theme track random(1,5) beat 4 tick 400
@@ -65,6 +65,8 @@ action during woodtick-theme
             try
             {
                 var script = parser.Parse();
+                var flattener = new ActionFlattener();
+                flattener.Execute(script);
                 var printer = new AstPrinter();
                 Console.WriteLine(printer.Print(script));
             }

@@ -8,7 +8,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
     {
         private readonly string name;
         private readonly ExpressionExecuter during;
-        private readonly StatementExecuter body;
+        private readonly BlockStatementExecuter body;
 
         public ActionDeclarationExecuter(ActionDeclaration action) : base(action)
         {
@@ -17,18 +17,18 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             {
                 during = ExpressionExecuter.Build(action.During);
             }
-            body = StatementExecuter.Build(action.Body);
+            body = new BlockStatementExecuter(action.Body);
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            int? duringValue = during?.GetValue(context).AsInteger(this);
+            int? duringValue = during?.Execute(context).AsInteger(this);
             var result = new ActionValue(new ImuseAction(name, duringValue, body));
             if (name != null)
             {
                 context.CurrentScope.AddOrUpdateSymbol(this.Node, name, result);
             }
-            return new ExecutionResult(ExecutionResultType.Normal, result);
+            return result;
         }
     }
 

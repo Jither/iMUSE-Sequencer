@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
 
@@ -16,14 +17,14 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             foreach (var sound in sounds)
             {
                 sound.Execute(context);
             }
 
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }

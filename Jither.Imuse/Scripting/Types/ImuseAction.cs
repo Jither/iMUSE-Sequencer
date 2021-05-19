@@ -8,9 +8,9 @@ namespace Jither.Imuse.Scripting.Types
     {
         public string Name { get; }
         public int? During { get; }
-        private readonly StatementExecuter bodyExecuter;
+        private readonly BlockStatementExecuter bodyExecuter;
 
-        public ImuseAction(string name, int? during, StatementExecuter bodyExecuter)
+        public ImuseAction(string name, int? during, BlockStatementExecuter bodyExecuter)
         {
             Name = name;
             During = during;

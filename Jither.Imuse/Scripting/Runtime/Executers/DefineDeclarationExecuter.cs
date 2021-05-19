@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 using System;
 
 namespace Jither.Imuse.Scripting.Runtime.Executers
@@ -14,12 +15,12 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             value = ExpressionExecuter.Build(define.Value);
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            var valueResult = value.GetValue(context);
+            var valueResult = value.Execute(context);
             context.CurrentScope.AddSymbol(name, valueResult, isConstant: true);
 
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             var cmdSymbol = context.CurrentScope.GetSymbol(identifier, identifier.Name);
 
@@ -48,7 +48,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                     arg = arguments[argumentIndex++];
                 }
 
-                var value = arg.GetValue(context);
+                var value = arg.Execute(context);
 
                 // Argument type checking
                 if (value.Type != param.Type)
@@ -74,7 +74,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 result = command.Execute(argValues);
             }
 
-            return new ExecutionResult(ExecutionResultType.Normal, result);
+            return result;
         }
     }
 }

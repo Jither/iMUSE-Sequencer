@@ -17,7 +17,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             op = expr.Operator;
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             RuntimeValue result;
 
@@ -26,8 +26,8 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 // These operators are short-circuiting - don't evaluate right until we know the value of left:
                 result = op switch
                 {
-                    BinaryOperator.And => left.GetValue(context).AsBoolean(left) && right.GetValue(context).AsBoolean(right) ? BooleanValue.True : BooleanValue.False,
-                    BinaryOperator.Or => left.GetValue(context).AsBoolean(left) || right.GetValue(context).AsBoolean(right) ? BooleanValue.True : BooleanValue.False,
+                    BinaryOperator.And => left.Execute(context).AsBoolean(left) && right.Execute(context).AsBoolean(right) ? BooleanValue.True : BooleanValue.False,
+                    BinaryOperator.Or => left.Execute(context).AsBoolean(left) || right.Execute(context).AsBoolean(right) ? BooleanValue.True : BooleanValue.False,
                     _ => throw new NotImplementedException($"Binary operator {op} not implemented in interpreter"),
                 };
             }
@@ -36,16 +36,16 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 // These operate on any type:
                 result = op switch
                 {
-                    BinaryOperator.Equal => left.GetValue(context).IsEqualTo(right.GetValue(context)) ? BooleanValue.True : BooleanValue.False,
-                    BinaryOperator.NotEqual => left.GetValue(context).IsEqualTo(right.GetValue(context)) ? BooleanValue.False : BooleanValue.True,
+                    BinaryOperator.Equal => left.Execute(context).IsEqualTo(right.Execute(context)) ? BooleanValue.True : BooleanValue.False,
+                    BinaryOperator.NotEqual => left.Execute(context).IsEqualTo(right.Execute(context)) ? BooleanValue.False : BooleanValue.True,
                     _ => throw new NotImplementedException($"Binary operator {op} not implemented in interpreter")
                 };
             }
             else
             {
                 // These operate only on integers
-                var leftValue = left.GetValue(context).AsInteger(left);
-                var rightValue = right.GetValue(context).AsInteger(right);
+                var leftValue = left.Execute(context).AsInteger(left);
+                var rightValue = right.Execute(context).AsInteger(right);
 
                 result = op switch
                 {
@@ -62,7 +62,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 };
             }
 
-            return new ExecutionResult(ExecutionResultType.Normal, result);
+            return result;
         }
     }
 }

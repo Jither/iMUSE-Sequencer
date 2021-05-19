@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 
 namespace Jither.Imuse.Scripting.Runtime.Executers
 {
@@ -13,10 +14,10 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             this.identifier = identifier;
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             var symbol = context.CurrentScope.GetSymbol(identifier, identifier.Name);
-            return new ExecutionResult(ExecutionResultType.Normal, symbol.Value);
+            return symbol.Value;
         }
     }
 }

@@ -191,8 +191,7 @@ namespace Jither.Imuse.Scripting.Ast
             string inc = stmt.Increment switch
             {
                 true => "++",
-                false => "--",
-                null => ""
+                false => "--"
             };
             Output($"for {inc}");
             indentLevel++;
@@ -317,6 +316,35 @@ namespace Jither.Imuse.Scripting.Ast
         public void VisitStartEventDeclarator(StartEventDeclarator node)
         {
             Output("start");
+        }
+
+        public void VisitJumpStatement(JumpStatement node)
+        {
+            Output($"jump to {node.Destination}");
+        }
+
+        public void VisitConditionalJumpStatement(ConditionalJumpStatement node)
+        {
+            Output(node.WhenNot ? $"jump-if-not to {node.Destination}" : $"jump-if to {node.Destination}");
+            indentLevel++;
+            node.Test.Accept(this);
+            indentLevel--;
+        }
+
+        public void VisitEnqueueStartStatement(EnqueueStartStatement node)
+        {
+            Output("enqueue-start");
+            indentLevel++;
+
+            node.SoundId.Accept(this);
+            node.MarkerId.Accept(this);
+
+            indentLevel--;
+        }
+
+        public void VisitEnqueueEndStatement(EnqueueEndStatement node)
+        {
+            Output("enqueue-end");
         }
     }
 }

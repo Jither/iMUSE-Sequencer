@@ -1,6 +1,7 @@
 ﻿using Jither.Imuse.Commands;
 using Jither.Imuse.Helpers;
 using Jither.Imuse.Scripting.Events;
+using Jither.Imuse.Scripting.Runtime.Executers;
 using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace Jither.Imuse.Scripting.Runtime
         public ImuseQueue Queue { get; }
         public FileProvider FileProvider { get; }
         public Scope CurrentScope => scopes.Peek();
-        public List<CommandCall> EnqueuingCommands { get; set; }
+        public EnqueueCommandList EnqueuingCommands { get; set; }
 
         private readonly Stack<Scope> scopes = new();
 

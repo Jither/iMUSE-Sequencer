@@ -37,6 +37,11 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitCaseDefinition(CaseDefinition node);
         void VisitAssignmentExpression(AssignmentExpression node);
         void VisitEnqueueStatement(EnqueueStatement node);
+
+        void VisitJumpStatement(JumpStatement node);
+        void VisitConditionalJumpStatement(ConditionalJumpStatement node);
+        void VisitEnqueueStartStatement(EnqueueStartStatement node);
+        void VisitEnqueueEndStatement(EnqueueEndStatement node);
     }
 
     /// <summary>
@@ -129,6 +134,11 @@ namespace Jither.Imuse.Scripting.Ast
         public void VisitForStatement(ForStatement node) => Visit(node);
         public void VisitIfStatement(IfStatement node) => Visit(node);
         public void VisitWhileStatement(WhileStatement node) => Visit(node);
+
+        public void VisitConditionalJumpStatement(ConditionalJumpStatement node) => Visit(node);
+        public void VisitJumpStatement(JumpStatement node) => Visit(node);
+        public void VisitEnqueueStartStatement(EnqueueStartStatement node) => Visit(node);
+        public void VisitEnqueueEndStatement(EnqueueEndStatement node) => Visit(node);
     }
 
     /// <summary>

@@ -19,9 +19,9 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             op = expr.Operator;
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            var rightValue = right.GetValue(context);
+            var rightValue = right.Execute(context);
             RuntimeValue value;
             if (op == AssignmentOperator.Equals)
             {
@@ -44,7 +44,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 value = IntegerValue.Create(resultInt);
             }
             context.CurrentScope.AddOrUpdateSymbol(this.Node, identifierName, value);
-            return new ExecutionResult(ExecutionResultType.Normal, value);
+            return value;
         }
     }
 

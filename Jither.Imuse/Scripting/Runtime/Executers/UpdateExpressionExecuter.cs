@@ -15,7 +15,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             op = expr.Operator;
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             var symbol = context.CurrentScope.GetSymbol(identifier, identifier.Name);
             var value = symbol.Value.AsInteger(identifier);
@@ -32,7 +32,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
             var newValue = IntegerValue.Create(value);
             symbol.Update(Node, newValue);
-            return new ExecutionResult(ExecutionResultType.Normal, newValue);
+            return newValue;
         }
     }
 }

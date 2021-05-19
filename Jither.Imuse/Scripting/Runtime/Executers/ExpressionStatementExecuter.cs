@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
 
@@ -13,10 +14,10 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             expression = ExpressionExecuter.Build(stmt.Expression);
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             expression.Execute(context);
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }

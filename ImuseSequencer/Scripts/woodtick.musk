@@ -177,6 +177,53 @@ action exit-woodshop
     }
 }
 
+variable inn-volume = 127;
+variable largo-volume = 0;
+
+action enter-largos-room
+{
+    do
+    {
+        largo-volume += 6
+        if (largo-volume > 127)
+        {
+            largo-volume is 127
+        }
+        inn-volume -= 2
+        if (inn-volume < 0)
+        {
+            inn-volume is 0
+        }
+
+        set-part-volume inn-theme channel 1 inn-volume
+        set-part-volume inn-theme channel 3 largo-volume
+
+        ; Need a break-here here - right now the "fade" is immediate
+    } until (inn-volume is 0)
+}
+
+action exit-largos-room
+{
+    do
+    {
+        largo-volume -= 2
+        if (largo-volume < 0)
+        {
+            largo-volume = 0
+        }
+        inn-volume += 6
+        if (inn-volume > 127)
+        {
+            inn-volume is 127
+        }
+
+        set-part-volume inn-theme channel 1 inn-volume
+        set-part-volume inn-theme channel 3 largo-volume
+
+        ; Need a break-here here - right now the "fade" is immediate
+    } until (largo-volume is 0)
+}
+
 action kidnap-wally
 {
     wally-snatched is true
@@ -200,6 +247,8 @@ on key "Shift+C":   enter-wallys
 on key "C":         exit-wallys
 on key "Shift+I":   enter-inn
 on key "I":         exit-inn
+on key "Shift+G":   enter-largos-room
+on key "G":         exit-largos-room
 on key "Shift+L":   enter-laundry
 on key "L":         exit-laundry
 on key "Shift+W":   enter-woodshop

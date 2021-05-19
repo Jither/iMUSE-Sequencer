@@ -1,5 +1,6 @@
 ﻿using Jither.Imuse.Files;
 using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 using System;
 
 namespace Jither.Imuse.Scripting.Runtime.Executers
@@ -15,17 +16,16 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             id = ExpressionExecuter.Build(sound.Id);
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            int soundId = id.GetValue(context).AsInteger(id);
-            string name = this.name.GetValue(context).AsString(this.name);
+            int soundId = id.Execute(context).AsInteger(id);
+            string name = this.name.Execute(context).AsString(this.name);
             context.Engine.RegisterSound(
                 soundId,
-                // TODO: The actual loading of the SoundFile should be the Engine's job
                 context.FileProvider.Load(name)
             );
 
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }

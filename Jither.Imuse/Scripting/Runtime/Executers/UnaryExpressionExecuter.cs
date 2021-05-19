@@ -15,16 +15,16 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             op = expr.Operator;
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             RuntimeValue result = op switch
             {
-                UnaryOperator.Plus => IntegerValue.Create(argument.GetValue(context).AsInteger(argument)),
-                UnaryOperator.Minus => IntegerValue.Create(-argument.GetValue(context).AsInteger(argument)),
-                UnaryOperator.Not => argument.GetValue(context).AsBoolean(argument) ? BooleanValue.False : BooleanValue.True,
+                UnaryOperator.Plus => IntegerValue.Create(argument.Execute(context).AsInteger(argument)),
+                UnaryOperator.Minus => IntegerValue.Create(-argument.Execute(context).AsInteger(argument)),
+                UnaryOperator.Not => argument.Execute(context).AsBoolean(argument) ? BooleanValue.False : BooleanValue.True,
                 _ => throw new NotImplementedException($"Unary operator {op} not implemented."),
             };
-            return new ExecutionResult(ExecutionResultType.Normal, result);
+            return result;
         }
     }
 }

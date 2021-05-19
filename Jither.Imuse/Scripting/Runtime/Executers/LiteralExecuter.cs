@@ -20,7 +20,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             };
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             var result = value;
 
@@ -30,7 +30,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 result = str.Format(this, context);
             }
 
-            return new ExecutionResult(ExecutionResultType.Normal, result);
+            return result;
         }
     }
 }

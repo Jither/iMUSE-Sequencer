@@ -18,12 +18,12 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            var valueResult = value?.GetValue(context) ?? RuntimeValue.Null;
+            var valueResult = value?.Execute(context) ?? RuntimeValue.Null;
             context.CurrentScope.AddSymbol(name, valueResult);
 
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }

@@ -38,9 +38,9 @@ namespace Jither.Imuse.Scripting
         }
     }
 
-    public class InvalidTokenException : ParserException
+    public class SyntaxException : ParserException
     {
-        public InvalidTokenException(string message, SourceRange range) : base(message, range)
+        public SyntaxException(Token token, string message) : base(message, token.Range)
         {
         }
     }

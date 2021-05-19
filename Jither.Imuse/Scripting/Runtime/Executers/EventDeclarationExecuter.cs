@@ -29,7 +29,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             evt = EventDeclaratorExecuter.Build(declaration.Event);
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             ImuseAction action;
             if (actionName != null)
@@ -38,7 +38,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
             else if (actionDeclaration != null)
             {
-                action = actionDeclaration.GetValue(context).AsAction(actionDeclaration);
+                action = actionDeclaration.Execute(context).AsAction(actionDeclaration);
             }
             else
             {
@@ -54,11 +54,11 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                         context.Events.RegisterEvent(new StartEvent(action));
                         break;
                     case TimeEventDeclaratorExecuter timed:
-                        var time = timed.GetValue(context).AsTime(timed);
+                        var time = timed.Execute(context).AsTime(timed);
                         context.Events.RegisterEvent(new TimedEvent(time, action));
                         break;
                     case KeyPressEventDeclaratorExecuter keyPress:
-                        var key = keyPress.GetValue(context).AsString(keyPress);
+                        var key = keyPress.Execute(context).AsString(keyPress);
                         context.Events.RegisterEvent(new KeyPressEvent(key, action));
                         break;
                     default:
@@ -70,7 +70,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
                 ErrorHelper.ThrowEngineError(this.Node, $"Error registering event: {ex.Message}");
             }
 
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 
@@ -101,11 +101,11 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             key = ExpressionExecuter.Build(node.Key);
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            string result = key.GetValue(context).AsString(key);
+            string result = key.Execute(context).AsString(key);
 
-            return new ExecutionResult(ExecutionResultType.Normal, new StringValue(result));
+            return new StringValue(result);
         }
     }
 
@@ -136,23 +136,23 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
             TimeValue result;
             if (time != null)
             {
-                var t = time.GetValue(context).AsTime(time);
+                var t = time.Execute(context).AsTime(time);
                 result = new TimeValue(t);
             }
             else
             {
-                int m = measure?.GetValue(context).AsInteger(measure) ?? 0;
-                int b = beat?.GetValue(context).AsInteger(beat) ?? 0;
-                int t = tick?.GetValue(context).AsInteger(tick) ?? 0;
+                int m = measure?.Execute(context).AsInteger(measure) ?? 0;
+                int b = beat?.Execute(context).AsInteger(beat) ?? 0;
+                int t = tick?.Execute(context).AsInteger(tick) ?? 0;
                 result = new TimeValue(new Time(m, b, t));
             }
 
-            return new ExecutionResult(ExecutionResultType.Normal, result);
+            return result;
         }
     }
 
@@ -162,9 +162,9 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         {
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }

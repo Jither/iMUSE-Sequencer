@@ -1,4 +1,5 @@
 ﻿using Jither.Imuse.Scripting.Ast;
+using Jither.Imuse.Scripting.Types;
 using System;
 using System.Collections.Generic;
 
@@ -16,17 +17,29 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             }
         }
 
-        public override ExecutionResult Execute(ExecutionContext context)
+        public override RuntimeValue Execute(ExecutionContext context)
         {
-            foreach (var stmt in statements)
+            int position = 0;
+            while (position < statements.Count)
             {
-                var result = stmt.Execute(context);
-                if (result.Type == ExecutionResultType.Break)
+                var statement = statements[position++];
+                switch (statement)
                 {
-                    return ExecutionResult.Break;
+                    case ConditionalJumpStatementExecuter condJump:
+                        // WhenNot = true ? Jump if condition is false
+                        // WhenNot = false ? Jump if condition is true
+                        if (condJump.Test.Execute(context).AsBoolean(condJump.Test) != condJump.WhenNot)
+                        {
+                            position = condJump.Destination;
+                        }
+                        continue;
+                    case JumpStatementExecuter jump:
+                        position = jump.Destination;
+                        continue;
                 }
+                statement.Execute(context);
             }
-            return ExecutionResult.Void;
+            return RuntimeValue.Void;
         }
     }
 }
