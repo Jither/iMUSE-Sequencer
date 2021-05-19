@@ -15,16 +15,20 @@ namespace Jither.Imuse.Scripting
         private readonly ScriptExecuter script;
         private readonly FileProvider fileProvider;
         private readonly MuskCommands scriptCommands = new();
+        private long ticks = 0;
 
         public ExecutionContext Context { get; private set; }
 
         public Interpreter(string source, FileProvider fileProvider)
         {
             this.fileProvider = fileProvider;
+
             var parser = new ScriptParser(source);
             var ast = parser.Parse();
+            
             var flattener = new ActionFlattener();
             flattener.Execute(ast);
+            
             this.script = new ScriptExecuter(ast);
         }
 
@@ -41,6 +45,16 @@ namespace Jither.Imuse.Scripting
 
             script.Execute(Context);
             engine.Events.TriggerStart(Context);
+        }
+
+        public void Tick()
+        {
+            ticks++;
+            // TODO: Temporary hardcode: 32 ticks = 1 frame at 30fps (assuming 120 bpm => 120 * 480 ticks per minute / 60 = 960 ticks per second = 960 / 30 = 32 ticks per frame)
+            if ((ticks % 32) == 0)
+            {
+                Context.ResumeScripts();
+            }
         }
     }
 }

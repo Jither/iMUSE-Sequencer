@@ -5,7 +5,7 @@ namespace Jither.Imuse.Scripting.Ast
     public class ConditionalJumpStatement : JumpStatement
     {
         public Expression Test { get; }
-        public bool WhenNot { get; }
+        public bool JumpWhen { get; }
 
         public override NodeType Type => NodeType.ConditionalJumpStatement;
 
@@ -17,10 +17,10 @@ namespace Jither.Imuse.Scripting.Ast
             }
         }
 
-        public ConditionalJumpStatement(Label destination, Expression test, bool whenNot) : base(destination)
+        public ConditionalJumpStatement(Label destination, Expression test, bool jumpWhen) : base(destination)
         {
             Test = test;
-            WhenNot = whenNot;
+            JumpWhen = jumpWhen;
         }
 
         public override void Accept(IAstVisitor visitor)

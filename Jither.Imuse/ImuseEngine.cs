@@ -32,6 +32,8 @@ namespace Jither.Imuse
         public ImuseCommands Commands { get; }
         public EventManager Events { get; }
 
+        public event Action Tick;
+
         public ImuseEngine(ITransmitter transmitter, SoundTarget target, ImuseOptions options = null)
         {
             this.transmitter = transmitter;
@@ -132,6 +134,7 @@ namespace Jither.Imuse
             long remainingTicks = ticks;
             while (remainingTicks > 0)
             {
+                Tick?.Invoke();
                 bool continuePlaying = players.Tick();
                 continuePlaying = sustainer.Tick() || continuePlaying;
                 driver.CurrentTick++;
@@ -143,7 +146,7 @@ namespace Jither.Imuse
                     {
                         logger.Warning($"Still playing note: {note}");
                     }
-                    // TODO: Temporary measure because the engine is constantly playing, and we don't want 1 tick between each
+                    // TODO: Temporary measure because the engine is constantly playing, and we don't want 1 tick between each no-op
                     driver.CurrentTick += remainingTicks;
                     break;
                 }

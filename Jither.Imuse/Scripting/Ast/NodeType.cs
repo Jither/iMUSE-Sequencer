@@ -34,6 +34,9 @@
         Identifier,
         Literal,
 
+        // Script suspension (multitasking)
+        BreakHereStatement,
+
         // Pseudo statement used during flattening/"compilation"
         Label, 
 

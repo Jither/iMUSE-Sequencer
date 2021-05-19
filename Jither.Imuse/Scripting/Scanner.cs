@@ -34,6 +34,7 @@ namespace Jither.Imuse.Scripting
         public const string Or = "or";
 
         public const string Enqueue = "enqueue";
+        public const string BreakHere = "break-here";
 
         // Soft keywords - these are scanned as identifiers, since they're only keywords in a specific context
         public const string During = "during";
@@ -67,6 +68,8 @@ namespace Jither.Imuse.Scripting
             IsNot,
             And,
             Or,
+
+            BreakHere,
 
             Enqueue
         };

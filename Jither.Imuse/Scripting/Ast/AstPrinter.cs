@@ -276,6 +276,17 @@ namespace Jither.Imuse.Scripting.Ast
             Output("break");
         }
 
+        public void VisitBreakHereStatement(BreakHereStatement stmt)
+        {
+            Output("break-here");
+            if (stmt.Count != null)
+            {
+                indentLevel++;
+                stmt.Count.Accept(this);
+                indentLevel--;
+            }
+        }
+
         public void VisitKeyPressEventDeclarator(KeyPressEventDeclarator node)
         {
             Output("key");
@@ -325,7 +336,7 @@ namespace Jither.Imuse.Scripting.Ast
 
         public void VisitConditionalJumpStatement(ConditionalJumpStatement node)
         {
-            Output(node.WhenNot ? $"jump-if-not to {node.Destination}" : $"jump-if to {node.Destination}");
+            Output($"jump to {node.Destination} when {node.JumpWhen}:");
             indentLevel++;
             node.Test.Accept(this);
             indentLevel--;

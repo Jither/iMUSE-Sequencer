@@ -164,6 +164,7 @@ namespace Jither.Imuse.Scripting
                         Keywords.Enqueue => ParseEnqueueStatement(),
                         Keywords.For => ParseForStatement(),
                         Keywords.If => ParseIfStatement(),
+                        Keywords.BreakHere => ParseBreakHereStatement(),
                         _ => ThrowUnexpectedToken<Statement>(lookahead, expected: "statement"),
                     };
                 case TokenType.Punctuation:
@@ -337,6 +338,22 @@ namespace Jither.Imuse.Scripting
             ExpectKeyword(Keywords.Break);
 
             return Finalize(new BreakStatement());
+        }
+
+        private BreakHereStatement ParseBreakHereStatement()
+        {
+            int line = CurrentLine;
+            StartNode();
+            ExpectKeyword(Keywords.BreakHere);
+
+            // Bit of a hack - like call statements, break-here is terminated at newline
+            Expression count = null;
+            if (line == CurrentLine)
+            {
+                count = ParseExpression();
+            }
+
+            return Finalize(new BreakHereStatement(count));
         }
 
         private DoStatement ParseDoStatement()

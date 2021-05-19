@@ -60,6 +60,11 @@ namespace Jither.Imuse.Scripting.Ast
             AddJump(loopEndLabelStack.Peek());
         }
 
+        public void VisitBreakHereStatement(BreakHereStatement node)
+        {
+            Add(node);
+        }
+
         public void VisitCaseStatement(CaseStatement node)
         {
             var endLabel = new Label();
@@ -214,13 +219,13 @@ namespace Jither.Imuse.Scripting.Ast
 
         private Statement AddIf(Expression test, Label destination)
         {
-            var statement = new ConditionalJumpStatement(destination, test, whenNot: false);
+            var statement = new ConditionalJumpStatement(destination, test, jumpWhen: true);
             return Add(statement);
         }
 
         private Statement AddIfNot(Expression test, Label destination)
         {
-            var statement = new ConditionalJumpStatement(destination, test, whenNot: true);
+            var statement = new ConditionalJumpStatement(destination, test, jumpWhen: false);
             return Add(statement);
         }
 

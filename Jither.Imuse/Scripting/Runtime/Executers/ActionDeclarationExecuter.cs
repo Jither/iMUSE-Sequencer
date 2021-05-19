@@ -1,6 +1,7 @@
 ﻿using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Types;
 using System;
+using System.Collections.Generic;
 
 namespace Jither.Imuse.Scripting.Runtime.Executers
 {
@@ -8,7 +9,7 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
     {
         private readonly string name;
         private readonly ExpressionExecuter during;
-        private readonly BlockStatementExecuter body;
+        private readonly List<StatementExecuter> body;
 
         public ActionDeclarationExecuter(ActionDeclaration action) : base(action)
         {
@@ -17,7 +18,12 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
             {
                 during = ExpressionExecuter.Build(action.During);
             }
-            body = new BlockStatementExecuter(action.Body);
+
+            body = new List<StatementExecuter>();
+            foreach (var stmt in action.Body.Body)
+            {
+                body.Add(StatementExecuter.Build(stmt));
+            }
         }
 
         public override RuntimeValue Execute(ExecutionContext context)

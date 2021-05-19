@@ -198,8 +198,9 @@ action enter-largos-room
         set-part-volume inn-theme channel 1 inn-volume
         set-part-volume inn-theme channel 3 largo-volume
 
-        ; Need a break-here here - right now the "fade" is immediate
-    } until (inn-volume is 0)
+        break-here
+    }
+    until (inn-volume is 0)
 }
 
 action exit-largos-room
@@ -220,8 +221,9 @@ action exit-largos-room
         set-part-volume inn-theme channel 1 inn-volume
         set-part-volume inn-theme channel 3 largo-volume
 
-        ; Need a break-here here - right now the "fade" is immediate
-    } until (largo-volume is 0)
+        break-here
+    }
+    until (largo-volume is 0)
 }
 
 action kidnap-wally

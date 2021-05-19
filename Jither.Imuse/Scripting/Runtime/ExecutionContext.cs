@@ -3,6 +3,7 @@ using Jither.Imuse.Helpers;
 using Jither.Imuse.Scripting.Events;
 using Jither.Imuse.Scripting.Runtime.Executers;
 using Jither.Imuse.Scripting.Types;
+using Jither.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,22 @@ using System.Reflection;
 
 namespace Jither.Imuse.Scripting.Runtime
 {
+    public class SuspendedAction
+    {
+        public ImuseAction Action { get; }
+        public int Position { get; }
+        public Scope LocalScope { get; }
+        public int FramesRemaining { get; set; }
+
+        public SuspendedAction(ImuseAction action, int position, Scope localScope, int frameCount)
+        {
+            Action = action;
+            Position = position;
+            LocalScope = localScope;
+            FramesRemaining = frameCount;
+        }
+    }
+
     public class ExecutionContext
     {
         public ImuseEngine Engine { get; }
@@ -20,6 +37,7 @@ namespace Jither.Imuse.Scripting.Runtime
         public EnqueueCommandList EnqueuingCommands { get; set; }
 
         private readonly Stack<Scope> scopes = new();
+        private readonly List<SuspendedAction> suspendedActions = new();
 
         public ExecutionContext(ImuseEngine engine, EventManager events, ImuseQueue queue, FileProvider fileProvider)
         {
@@ -35,12 +53,43 @@ namespace Jither.Imuse.Scripting.Runtime
         public void EnterScope(string name)
         {
             var scope = new Scope(name, CurrentScope);
+            EnterScope(scope);
+        }
+
+        public void EnterScope(Scope scope)
+        {
             scopes.Push(scope);
         }
 
         public void ExitScope()
         {
             scopes.Pop();
+        }
+
+        public void SuspendAction(ImuseAction action, int position, int frameCount)
+        {
+            suspendedActions.Add(new SuspendedAction(action, position, CurrentScope, frameCount));
+        }
+
+        public void ResumeScripts()
+        {
+            // Storing the current number of suspended scripts in order to not resume scripts that are re-added after resuming
+            int count = suspendedActions.Count;
+            int listIndex = 0;
+            for (int i = 0; i < count; i++)
+            {
+                var action = suspendedActions[listIndex];
+                action.FramesRemaining--;
+                if (action.FramesRemaining == 0)
+                {
+                    suspendedActions.RemoveAt(listIndex);
+                    action.Action.Resume(this, action.Position, action.LocalScope);
+                }
+                else
+                {
+                    listIndex++;
+                }
+            }
         }
 
         public void AddCommands(object commandObject)

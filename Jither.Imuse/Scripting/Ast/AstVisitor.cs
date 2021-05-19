@@ -38,6 +38,8 @@ namespace Jither.Imuse.Scripting.Ast
         void VisitAssignmentExpression(AssignmentExpression node);
         void VisitEnqueueStatement(EnqueueStatement node);
 
+        void VisitBreakHereStatement(BreakHereStatement node);
+
         void VisitJumpStatement(JumpStatement node);
         void VisitConditionalJumpStatement(ConditionalJumpStatement node);
         void VisitEnqueueStartStatement(EnqueueStartStatement node);
@@ -134,6 +136,8 @@ namespace Jither.Imuse.Scripting.Ast
         public void VisitForStatement(ForStatement node) => Visit(node);
         public void VisitIfStatement(IfStatement node) => Visit(node);
         public void VisitWhileStatement(WhileStatement node) => Visit(node);
+
+        public void VisitBreakHereStatement(BreakHereStatement node) => Visit(node);
 
         public void VisitConditionalJumpStatement(ConditionalJumpStatement node) => Visit(node);
         public void VisitJumpStatement(JumpStatement node) => Visit(node);

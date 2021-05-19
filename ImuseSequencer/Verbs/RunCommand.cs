@@ -75,6 +75,8 @@ namespace ImuseSequencer.Verbs
 
                         interpreter.Execute(engine);
 
+                        engine.Tick += interpreter.Tick;
+
                         logger.Info("");
 
                         foreach (var evt in engine.Events.KeyPressEvents)

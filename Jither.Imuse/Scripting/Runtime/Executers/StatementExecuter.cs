@@ -54,12 +54,12 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
     public class ConditionalJumpStatementExecuter : JumpStatementExecuter
     {
         public ExpressionExecuter Test { get; }
-        public bool WhenNot { get; }
+        public bool JumpWhen { get; }
 
         public ConditionalJumpStatementExecuter(ConditionalJumpStatement statement) : base(statement)
         {
             Test = ExpressionExecuter.Build(statement.Test);
-            WhenNot = statement.WhenNot;
+            JumpWhen = statement.JumpWhen;
         }
     }
 
@@ -74,21 +74,15 @@ namespace Jither.Imuse.Scripting.Runtime.Executers
         {
             return stmt switch
             {
-                BlockStatement block => new BlockStatementExecuter(block),
-                //BreakStatement breakStmt => new BreakStatementExecuter(breakStmt),
-                //CaseStatement switchCase => new CaseStatementExecuter(switchCase),
-                //DoStatement doStmt => new DoStatementExecuter(doStmt),
-                //EnqueueStatement enqueue => new EnqueueStatementExecuter(enqueue),
                 ExpressionStatement expr => new ExpressionStatementExecuter(expr),
-                //ForStatement forStmt => new ForStatementExecuter(forStmt),
-                //IfStatement ifStmt => new IfStatementExecuter(ifStmt),
-                //WhileStatement whileStmt => new WhileStatementExecuter(whileStmt),
+                BreakHereStatement breakHere => new BreakHereStatementExecuter(breakHere),
 
                 ConditionalJumpStatement condJump => new ConditionalJumpStatementExecuter(condJump),
                 JumpStatement jump => new JumpStatementExecuter(jump),
                 
                 EnqueueStartStatement enqueueStart => new EnqueueStartStatementExecuter(enqueueStart),
                 EnqueueEndStatement enqueueEnd => new EnqueueEndStatementExecuter(enqueueEnd),
+
                 _ => ErrorHelper.ThrowUnknownNode<StatementExecuter>(stmt)
             };
         }
