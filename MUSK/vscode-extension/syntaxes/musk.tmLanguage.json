@@ -80,7 +80,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.musk",
-					"match": "\\b(break|case|of|default|otherwise|do|until|for|to|if|else|while)\\b"
+					"match": "\\b(break-here|break|case|of|default|otherwise|do|until|for|to|if|else|while)\\b"
 				},
 				{
 					"name": "keyword.operator.word.musk",
