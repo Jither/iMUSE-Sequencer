@@ -457,7 +457,12 @@ namespace Jither.Imuse.Scripting
             ExpectKeyword("for");
 
             var iterator = ParseIdentifier();
-            Expect("=");
+            if (!Matches("=") && !MatchesKeyword("is"))
+            {
+                return ThrowUnexpectedToken<ForStatement>(lookahead, "for loop expected an = or 'is'", "= or is");
+            }
+            NextToken();
+
             var from = ParseExpression();
             ExpectKeyword("to");
             var to = ParseExpression();

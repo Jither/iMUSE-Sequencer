@@ -4,7 +4,6 @@ using ImuseSequencer.UI;
 using Jither.CommandLine;
 using Jither.Imuse;
 using Jither.Imuse.Scripting;
-using Jither.Imuse.Scripting.Ast;
 using Jither.Imuse.Scripting.Runtime;
 using Jither.Logging;
 using Jither.Utilities;
@@ -103,12 +102,26 @@ namespace ImuseSequencer.Verbs
 
         private void OutputSourceWithLocation(string source, SourceRange range)
         {
+            var context = range.GetContext(source, 2);
+
+            // We use a StringBuilder because we're formatting the lines, and may have formatting tokens that
+            // start and end on different lines - that won't work if logging the individual lines.
             var builder = new StringBuilder();
-            builder.Append(source[..range.Start.Index]);
-            builder.Append("[red]");
-            builder.Append(source[range.Start.Index..range.End.Index]);
-            builder.Append("[/]");
-            builder.Append(source[range.End.Index..]);
+            for (int i = 0; i < context.Lines.Count; i++)
+            {
+                int lineNumber = i + context.FirstLine;
+                string line = context.Lines[i];
+                if (lineNumber == range.End.Line)
+                {
+                    line = line[..range.End.Column] + "[/]" + line[range.End.Column..];
+                }
+                if (lineNumber == range.Start.Line)
+                {
+                    line = line[..range.Start.Column] + "[red]" + line[range.Start.Column..];
+                }
+                builder.AppendLine($"{lineNumber,5}:  {line}");
+            }
+
             logger.Info(builder.ToString());
         }
     }

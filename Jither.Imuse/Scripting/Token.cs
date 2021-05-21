@@ -1,5 +1,4 @@
-﻿using Jither.Imuse.Scripting.Ast;
-using Jither.Imuse.Scripting.Types;
+﻿using Jither.Imuse.Scripting.Types;
 using System;
 using System.Globalization;
 

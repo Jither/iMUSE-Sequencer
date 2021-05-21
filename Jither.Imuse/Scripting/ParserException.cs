@@ -1,5 +1,4 @@
-﻿using Jither.Imuse.Scripting.Ast;
-using System;
+﻿using System;
 
 namespace Jither.Imuse.Scripting
 {

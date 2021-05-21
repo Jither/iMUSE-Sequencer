@@ -3,6 +3,8 @@ using Jither.Imuse.Drivers;
 using Jither.Imuse.Files;
 using Jither.Imuse.Parts;
 using Jither.Imuse.Scripting.Events;
+using Jither.Imuse.Scripting.Runtime;
+using Jither.Imuse.Scripting.Types;
 using Jither.Logging;
 using Jither.Midi.Files;
 using Jither.Utilities;
@@ -24,6 +26,7 @@ namespace Jither.Imuse
         private bool isInitialized;
         private int ticksPerQuarterNote;
         private ImuseVersion imuseVersion;
+        private SoundTarget target;
         private PartManager parts;
 
         private bool disposed;
@@ -38,6 +41,7 @@ namespace Jither.Imuse
         {
             this.transmitter = transmitter;
             transmitter.Engine = this;
+            this.target = target;
             this.options = options;
 
             options ??= new ImuseOptions();
@@ -45,9 +49,7 @@ namespace Jither.Imuse
             driver = GetDriver(target);
 
             Queue = new ImuseQueue(this);
-
             sustainer = new Sustainer(options);
-
             players = new PlayerManager(files, Queue, options);
 
             Commands = new ImuseCommands(players, Queue);
@@ -172,6 +174,15 @@ namespace Jither.Imuse
                 SoundTarget.GeneralMidi => new GeneralMidi(transmitter),
                 _ => throw new ImuseException($"Driver for {target} target is not implemented yet."),
             };
+        }
+
+        public void PopulateExecutionContext(ExecutionContext context)
+        {
+            context.CurrentScope.AddSymbol("sound-mode", IntegerValue.Create((int)target));
+            context.CurrentScope.AddSymbol("ADLIB", IntegerValue.Create((int)SoundTarget.Adlib));
+            context.CurrentScope.AddSymbol("ROLAND", IntegerValue.Create((int)SoundTarget.Roland));
+            context.CurrentScope.AddSymbol("PC", IntegerValue.Create((int)SoundTarget.Speaker));
+            context.CurrentScope.AddSymbol("GMIDI", IntegerValue.Create((int)SoundTarget.GeneralMidi));
         }
 
         public void Dispose()

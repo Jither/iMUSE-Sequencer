@@ -1,4 +1,4 @@
-﻿namespace Jither.Imuse.Scripting.Ast
+﻿namespace Jither.Imuse.Scripting
 {
     public class SourceLocation
     {
@@ -16,23 +16,6 @@
         public override string ToString()
         {
             return $"{Line}:{Column}";
-        }
-    }
-
-    public class SourceRange
-    {
-        public SourceLocation Start { get; }
-        public SourceLocation End { get; }
-
-        public SourceRange(SourceLocation start, SourceLocation end)
-        {
-            Start = start;
-            End = end;
-        }
-
-        public override string ToString()
-        {
-            return $"{Start}-{End}";
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Jither.Imuse.Scripting;
 
 namespace Jither.Imuse.Scripting.Ast
 {

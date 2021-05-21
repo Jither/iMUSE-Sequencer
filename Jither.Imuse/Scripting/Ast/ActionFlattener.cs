@@ -139,11 +139,25 @@ namespace Jither.Imuse.Scripting.Ast
 
         public void VisitForStatement(ForStatement node)
         {
-            // We add "%" in front of the counter - this can never clash with a written identifier, because "%" is not allowed in identifiers.
-            var counter = new Identifier($"%counter{UniqueId}");
+            // Semantics of SCUMM/MUSK for statement, increment:
+            // counter = from
+            // :start
+            //    ...
+            // counter++
+            // if (counter <= to) jump :start
+
+            // Semantics of SCUMM/MUSK for statement, decrement:
+            // counter = from
+            // :start
+            //    ...
+            // counter--
+            // if (counter >= to) jump :start
+
+            // counter can be modified inside loop - and often is in original SCUMM.
+            var counter = node.Iterator;
             var initialization = new ExpressionStatement(new AssignmentExpression(counter, node.From, AssignmentOperator.Equals));
             var update = new ExpressionStatement(new UpdateExpression(counter, node.Increment ? UpdateOperator.Increment : UpdateOperator.Decrement));
-            var test = new BinaryExpression(counter, node.To, BinaryOperator.NotEqual);
+            var test = new BinaryExpression(counter, node.To, node.Increment ? BinaryOperator.LessOrEqual : BinaryOperator.GreaterOrEqual);
 
             var startLabel = new Label();
             var endLabel = new Label();
@@ -151,8 +165,8 @@ namespace Jither.Imuse.Scripting.Ast
 
             Add(initialization);
             Add(startLabel);
-            Add(update);
             node.Body.Accept(this);
+            Add(update);
             AddIf(test, startLabel);
 
             Add(endLabel);

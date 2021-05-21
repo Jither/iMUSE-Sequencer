@@ -35,7 +35,9 @@ namespace Jither.Imuse.Scripting
         public void Execute(ImuseEngine engine)
         {
             Context = new ExecutionContext(engine, engine.Events, engine.Queue, fileProvider);
-            
+
+            engine.PopulateExecutionContext(Context);
+
             // iMUSE specific commands:
             Context.AddCommands(engine.Commands);
             // Scripting commands (e.g. random, print-line...)
