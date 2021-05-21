@@ -26,7 +26,7 @@ namespace Jither.Imuse
         private bool isInitialized;
         private int ticksPerQuarterNote;
         private ImuseVersion imuseVersion;
-        private SoundTarget target;
+        private readonly SoundTarget target;
         private PartManager parts;
 
         private bool disposed;
@@ -34,6 +34,7 @@ namespace Jither.Imuse
         public ImuseQueue Queue { get; }
         public ImuseCommands Commands { get; }
         public EventManager Events { get; }
+        public FaderManager Faders { get; }
 
         public event Action Tick;
 
@@ -51,9 +52,11 @@ namespace Jither.Imuse
             Queue = new ImuseQueue(this);
             sustainer = new Sustainer(options);
             players = new PlayerManager(files, Queue, options);
+            Faders = new FaderManager();
 
-            Commands = new ImuseCommands(players, Queue);
+            Commands = new ImuseCommands(players, Queue, Faders);
             Events = new EventManager();
+            Tick += Faders.Tick;
         }
 
         public void RegisterSound(int id, SoundFile file)

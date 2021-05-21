@@ -1,0 +1,60 @@
+﻿define poke-largo-theme			= 0
+define largo-to-voodoo-theme	= 1
+define largo-is-poked-theme     = 2
+
+sounds {
+    "mi2/ogral"     poke-largo-theme
+    "mi2/deepdoo"   largo-to-voodoo-theme
+    "mi2/ouch"      largo-is-poked-theme
+}
+
+action start
+{
+    start-sound poke-largo-theme
+}
+
+action poke-largo
+{
+    set-jump-hook poke-largo-theme 1
+}
+
+action poke-again
+{
+    start-sound largo-is-poked-theme
+}
+
+action brag
+{
+    enqueue poke-largo-theme marker 1
+    {
+        ; Original uses this (which is a no-op at the moment):
+        ; set-speed poke-largo-theme 0
+        pause-sound poke-largo-theme
+    }
+    set-jump-hook poke-largo-theme 2
+}
+
+action show-beard
+{
+    enqueue poke-largo-theme marker 2
+    {
+        stop-sound poke-largo-theme
+    }
+    resume-sound poke-largo-theme
+}
+
+action stupidly-hand-largo-beard
+{
+    clear-queue
+    enqueue poke-largo-theme marker 3
+    {
+        start-sound largo-to-voodoo-theme
+    }
+}
+
+on key "S":         start
+on key "1":         poke-largo
+on key "P":         poke-again
+on key "2":         brag
+on key "3":         show-beard
+on key "4":         stupidly-hand-largo-beard

@@ -9,10 +9,8 @@ namespace Jither.Imuse.Scripting.Ast
     /// </summary>
     public class ActionFlattener : IAstVisitor
     {
-        private int _uniqueId = 0;
         private List<Statement> currentActionStatements;
         private readonly Stack<Label> loopEndLabelStack = new();
-        private int UniqueId => _uniqueId++;
 
         public void Execute(Node node)
         {

@@ -37,7 +37,15 @@ namespace ImuseSequencer.Verbs
 
         public override void Execute()
         {
-            var source = File.ReadAllText(options.ScriptPath, Encoding.UTF8);
+            string source;
+            try
+            {
+                source = File.ReadAllText(options.ScriptPath, Encoding.UTF8);
+            }
+            catch (IOException ex)
+            {
+                throw new ImuseSequencerException($"Failed to open script: {ex.Message}", ex);
+            }
 
             try
             {

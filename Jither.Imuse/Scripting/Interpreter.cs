@@ -53,7 +53,7 @@ namespace Jither.Imuse.Scripting
         {
             ticks++;
             // TODO: Temporary hardcode: 96 ticks = 1 frame at 10fps (MI2 frame rate), assuming 120 bpm => 120 * 480 ticks per minute / 60 = 960 ticks per second = 960 / 10 = 96 ticks per frame)
-            if ((ticks % 32) == 0)
+            if ((ticks % 96) == 0)
             {
                 Context.ResumeScripts();
             }

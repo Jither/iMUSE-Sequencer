@@ -13,11 +13,13 @@ namespace Jither.Imuse.Commands
     {
         private readonly PlayerManager players;
         private readonly ImuseQueue queue;
+        private readonly FaderManager faders;
 
-        public ImuseCommands(PlayerManager players, ImuseQueue queue)
+        public ImuseCommands(PlayerManager players, ImuseQueue queue, FaderManager faders)
         {
             this.players = players;
             this.queue = queue;
+            this.faders = faders;
         }
 
         [Enqueueable]
@@ -55,6 +57,17 @@ namespace Jither.Imuse.Commands
         {
             StopSound(sound);
             StartSound(sound);
+        }
+
+        [Enqueueable]
+        public void PauseSound(int sound)
+        {
+            GetPlayer(sound)?.Sequencer.Pause();
+        }
+
+        public void ResumeSound(int sound)
+        {
+            GetPlayer(sound)?.Sequencer.Resume();
         }
 
         // TODO: This is enqueuable
@@ -175,7 +188,11 @@ namespace Jither.Imuse.Commands
         [Enqueueable]
         public void FadeVolume(int sound, int volume, int duration)
         {
-            throw new NotImplementedException();
+            var player = GetPlayer(sound);
+            if (player != null)
+            {
+                faders.FadeVolume(player, volume, duration);
+            }
         }
 
         [Enqueueable]

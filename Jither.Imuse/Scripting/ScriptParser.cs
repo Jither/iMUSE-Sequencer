@@ -287,7 +287,7 @@ namespace Jither.Imuse.Scripting
                     }
                     else
                     {
-                        expression = ParseCallExpression(identifier);
+                        expression = ParseCallExpressionStatement(identifier);
                     }
                     break;
                 case TokenType.Punctuation:
@@ -518,13 +518,13 @@ namespace Jither.Imuse.Scripting
             return Finalize(new AssignmentExpression(left, right, op.Value));
         }
 
-        private Expression ParseCallExpression(Identifier name)
+        private Expression ParseCallExpressionStatement(Identifier name)
         {
             // Procedure call statement (with no return value) differs from
             // function call expression in syntax, but not semantics. So, it's an ExpressionStatement(CallExpression)
 
             // No StartNode() - we started when parsing the identifier
-            int line = CurrentLine;
+            int line = name.Range.Start.Line;
             var arguments = new List<Expression>();
             while (CurrentLine == line && !Matches("}"))
             {

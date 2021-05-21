@@ -39,6 +39,7 @@ namespace Jither.Imuse
         private long nextEventTick; // tick of next event to be processed
         
         private bool bail;
+        private bool paused;
 
         internal long NextEventTick => nextEventTick;
         internal long CurrentTick => currentTick;
@@ -118,6 +119,16 @@ namespace Jither.Imuse
             loopsRemaining = 0;
         }
 
+        public void Pause()
+        {
+            paused = true;
+        }
+
+        public void Resume()
+        {
+            paused = false;
+        }
+
         /// <summary>
         /// Processes events at the current tick.
         /// </summary>
@@ -129,6 +140,11 @@ namespace Jither.Imuse
             if (status != SequencerStatus.On)
             {
                 return false;
+            }
+
+            if (paused)
+            {
+                return true;
             }
 
             // Update beat time

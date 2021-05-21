@@ -15,8 +15,8 @@ namespace Jither.Imuse
         public FaderStatus Status { get; set; }
         public Player Player { get; set; }
         public int CurrentLevel { get; set; }
-        public int TicksDuration { get; set; } // "time"
-        public int TicksRemaining { get; set; } // "counter"
+        public int FramesDuration { get; set; } // "time"
+        public int FramesRemaining { get; set; } // "counter"
         public int Slope { get; set; }
         public int Nudge { get; set; }
         public int SlopeMod { get; set; }
@@ -36,6 +36,7 @@ namespace Jither.Imuse
         private readonly List<Fader> faders = new();
         private bool fadersEnabled;
         private long usecCount;
+        private long ticks = 0;
 
         public FaderManager()
         {
@@ -48,11 +49,11 @@ namespace Jither.Imuse
             usecCount = 0;
         }
 
-        public bool FadeVolume(Player player, int volume, int ticksDuration)
+        public bool FadeVolume(Player player, int volume, int duration)
         {
             StopFade(player);
 
-            if (ticksDuration == 0)
+            if (duration == 0)
             {
                 player.SetVolume(volume);
                 return true;
@@ -67,10 +68,10 @@ namespace Jither.Imuse
                     fader.Status = FaderStatus.On;
                     fader.Player = player;
                     fader.CurrentLevel = player.Volume; // get_param?
-                    fader.TicksDuration = ticksDuration;
-                    fader.TicksRemaining = ticksDuration;
+                    fader.FramesDuration = duration;
+                    fader.FramesRemaining = duration;
                     int height = volume - fader.CurrentLevel;
-                    fader.Slope = height / ticksDuration;
+                    fader.Slope = height / duration;
                     if (height < 0)
                     {
                         height = -height;
@@ -81,7 +82,7 @@ namespace Jither.Imuse
                         fader.Nudge = 1;
                     }
 
-                    fader.SlopeMod = height % ticksDuration; // TODO: Combine and use double/decimal
+                    fader.SlopeMod = height % duration; // TODO: Combine and use double/decimal
                     fader.ModOverflowCounter = 0;
                     return true;
                 }
@@ -109,45 +110,47 @@ namespace Jither.Imuse
                 return;
             }
 
-            // TODO: Proper time-elapsed for faders
-            //usecCount += USEC_PER_INT; 
-            //while (usecCount >= USEC_PER_60TH)
+            ticks++;
+            // TODO: Temporary hardcode: 96 ticks = 1 frame at 10fps (MI2 frame rate), assuming 120 bpm => 120 * 480 ticks per minute / 60 = 960 ticks per second = 960 / 10 = 96 ticks per frame)
+            if ((ticks % 96) != 0)
             {
-                //usecCount -= USEC_PER_60TH;
-                fadersEnabled = false;
-                foreach (var fader in faders)
+                return;
+            }
+            // TODO: Proper time-elapsed for faders
+            fadersEnabled = false;
+            foreach (var fader in faders)
+            {
+                if (fader.Status == FaderStatus.On)
                 {
-                    if (fader.Status == FaderStatus.On)
+                    fadersEnabled = true;
+                    int level = fader.CurrentLevel + fader.Slope;
+                    fader.ModOverflowCounter += fader.SlopeMod;
+                    if (fader.ModOverflowCounter >= fader.FramesDuration)
                     {
-                        fadersEnabled = true;
-                        int level = fader.CurrentLevel + fader.Slope;
-                        fader.ModOverflowCounter += fader.SlopeMod;
-                        if (fader.ModOverflowCounter >= fader.TicksDuration)
+                        fader.ModOverflowCounter -= fader.FramesDuration;
+                        level += fader.Nudge;
+                    }
+                    if (level != fader.CurrentLevel)
+                    {
+                        if (level != 0)
                         {
-                            fader.ModOverflowCounter -= fader.TicksDuration;
-                            level += fader.Nudge;
+                            fader.CurrentLevel = level;
+                            fader.Player.SetVolume(level);
                         }
-                        if (level != fader.CurrentLevel)
+                        else
                         {
-                            if (level != 0)
-                            {
-                                fader.CurrentLevel = level;
-                                fader.Player.SetVolume(level);
-                            }
-                            else
-                            {
-                                fader.Player.Stop();
-                                fader.Status = FaderStatus.Off;
-                            }
+                            fader.Player.Stop();
+                            fader.Status = FaderStatus.Off;
                         }
                     }
-                    fader.TicksRemaining--;
-                    if (fader.TicksRemaining == 0)
-                    {
-                        fader.Status = FaderStatus.Off;
-                    }
+                }
+                fader.FramesRemaining--;
+                if (fader.FramesRemaining == 0)
+                {
+                    fader.Status = FaderStatus.Off;
                 }
             }
         }
     }
 }
+
