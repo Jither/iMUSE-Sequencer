@@ -16,12 +16,12 @@ variable know-wally-is-gone = false
 
 sounds
 {
-    "mi2/wood"      woodtick-theme
-    "mi2/woodbar"   bar-theme
-    "mi2/woodcart"  cartographers-theme
-    "mi2/woodinn"   inn-theme
-    "mi2/woodlaun"  laundry-theme
-    "mi2/woodshop"  woodshop-theme
+    "mi2/woodtick-theme"        woodtick-theme
+    "mi2/bar-theme"             bar-theme
+    "mi2/cartographers-theme"   cartographers-theme
+    "mi2/inn-theme"             inn-theme
+    "mi2/laundry-theme"         laundry-theme
+    "mi2/woodshop-theme"        woodshop-theme
 }
 
 action enter-bar
