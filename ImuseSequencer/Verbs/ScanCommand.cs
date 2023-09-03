@@ -1,7 +1,6 @@
 ﻿using Jither.CommandLine;
 using Jither.Imuse.Files;
 using Jither.Imuse.Messages;
-using Jither.Logging;
 using Jither.Midi.Files;
 using Jither.Midi.Helpers;
 using Jither.Midi.Messages;
@@ -10,137 +9,136 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ImuseSequencer.Verbs
+namespace ImuseSequencer.Verbs;
+
+public enum PropertyType
 {
-    public enum PropertyType
+    ImuseMessage,
+    CtrlMessage,
+    SysMessage,
+    ImuseHookId,
+    ImuseUnknown,
+    ImuseVersion
+}
+
+[Verb("scan", Help = "Scans MIDI files for various MIDI properties and lists them for each file")]
+public class ScanOptions : CommonOptions
+{
+    [Positional(0, Help = "Path to folder with MIDI files.", Name = "path", Required = true)]
+    public string Path { get; set; }
+
+    [Option('t', "type", Help = "Type of property to scan for.", ArgName = "message type", Required = true)]
+    public PropertyType Type { get; set; }
+
+    [Option('s', "skipped", Help = "Lists skipped files with info on why they were skipped.")]
+    public bool ListSkipped { get; set; }
+}
+
+public class ScanCommand : Command<ScanOptions>
+{
+    public ScanCommand(Settings settings, ScanOptions options) : base(settings, options)
     {
-        ImuseMessage,
-        CtrlMessage,
-        SysMessage,
-        ImuseHookId,
-        ImuseUnknown,
-        ImuseVersion
     }
 
-    [Verb("scan", Help = "Scans MIDI files for various MIDI properties and lists them for each file")]
-    public class ScanOptions : CommonOptions
+    public override void Execute()
     {
-        [Positional(0, Help = "Path to folder with MIDI files.", Name = "path", Required = true)]
-        public string Path { get; set; }
-
-        [Option('t', "type", Help = "Type of property to scan for.", ArgName = "message type", Required = true)]
-        public PropertyType Type { get; set; }
-
-        [Option('s', "skipped", Help = "Lists skipped files with info on why they were skipped.")]
-        public bool ListSkipped { get; set; }
-    }
-
-    public class ScanCommand : Command<ScanOptions>
-    {
-        public ScanCommand(Settings settings, ScanOptions options) : base(settings, options)
+        var files = Directory.EnumerateFiles(options.Path, "*.*", new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true });
+        HashSet<string> events = new();
+        foreach (var path in files)
         {
-        }
+            string fileName = Path.GetRelativePath(options.Path, path);
 
-        public override void Execute()
-        {
-            var files = Directory.EnumerateFiles(options.Path, "*.*", new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true });
-            HashSet<string> events = new();
-            foreach (var path in files)
+            events.Clear();
+            SoundFile soundFile;
+            try
             {
-                string fileName = Path.GetRelativePath(options.Path, path);
-
-                events.Clear();
-                SoundFile soundFile;
-                try
+                soundFile = SoundFile.Load(path);
+            }
+            catch (MidiFileException ex)
+            {
+                if (options.ListSkipped)
                 {
-                    soundFile = new SoundFile(path);
+                    logger.Warning($"{fileName}: {ex.Message}");
                 }
-                catch (MidiFileException ex)
-                {
-                    if (options.ListSkipped)
-                    {
-                        logger.Warning($"{fileName}: {ex.Message}");
-                    }
-                    continue;
-                }
+                continue;
+            }
 
-                if (options.Type == PropertyType.ImuseVersion)
+            if (options.Type == PropertyType.ImuseVersion)
+            {
+                logger.Info($"{fileName, -60}: {soundFile.ImuseVersion.GetDisplayName()}");
+            }
+            else
+            {
+                EnumerateEvents(soundFile, events);
+
+                if (events.Count == 0)
                 {
-                    logger.Info($"{fileName, -60}: {soundFile.ImuseVersion.GetDisplayName()}");
+                    logger.Info($"{fileName} has no events of this type.");
                 }
                 else
                 {
-                    EnumerateEvents(soundFile, events);
-
-                    if (events.Count == 0)
+                    if (options.Type == PropertyType.ImuseUnknown)
                     {
-                        logger.Info($"{fileName} has no events of this type.");
+                        logger.Info($"{fileName}:");
+                        foreach (var evt in events)
+                        {
+                            logger.Info($"  {evt}");
+                        }
                     }
                     else
                     {
-                        if (options.Type == PropertyType.ImuseUnknown)
-                        {
-                            logger.Info($"{fileName}:");
-                            foreach (var evt in events)
-                            {
-                                logger.Info($"  {evt}");
-                            }
-                        }
-                        else
-                        {
-                            logger.Info($"{fileName}: {String.Join(", ", events)}");
-                        }
+                        logger.Info($"{fileName}: {String.Join(", ", events)}");
                     }
                 }
             }
         }
+    }
 
-        private void EnumerateEvents(SoundFile soundFile, HashSet<string> events)
+    private void EnumerateEvents(SoundFile soundFile, HashSet<string> events)
+    {
+        foreach (var track in soundFile.Midi.Tracks)
         {
-            foreach (var track in soundFile.Midi.Tracks)
+            foreach (var evt in track.Events)
             {
-                foreach (var evt in track.Events)
+                switch (options.Type)
                 {
-                    switch (options.Type)
-                    {
-                        case PropertyType.ImuseMessage:
-                            if (evt.Message is ImuseMessage imuse)
+                    case PropertyType.ImuseMessage:
+                        if (evt.Message is ImuseMessage imuse)
+                        {
+                            events.Add(imuse.ImuseMessageName);
+                        }
+                        break;
+                    case PropertyType.CtrlMessage:
+                        if (evt.Message is ControlChangeMessage ctrl)
+                        {
+                            events.Add(MidiHelper.GetControllerName(ctrl.Controller));
+                        }
+                        break;
+                    case PropertyType.SysMessage:
+                        if (evt.Message is not ChannelMessage)
+                        {
+                            if (evt.Message is MetaMessage meta)
                             {
-                                events.Add(imuse.ImuseMessageName);
+                                events.Add(meta.TypeName);
                             }
-                            break;
-                        case PropertyType.CtrlMessage:
-                            if (evt.Message is ControlChangeMessage ctrl)
+                            else
                             {
-                                events.Add(MidiHelper.GetControllerName(ctrl.Controller));
+                                events.Add(evt.Message.Name);
                             }
-                            break;
-                        case PropertyType.SysMessage:
-                            if (evt.Message is not ChannelMessage)
-                            {
-                                if (evt.Message is MetaMessage meta)
-                                {
-                                    events.Add(meta.TypeName);
-                                }
-                                else
-                                {
-                                    events.Add(evt.Message.Name);
-                                }
-                            }
-                            break;
-                        case PropertyType.ImuseHookId:
-                            if (evt.Message is ImuseHook hook)
-                            {
-                                events.Add($"0x{hook.Hook:x2}");
-                            }
-                            break;
-                        case PropertyType.ImuseUnknown:
-                            if (evt.Message is ImuseUnknown unknown)
-                            {
-                                events.Add(unknown.Data.ToHex());
-                            }
-                            break;
-                    }
+                        }
+                        break;
+                    case PropertyType.ImuseHookId:
+                        if (evt.Message is ImuseHook hook)
+                        {
+                            events.Add($"0x{hook.Hook:x2}");
+                        }
+                        break;
+                    case PropertyType.ImuseUnknown:
+                        if (evt.Message is ImuseUnknown unknown)
+                        {
+                            events.Add(unknown.Data.ToHex());
+                        }
+                        break;
                 }
             }
         }

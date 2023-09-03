@@ -1,6 +1,7 @@
 ﻿using Jither.Midi.Messages;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Text;
 
@@ -197,7 +198,14 @@ namespace Jither.Midi.Files
                 throw new MidiFileException($"Not a valid MIDI file: Didn't find expected MTrk chunk.");
             }
             uint size = reader.ReadUint32();
-            
+
+            var events = ReadEvents(reader, size);
+
+            return new MidiTrack(trackIndex, events);
+        }
+
+        public List<MidiEvent> ReadEvents(MidiReader reader, long size, bool stopAtEndOfTrack = false)
+        {
             // A MIDI file cannot actually exceed uint size (and isn't likely to need to in any event...)
             uint end = (uint)(reader.Position + size);
 
@@ -236,9 +244,14 @@ namespace Jither.Midi.Files
 
                 var evt = new MidiEvent(absoluteTicks, message);
                 events.Add(evt);
+
+                if (stopAtEndOfTrack && message is MetaMessage meta && meta.Type == MetaType.EndOfTrack)
+                {
+                    break;
+                }
             }
 
-            return new MidiTrack(trackIndex, events);
+            return events;
         }
 
         public void WriteTrackChunk(MidiFileWriter writer, MidiTrack track)

@@ -46,6 +46,11 @@ namespace Jither.Midi.Files
             return Encoding.ASCII.GetString(buffer);
         }
 
+        public int Read(byte[] buffer, int offset, int count)
+        {
+            return stream.Read(buffer, offset, count);
+        }
+
         public byte ReadByte()
         {
             int result = stream.ReadByte();

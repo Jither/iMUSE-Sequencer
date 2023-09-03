@@ -6,6 +6,7 @@ using Jither.Utilities;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace Jither.Imuse.Files
@@ -242,30 +243,48 @@ namespace Jither.Imuse.Files
         /// </summary>
         public ImuseMidiHeader ImuseHeader { get; private set; }
 
+        public byte[] PgHeader { get; private set; }
+
         public MidiFile Midi { get; private set; }
 
-        public ImuseVersion ImuseVersion { get; }
+        public ImuseVersion ImuseVersion { get; private set; }
 
-        public SoundFile(string path)
+        protected SoundFile(MidiReader reader)
         {
-            Name = path;
+            // We allow (and in some cases, prefer) various LEC wrappers and headers before the MIDI itself:
+            FindMidiHeader(reader);
+            // Now continue reading the actual MIDI:
+            Midi = new MidiFile(reader, new MidiFileOptions().WithParser(new ImuseSysexParser()));
+            if (Midi.Timeline == null)
+            {
+                throw new MidiFileException($"iMUSE does not support non-PPQN files");
+            }
+            Midi.Timeline.ApplyBeatPositions();
+
+            ImuseVersion = DetermineVersion();
+        }
+
+        public static SoundFile Load(string path)
+        {
             using (var stream = File.OpenRead(path))
             {
-                using (var reader = new MidiReader(stream))
-                {
-                    // We allow (and in some cases, prefer) various LEC wrappers and headers before the MIDI itself:
-                    FindMidiHeader(reader);
-                    // Now continue reading the actual MIDI:
-                    Midi = new MidiFile(reader, new MidiFileOptions().WithParser(new ImuseSysexParser()));
-                    if (Midi.Timeline == null)
-                    {
-                        throw new MidiFileException($"iMUSE does not support non-PPQN files");
-                    }
-                    Midi.Timeline.ApplyBeatPositions();
-
-                    ImuseVersion = DetermineVersion();
-                }
+                var result = Load(stream);
+                result.Name = path;
+                return result;
             }
+        }
+
+        public static SoundFile Load(Stream stream)
+        {
+            using (var reader = new MidiReader(stream))
+            {
+                return Load(reader);
+            }
+        }
+
+        public static SoundFile Load(MidiReader reader)
+        {
+            return new SoundFile(reader);
         }
 
         private ImuseVersion DetermineVersion()
@@ -348,10 +367,12 @@ namespace Jither.Imuse.Files
                         }
                         break;
                     case "MDpg":
-                        // Found in SNM and DOTT - variable length, not in all target chunks
+                        // Found in SNM and DOTT - variable length, not in all target chunks.
+                        // It lists what appears to be the initial patches/programs in the MIDI.
+                        // It doesn't appear to be used at playback, though.
                         uint mdpgSize = reader.ReadUint32();
-                        // Just skip size for now
-                        reader.Position += mdpgSize;
+                        PgHeader = new byte[mdpgSize];
+                        reader.Read(PgHeader, 0, (int)mdpgSize);
                         break;
                     default:
                         if (!targetsByChunk.TryGetValue(type, out var target))

@@ -25,7 +25,7 @@ namespace Jither.Imuse.Scripting
             string path = GetPath(name);
             try
             {
-                return new SoundFile(path);
+                return SoundFile.Load(path);
             }
             catch (IOException ex)
             {

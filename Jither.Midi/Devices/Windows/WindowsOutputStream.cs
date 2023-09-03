@@ -43,6 +43,10 @@ namespace Jither.Midi.Devices.Windows
 
         public WindowsOutputStream(int deviceId, string name) : base(name)
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                throw new InvalidOperationException($"{nameof(WindowsOutputStream)} is only supported on Microsoft Windows platforms");
+            }
             // We need to manually create the delegate to avoid it being garbage collected
             midiOutCallback = new WinApi.MidiOutProc(HandleMessage);
             int result = WinApi.midiStreamOpen(out handle, ref deviceId, 1, midiOutCallback, IntPtr.Zero, WinApiConstants.CALLBACK_FUNCTION);
