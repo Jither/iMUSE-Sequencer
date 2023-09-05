@@ -11,7 +11,7 @@ public static class PatchNameHelper
     /// <summary>
     /// Patch names in the General MIDI standard. Note: 0-indexed!
     /// </summary>
-    public static List<string> GeneralMidiNames = new List<string>
+    public static readonly IReadOnlyList<string> GeneralMidiNames = new List<string>
     {
         "Acoustic Grand Piano",
         "Bright Acoustic Piano",
@@ -146,7 +146,7 @@ public static class PatchNameHelper
     /// <summary>
     /// Factory patch names for Roland MT-32. Note: 0-indexed!
     /// </summary>
-    public static List<string> MT32Names = new List<string>
+    public static readonly IReadOnlyList<string> MT32Names = new List<string>
     {
         "Acou Piano 1",
         "Acou Piano 2",
