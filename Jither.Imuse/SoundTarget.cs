@@ -17,7 +17,9 @@ namespace Jither.Imuse
         [Display(Name = "Roland MT-32", ShortName = "ROL")]
         Roland = 4,
         // SoundBlaster = 5
-        [Display(Name = "General MIDI", ShortName = "GMD")]
+        [Display(Name = "General MIDI", ShortName = "GMD")] // TODO: Or FM-Towns
         GeneralMidi = 6,
+        [Display(Name = "Mac", ShortName = "MAC")]
+        Mac = 7
     }
 }

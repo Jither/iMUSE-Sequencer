@@ -225,7 +225,8 @@ namespace Jither.Imuse.Files
             ["ROL "] = SoundTarget.Roland,
             ["GMD "] = SoundTarget.GeneralMidi,
             ["MIDI"] = SoundTarget.GeneralMidi,
-            ["SPK "] = SoundTarget.Speaker
+            ["SPK "] = SoundTarget.Speaker,
+            ["MAC "] = SoundTarget.Mac
         };
 
         /// <summary>

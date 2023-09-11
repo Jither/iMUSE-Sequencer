@@ -64,6 +64,9 @@ namespace Jither.Imuse.Scripting
                 case SoundTarget.Speaker:
                     fullPath = Path.ChangeExtension(path, ".spk");
                     break;
+                case SoundTarget.Mac:
+                    fullPath = Path.ChangeExtension(path, ".mac");
+                    break;
                 default:
                     throw new NotImplementedException($"FileProvider doesn't support target {target}");
             }

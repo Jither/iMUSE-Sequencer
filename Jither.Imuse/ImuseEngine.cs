@@ -186,6 +186,7 @@ namespace Jither.Imuse
             context.CurrentScope.AddSymbol("ROLAND", IntegerValue.Create((int)SoundTarget.Roland));
             context.CurrentScope.AddSymbol("PC", IntegerValue.Create((int)SoundTarget.Speaker));
             context.CurrentScope.AddSymbol("GMIDI", IntegerValue.Create((int)SoundTarget.GeneralMidi));
+            context.CurrentScope.AddSymbol("MAC", IntegerValue.Create((int)SoundTarget.Mac));
         }
 
         public void Dispose()
