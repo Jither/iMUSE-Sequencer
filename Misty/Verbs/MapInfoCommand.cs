@@ -16,6 +16,13 @@ public class MapInfoOptions : CommonOptions, ICustomParsing
     [Positional(0, Help = $"Path to mapping file. Default: {InstrumentMap.DefaultFileName} in program folder.", Name = "mapping file", Required = false)]
     public string MappingFile { get; set; }
 
+    [Examples]
+    public static IEnumerable<Example<MapInfoOptions>> Examples => new[]
+    {
+        new Example<MapInfoOptions>("Get info on default mapping file", new MapInfoOptions { }),
+        new Example<MapInfoOptions>("Get info on specific mapping file", new MapInfoOptions { MappingFile = "mycustom.mapping" }),
+    };
+
     public void AfterParse()
     {
         MappingFile ??= InstrumentMap.DefaultPath;

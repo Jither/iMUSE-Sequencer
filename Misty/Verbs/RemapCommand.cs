@@ -18,6 +18,14 @@ public class RemapOptions : CommonOptions, ICustomParsing
     [Option('m', "mapping", Help = $"Path to mapping file. Default: {InstrumentMap.DefaultFileName} in program folder.", ArgName = "file")]
     public string MappingFile { get; set; }
 
+    [Examples]
+    public static IEnumerable<Example<RemapOptions>> Examples => new[]
+{
+        new Example<RemapOptions>("Remap MIDI file using default mapping", new RemapOptions { InputFile = "largo.mid", OutputFile = "largo-gm.mid" }),
+        new Example<RemapOptions>("Remap MIDI file using default mapping, outputting to largo.remapped.mid", new RemapOptions { InputFile = "largo.mid" }),
+        new Example<RemapOptions>("Remap MIDI file using specific mapping", new RemapOptions { InputFile = "largo.mid", OutputFile = "largo-gm.mid", MappingFile = "mycustom.mapping" }),
+    };
+
     public void AfterParse()
     {
         OutputFile ??= Path.ChangeExtension(InputFile, "remapped.mid");

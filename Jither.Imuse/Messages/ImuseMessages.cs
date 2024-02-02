@@ -413,10 +413,10 @@ namespace Jither.Imuse.Messages
     public class ImuseHookJump : ImuseHook
     {
         public override string ImuseMessageName => "hook-jump";
-        protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,5}, beat: {Beat,5}, tick: {Tick,5}";
+        protected override string Info => $"hook: {Hook,3}, track: {Track,5}, beat: {Beat,5}, tick: {Tick,5}";
         public override HookType Type => Imuse.HookType.Jump;
 
-        public int Chunk { get; }
+        public int Track { get; }
         public int Beat { get; }
         public int Tick { get; }
 
@@ -424,7 +424,7 @@ namespace Jither.Imuse.Messages
         {
             Hook = ImuseData[0];
             // Yes, ImuseData is full 8-bit bytes (unpacked from nibbles), so << 8 is correct.
-            Chunk = ImuseData[1] << 8 | ImuseData[2];
+            Track = ImuseData[1] << 8 | ImuseData[2];
             Beat = ImuseData[3] << 8 | ImuseData[4];
             Tick = ImuseData[5] << 8 | ImuseData[6];
         }
@@ -436,12 +436,12 @@ namespace Jither.Imuse.Messages
     public class ImuseV3HookJump : ImuseHook
     {
         public override string ImuseMessageName => "hook-jump-v3";
-        protected override string Info => $"hook: {Hook,3}, chunk: {Chunk,3}, measure: {Measure,5}, beat: {Beat,3}, tick: {Tick,3}, sustain: {Sustain}";
+        protected override string Info => $"hook: {Hook,3}, track: {Track,3}, measure: {Measure,5}, beat: {Beat,3}, tick: {Tick,3}, sustain: {Sustain}";
         protected override bool HasChannel => false;
 
         public override HookType Type => Imuse.HookType.Jump;
 
-        public int Chunk { get; }
+        public int Track { get; }
         public int Measure { get; }
         public int Beat { get; }
         public int Tick { get; }
@@ -450,7 +450,7 @@ namespace Jither.Imuse.Messages
         public ImuseV3HookJump(byte[] data) : base(data, 8)
         {
             Hook = ImuseByteData[0];
-            Chunk = ImuseByteData[1] - 1; // Chunk is 1-indexed rather than 0-indexed in v3. We keep it 0-indexed.
+            Track = ImuseByteData[1] - 1; // Chunk is 1-indexed rather than 0-indexed in v3. We keep it 0-indexed.
             Measure = ImuseByteData[2] << 7 | ImuseByteData[3]; // Measure is 1-indexed
             Beat = ImuseByteData[4];
             Tick = ImuseByteData[5] << 7 | ImuseByteData[6];
@@ -530,7 +530,7 @@ namespace Jither.Imuse.Messages
     public class ImuseHookPartProgramChange : ImuseHook
     {
         public override string ImuseMessageName => "hook-part-pgmch";
-        protected override string Info => $"hook: {Hook,3}, vol: {Program,3}";
+        protected override string Info => $"hook: {Hook,3}, program: {Program,3}";
 
         public override HookType Type => Imuse.HookType.PartProgramChange;
 

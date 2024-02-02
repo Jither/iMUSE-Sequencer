@@ -5,8 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <Description>Misty - MIDI and iMUSE Spelunking Tool - Yowza!</Description>
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Description>MIDI and iMUSE Spelunking Tool - Yowza!</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -25,7 +25,7 @@ internal class Program
 
         try
         {
-            var parser = new CommandParser()
+            var parser = new CommandParser(new HelpSettings { HeaderTemplate = "\n{product} v{version}{\ndescription}{\ncopyright}" })
                 .WithVerb<RemapOptions>(o => new RemapCommand(o).Execute())
                 .WithVerb<MapInfoOptions>(o => new MapInfoCommand(o).Execute())
                 .WithErrorHandler(err => err.Parser.WriteHelp(err));

@@ -259,7 +259,7 @@ namespace Jither.Imuse
                     // We allow limiting the number of jumps performed for a given hook. This is useful for non-interactive recording.
                     if (executedCount < options.JumpLimit)
                     {
-                        if (HookBlock.HandleJump(jump.Hook, jump.Chunk, jump.Beat, jump.Tick))
+                        if (HookBlock.HandleJump(jump.Hook, jump.Track, jump.Beat, jump.Tick))
                         {
                             jumpsExecuted[jump] = executedCount + 1;
                         }
@@ -272,7 +272,7 @@ namespace Jither.Imuse
                     {
                         // TODO: This hasn't been checked, and probably isn't right (e.g. measure * 4). Just a quick test.
                         // Also needs to handle the Sustain property on the jump
-                        if (HookBlock.HandleJump(jump.Hook, jump.Chunk, ((jump.Measure - 1) * 4) + jump.Beat, jump.Tick, jump.Sustain))
+                        if (HookBlock.HandleJump(jump.Hook, jump.Track, ((jump.Measure - 1) * 4) + jump.Beat, jump.Tick, jump.Sustain))
                         {
                             jumpsExecuted[jump] = executed3Count + 1;
                         }
