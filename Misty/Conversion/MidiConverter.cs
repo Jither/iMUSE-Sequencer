@@ -33,7 +33,7 @@ public class MidiConverter
                 .Replace("{folder}", Path.GetDirectoryName(inputPath))
                 .Replace("{name}", Path.GetFileNameWithoutExtension(inputPath))
                 .Replace("{track}", (inputTrack.Index + 1).ToString())
-                .Replace("{tracknumber}", (inputTrack.Index).ToString());
+                .Replace("{trackindex}", (inputTrack.Index).ToString());
 
             outputPath = PathHelpers.NormalizeForPlatform(outputPath);
 
