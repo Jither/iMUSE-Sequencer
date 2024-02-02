@@ -109,8 +109,8 @@ namespace Jither.Midi.Files
         public void WriteShortMessage(byte status, ushort value)
         {
             WriteByte(status);
-            WriteByte((byte)((value & 0x3f80) >> 7));
             WriteByte((byte)(value & 0x7f));
+            WriteByte((byte)((value & 0x3f80) >> 7));
         }
 
         public void WriteShortMessage(byte status, byte value)

@@ -41,6 +41,35 @@ namespace Jither.Imuse.Messages
                 _ => new ImuseUnknown(data)
             };
         }
+
+        public static byte GetTypeCode(ImuseMessage message)
+        {
+            return message switch
+            {
+                ImuseV3Marker => 0x00,
+                ImuseAllocPart => 0x00,
+                ImuseV3HookJump => 0x01,
+                ImuseDeallocPart => 0x01,
+                ImuseDeallocAllParts => 0x02,
+                ImuseV3Text => 0x03,
+                ImuseActiveSetup => 0x10,
+                ImuseStoredSetup => 0x11,
+                ImuseSetupBank => 0x12,
+                ImuseSystemParam => 0x20,
+                ImuseSetupParam => 0x21,
+                ImuseHookJump => 0x30,
+                ImuseHookTranspose => 0x31,
+                ImuseHookPartEnable => 0x32,
+                ImuseHookPartVolume => 0x33,
+                ImuseHookPartProgramChange => 0x34,
+                ImuseHookPartTranspose => 0x35,
+                ImuseMarker => 0x40,
+                ImuseSetLoop => 0x50,
+                ImuseClearLoop => 0x51,
+                ImuseLoadSetup => 0x60,
+                _ => throw new ImuseException($"No type code for {message.GetType()}.")
+            };
+        }
     }
 
     /// <summary>
@@ -62,23 +91,26 @@ namespace Jither.Imuse.Messages
         public int Channel { get; }
 
         protected virtual bool HasChannel => true;
+        protected int ByteDataLength { get; }
 
-        protected ImuseMessage(byte[] data, int byteDataLength) : base(data)
+        protected ImuseMessage(byte[] data, int? byteDataLen) : base(data)
         {
+            // Unknown iMUSE messages and V3 text have variable data length, indicated with null. The three remaining bytes are manufacturer ID, type, and the sysex end.
+            ByteDataLength = byteDataLen ?? data.Length - 3;
             // Skip manufacturer ID and type
             int dataIndex = 2;
 
             // A few rare sound files have different sized iMUSE markers (RUDE8 in MI2) - we truncate the data in that case.
             int bytesLeftForData = data.Length - 3;
-            if (byteDataLength > bytesLeftForData)
+            if (ByteDataLength > bytesLeftForData)
             {
-                logger.Warning($"Found iMUSE {ImuseMessageName} with less than {byteDataLength} bytes of data ({bytesLeftForData})");
-                byteDataLength = bytesLeftForData;
+                logger.Warning($"Found iMUSE {ImuseMessageName} with less than {ByteDataLength} bytes of data ({bytesLeftForData})");
+                ByteDataLength = bytesLeftForData;
             }
 
             // The first few bytes after that are 7 bit data - length depends on message type.
             // Note that for v3, all (well, both) iMUSE messages only have byte data.
-            ImuseByteData = new ArraySegment<byte>(data, dataIndex, byteDataLength);
+            ImuseByteData = new ArraySegment<byte>(data, dataIndex, ByteDataLength);
 
             // In v1, the first byte is the channel
             if (HasChannel)
@@ -90,10 +122,52 @@ namespace Jither.Imuse.Messages
                 Channel = ImuseByteData[0];
             }
 
-            dataIndex += byteDataLength;
+            dataIndex += ByteDataLength;
 
             // The remainder is bytes with nibbles (4 bits) distributed into two bytes
             UnpackNibbles(data, dataIndex);
+        }
+
+        protected override byte[] GetData()
+        {
+            var imuseData = GetImuseData();
+            var imuseByteData = GetImuseByteData();
+            int byteDataLength = imuseByteData.Length;
+            if (byteDataLength != ByteDataLength)
+            {
+                throw new ImuseException($"iMUSE byte data exceeds what's allowed for the message.");
+            }
+            var data = new byte[3 + byteDataLength + imuseData.Length * 2];
+            int dataIndex = 0;
+            data[dataIndex++] = 0x7d; // Manufacturer ID
+            data[dataIndex++] = ImuseSysexParser.GetTypeCode(this);
+            Array.Copy(imuseByteData, 0, data, dataIndex, byteDataLength);
+            dataIndex += byteDataLength;
+            PackNibbles(imuseData, data, dataIndex);
+            data[^1] = 0xf7;
+            return data;
+        }
+
+        protected virtual byte[] GetImuseByteData()
+        {
+            return ImuseByteData.ToArray();
+        }
+
+        protected virtual byte[] GetImuseData()
+        {
+            // By default, we don't update - simply return the original data
+            return ImuseData;
+        }
+
+        private void PackNibbles(byte[] source, byte[] dest, int destIndex)
+        {
+            int sourceIndex = 0;
+            while (sourceIndex < ImuseData.Length)
+            {
+                dest[destIndex++] = (byte)(source[sourceIndex] >> 4);
+                dest[destIndex++] = (byte)(source[sourceIndex] & 0x0f);
+                sourceIndex++;
+            }
         }
 
         private void UnpackNibbles(byte[] data, int source)
@@ -139,7 +213,7 @@ namespace Jither.Imuse.Messages
         public override string ImuseMessageName => "unknown";
         protected override bool HasChannel => false;
 
-        public ImuseUnknown(byte[] data) : base(data, data.Length - 3)
+        public ImuseUnknown(byte[] data) : base(data, null)
         {
         }
     }
@@ -163,7 +237,7 @@ namespace Jither.Imuse.Messages
         public int Transpose { get; }
         public int Detune { get; }
         public int PitchBendRange { get; }
-        public int Program { get; }
+        public int Program { get; set; }
         public bool TransposeLocked => Transpose == transposeLockedFlag;
 
         public ImuseAllocPart(byte[] data) : base(data, 1)
@@ -180,6 +254,21 @@ namespace Jither.Imuse.Messages
             Detune = (sbyte)ImuseData[5];
             PitchBendRange = ImuseData[6];
             Program = ImuseData[7];
+        }
+
+        protected override byte[] GetImuseData()
+        {
+            return new byte[]
+            {
+                (byte)((Enabled ? 1 : 0) | (Reverb  << 1)),
+                (byte)PriorityOffset,
+                (byte)Volume,
+                (byte)Pan,
+                (byte)Transpose,
+                (byte)Detune,
+                (byte)PitchBendRange,
+                (byte)Program
+            };
         }
     }
 
@@ -207,7 +296,7 @@ namespace Jither.Imuse.Messages
 
         public string Text { get; }
 
-        public ImuseV3Text(byte[] data) : base(data, data.Length - 3)
+        public ImuseV3Text(byte[] data) : base(data, null)
         {
             Text = Encoding.ASCII.GetString(ImuseByteData);
         }
@@ -445,12 +534,21 @@ namespace Jither.Imuse.Messages
 
         public override HookType Type => Imuse.HookType.PartProgramChange;
 
-        public int Program { get; }
+        public int Program { get; set; }
 
         public ImuseHookPartProgramChange(byte[] data) : base(data, 1)
         {
             Hook = ImuseData[0];
             Program = ImuseData[1];
+        }
+
+        protected override byte[] GetImuseData()
+        {
+            return new byte[]
+            {
+                (byte)Hook,
+                (byte)Program
+            };
         }
     }
 

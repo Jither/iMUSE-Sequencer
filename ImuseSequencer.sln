@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30907.101
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImuseSequencer", "ImuseSequencer\ImuseSequencer.csproj", "{4F4CC126-AA6C-4DB2-B6D5-069BFDDBF814}"
 EndProject
@@ -13,9 +13,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Imuse", "Jither.Imus
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Midi.Tests", "Jither.Midi.Tests\Jither.Midi.Tests.csproj", "{E4A1C747-2733-4ED8-A230-5B2178E0AA61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jither.Imuse.Tests", "Jither.Imuse.Tests\Jither.Imuse.Tests.csproj", "{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jither.Imuse.Tests", "Jither.Imuse.Tests\Jither.Imuse.Tests.csproj", "{D1D4C455-D555-4EAC-BB28-BD6748B4C65A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptingSandbox", "ScriptingSandbox\ScriptingSandbox.csproj", "{678F73C6-D13E-4F8D-8BB8-42D7789F5976}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScriptingSandbox", "ScriptingSandbox\ScriptingSandbox.csproj", "{678F73C6-D13E-4F8D-8BB8-42D7789F5976}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Misty", "Misty\Misty.csproj", "{B6F2EE4B-74C2-4AE5-BFD1-47AAD78B7721}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{678F73C6-D13E-4F8D-8BB8-42D7789F5976}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6F2EE4B-74C2-4AE5-BFD1-47AAD78B7721}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6F2EE4B-74C2-4AE5-BFD1-47AAD78B7721}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6F2EE4B-74C2-4AE5-BFD1-47AAD78B7721}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6F2EE4B-74C2-4AE5-BFD1-47AAD78B7721}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

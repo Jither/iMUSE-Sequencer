@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <Description>Misty - MIDI and iMUSE Spelunking Tool - Yowza!</Description>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="default.mapping" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="default.mapping">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Jither.Imuse\Jither.Imuse.csproj" />
+    <ProjectReference Include="..\Jither.Midi\Jither.Midi.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Misty": {
+      "commandName": "Project",
+      "commandLineArgs": "remap D:\\scumm\\MIDIs\\FOA\\sound-1.ROL sound-1.mid"
+    }
+  }
+}

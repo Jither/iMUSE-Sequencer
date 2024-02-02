@@ -247,7 +247,7 @@ namespace Jither.Midi.Messages
         protected override byte Command => 0xc0;
         protected override int RawData => Program;
 
-        public byte Program { get; }
+        public byte Program { get; set; }
 
         public ProgramChangeMessage(int channel, byte program) : base(channel)
         {
@@ -334,7 +334,18 @@ namespace Jither.Midi.Messages
 
         public override void Write(IMidiWriter writer)
         {
-            writer.WriteSysex(Status, Data);
+            var data = GetData();
+            // TODO: We don't handle continuation sysex
+            writer.WriteSysex(Status, data);
+        }
+
+        /// <summary>
+        /// Allows providing updated sysex data for derived classes. By default, it simply returns the original data verbatim.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual byte[] GetData()
+        {
+            return Data;
         }
     }
 
